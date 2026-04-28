@@ -864,7 +864,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
   <div class="room-panel">
     <div class="room-head">
       <div>
-        <div class="room-title">Assign Room</div>
+        <div class="room-title">Select Production</div>
         <div class="room-device" id="kp-room-panel-name"></div>
         <div id="kp-room-panel-meta" style="font-family:var(--f-mono);font-size:10px;color:rgba(255,255,255,.35);letter-spacing:.1em;margin-top:2px;"></div>
       </div>
@@ -872,15 +872,8 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
     </div>
     <div class="room-body">
       <input type="hidden" id="kp-room-prod-id"><input type="hidden" id="kp-room-panel-id">
-      <div class="room-lbl">Select Control Room</div>
-      <div class="room-btns">
-        <button class="room-btn pcr1 kp-room-btn" data-room="PCR1" onclick="kpRoomBtnClick(this,'PCR1')"><span class="room-btn-color"></span><span class="room-btn-name">PCR1</span></button>
-        <button class="room-btn pcr2 kp-room-btn" data-room="PCR2" onclick="kpRoomBtnClick(this,'PCR2')"><span class="room-btn-color"></span><span class="room-btn-name">PCR2</span></button>
-        <button class="room-btn mfr1 kp-room-btn" data-room="MFR1" onclick="kpRoomBtnClick(this,'MFR1')"><span class="room-btn-color"></span><span class="room-btn-name">MFR1</span></button>
-        <button class="room-btn mfr2 kp-room-btn" data-room="MFR2" onclick="kpRoomBtnClick(this,'MFR2')"><span class="room-btn-color"></span><span class="room-btn-name">MFR2</span></button>
-        <button class="room-btn other kp-room-btn" data-room="OTHER" onclick="kpRoomBtnClick(this,'OTHER')"><span class="room-btn-color"></span><span class="room-btn-name">Other</span></button>
-      </div>
-      <input class="field-input" id="kp-room-other-inp" type="text" placeholder="Room name…" maxlength="16" style="display:none;margin-top:6px;" autocomplete="off">
+      <div class="room-lbl" id="kp-room-body-lbl">Select Production</div>
+      <div class="room-btns" id="kp-room-btns-wrap"></div>
       <button class="btn-full" id="btn-kp-room-confirm" style="margin-top:8px;">Assign</button>
       <button id="btn-kp-room-cancel" style="display:none;"></button>
     </div>
@@ -1373,7 +1366,7 @@ function setView(v){
   if(uf){
     const show = v==='allbeltpacks'||v==='keypanels';
     var locSec=$('unified-loc-section');
-    if(locSec) locSec.style.display = v==='keypanels' ? 'flex' : 'none';
+    if(locSec) locSec.style.display='none'; // rooms section now handles production filtering
     // Update search placeholder
     const si=$('unified-search');
     if(si) si.placeholder = v==='keypanels' ? 'Search panels…' : 'Search WB# or name…';
@@ -1551,13 +1544,7 @@ function kpPanelMatchesFilter(panel, entry){
   if(statuses && statuses.size > 0){
     if(statuses.has('available') && entry) return false;
   }
-  if(locs.size > 0){
-    // locs now stores production IDs — check if panel is in any selected production
-    const inProd = Object.values(PRODUCTIONS).some(p=>
-      locs.has(p.id) && p.keypanels && p.keypanels.some(kp=>kp.id===panel.id)
-    );
-    if(!inProd) return false;
-  }
+  // production filtering handled by _kpFilter.rooms
   if(rooms.size > 0){
     // rooms now stores production IDs
     const inProd=Object.values(PRODUCTIONS).some(p=>
@@ -1686,12 +1673,19 @@ function openKpReassignModal(panelId, prodId){
   $('kp-room-panel-meta').textContent=panel.model+' · Port '+panel.port;
   $('kp-room-prod-id').value=prodId;
   $('kp-room-panel-id').value=panelId;
-  $('kp-room-other-inp').style.display='none'; $('kp-room-other-inp').value='';
-  document.querySelectorAll('.kp-room-btn').forEach(b=>{
-    b.style.background='var(--surface)';b.style.borderColor='var(--border-hi)';
-    b.style.color=b.dataset.room==='OTHER'?'var(--text-muted)':'var(--text)';
-  });
+  // Build production buttons dynamically
   _kpRoomSelected=null;
+  const wrap=document.getElementById('kp-room-btns-wrap'); wrap.innerHTML='';
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+    const clr=crFg(prod.controlRoom)||'#888888';
+    const btn=document.createElement('button');
+    btn.className='room-btn kp-room-btn';
+    btn.dataset.room=prod.controlRoom;
+    btn.dataset.prodId=prod.id;
+    btn.innerHTML='<span class="room-btn-color" style="background:'+clr+';"></span><span class="room-btn-name">'+prodLabel(prod)+'</span>';
+    btn.addEventListener('click',()=>kpRoomBtnClick(btn, prod.controlRoom, prod.id));
+    wrap.appendChild(btn);
+  });
   // Override confirm to wipe keys
   _kpRoomReassign=true;
   $('modal-kp-room').classList.add('active');
@@ -1734,24 +1728,18 @@ function openKpReassignModal(panelId, prodId){
 // KP Room modal
 let _kpRoomSelected = null;
 let _kpRoomReassign = false;
-function kpRoomBtnClick(btn, room){
+function kpRoomBtnClick(btn, room, prodId){
   document.querySelectorAll('.kp-room-btn').forEach(b=>{b.classList.remove('selected');});
   btn.classList.add('selected');
   _kpRoomSelected=room;
-  const otherInp=$('kp-room-other-inp');
-  otherInp.style.display=room==='OTHER'?'block':'none';
-  if(room==='OTHER') setTimeout(()=>otherInp.focus(),50);
+  _kpRoomProdId=prodId||null;
 }
+let _kpRoomProdId=null;
 (document.getElementById('btn-kp-room-confirm')||document.createElement('button')).addEventListener('click',()=>{
-  if(!_kpRoomSelected){toast('Select a control room','danger');return;}
+  if(!_kpRoomSelected){toast('Select a production','danger');return;}
   const prodId=$('kp-room-prod-id').value;
   const panelId=$('kp-room-panel-id').value;
-  let room=_kpRoomSelected;
-  if(room==='OTHER'){
-    const custom=$('kp-room-other-inp').value.trim().toUpperCase();
-    if(!custom){toast('Enter a room name','danger');return;}
-    room=custom;
-  }
+  let room=_kpRoomSelected; // controlRoom of selected production
   $('modal-kp-room').classList.remove('active');
   if(_kpRoomReassign){
     _kpRoomReassign=false;
@@ -2394,15 +2382,23 @@ function openBpKeyModal(bp, code, keyIndex){
 }
 
 function openBpRoomPicker(bp, code){
-  // Reuse the KP room modal for BP room assignment
   $('kp-room-panel-name').textContent = bp;
   $('kp-room-panel-meta').textContent = 'Beltpack';
   $('kp-room-prod-id').value = code;
-  $('kp-room-panel-id').value = '__bp__'+bp; // prefix to distinguish from KP
-  $('kp-room-other-inp').style.display='none';
-  $('kp-room-other-inp').value='';
-  document.querySelectorAll('.kp-room-btn').forEach(b=>{b.classList.remove('selected');});
-  _kpRoomSelected=null;
+  $('kp-room-panel-id').value = '__bp__'+bp;
+  _kpRoomSelected=null; _kpRoomReassign=false;
+  // Build production buttons
+  const wrap=document.getElementById('kp-room-btns-wrap'); wrap.innerHTML='';
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+    const clr=crFg(prod.controlRoom)||'#888888';
+    const btn=document.createElement('button');
+    btn.className='room-btn kp-room-btn';
+    btn.dataset.room=prod.controlRoom;
+    btn.dataset.prodId=prod.id;
+    btn.innerHTML='<span class="room-btn-color" style="background:'+clr+';"></span><span class="room-btn-name">'+prodLabel(prod)+'</span>';
+    btn.addEventListener('click',()=>kpRoomBtnClick(btn, prod.controlRoom, prod.id));
+    wrap.appendChild(btn);
+  });
   $('modal-kp-room').classList.add('active');
 }
 
