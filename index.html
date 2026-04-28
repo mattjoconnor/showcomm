@@ -1073,7 +1073,7 @@ function saveClaimed(code,data){
 }
 async function loadClaimedFromDB(code){
   if(!SUPA) return;
-  var r=await SUPA.from('beltpack_assignments').select('data').eq('production_id',code).single();
+  var r=await SUPA.from('beltpack_assignments').select('data').eq('production_id',code).maybeSingle();
   if(r.error||!r.data) return;
   localStorage.setItem('sc_bp_'+code,JSON.stringify(r.data.data));
 }
@@ -1085,7 +1085,7 @@ function saveClaimedKP(code,data){
 }
 async function loadClaimedKPFromDB(code){
   if(!SUPA||code==='__draft__') return;
-  var r=await SUPA.from('keypanel_assignments').select('data').eq('production_id',code).single();
+  var r=await SUPA.from('keypanel_assignments').select('data').eq('production_id',code).maybeSingle();
   if(r.error||!r.data) return;
   localStorage.setItem('sc_kp_'+code,JSON.stringify(r.data.data));
 }
@@ -1173,7 +1173,7 @@ function loadGlobalOptions(){
     else { localStorage.removeItem('sc_global_opts'); saveGlobalOptions(); }
   } else { saveGlobalOptions(); }
   if(SUPA){
-    SUPA.from('global_options').select('data').eq('key','main').single().then(function(res){
+    SUPA.from('global_options').select('data').eq('key','main').maybeSingle().then(function(res){
       if(res.error||!res.data) return;
       var s=res.data.data;
       if(s&&s.PLs){ GLOBAL_OPTIONS=s; localStorage.setItem('sc_global_opts',JSON.stringify(GLOBAL_OPTIONS)); }
