@@ -2476,6 +2476,11 @@ function setKpRoom(panelId, code, room){
     c[panelId].activeRoom = room;
   }
   saveClaimedKP(code, c);
+  // Keep card open after assignment by updating _kpCardOpen key
+  const _oldKey='avail_'+panelId.replace(/\s/g,'_');
+  const _newKey=code+'_'+panelId;
+  if(_kpCardOpen.has(_oldKey)){ _kpCardOpen.delete(_oldKey); _kpCardOpen.add(_newKey); }
+  else { _kpCardOpen.add(_newKey); }
   toast(`${panelId} → ${room}`, 'success');
   renderKeypanels();
 }
@@ -2850,7 +2855,7 @@ function renderOptionsTab(cat){
   if(isKp){
     const LOCS=['PCR1','ACR1','MOPS','PCR2','MFR1','MFR2','INGEST','ASST'];
     LOCS.forEach(loc=>{
-      const panels=Object.values(PRODUCTIONS).flatMap(p=>p.keypanels||[]).filter(p=>p.location===loc);
+      const panels=KP_PANELS.filter(p=>p.location===loc);
       if(!panels.length) return;
       const secRow=tbody.insertRow(); secRow.className='opt-section-hdr';
       secRow.style.cursor='pointer';
