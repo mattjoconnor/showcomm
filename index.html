@@ -1165,6 +1165,7 @@ try {
   );
 } catch(e) { console.warn('Supabase init failed:', e); }
 let _currentUser=null, _currentProfile=null, _currentRole=null, _selectedRole=null;
+let _blockProdReload=false;
 
 function initAdminApp(){
   loadGlobalOptions(); initBpSelectors(); buildUnifiedFilters(); setView('keypanels');
@@ -1176,7 +1177,7 @@ function initAdminApp(){
       .on('postgres_changes',{event:'*',schema:'public',table:'device_claims'},  ()=>onRequestChange())
       .on('postgres_changes',{event:'*',schema:'public',table:'change_requests'},()=>onRequestChange())
       .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'},   ()=>onRequestChange())
-      .on('postgres_changes',{event:'*',schema:'public',table:'productions'},    ()=>loadProds())
+      .on('postgres_changes',{event:'*',schema:'public',table:'productions'},    ()=>{ if(!_blockProdReload) loadProds(); })
       .subscribe();
   }
   const clearBtn=document.getElementById('btn-clear-filters');
@@ -3356,10 +3357,7 @@ function renderProductions(){
 
     card.innerHTML=`
       <div class="prod-card-header">
-        <div class="prod-reorder-btns">
-          <button class="prod-reorder-btn" onclick="moveProd('${prod.id}',-1)" title="Move up">▲</button>
-          <button class="prod-reorder-btn" onclick="moveProd('${prod.id}',1)" title="Move down">▼</button>
-        </div>
+        <div class="prod-reorder-btns" id="reorder-btns-${prod.id}"></div>
         <div style="flex:1;min-width:0;cursor:pointer;" onclick="toggleProdCard('${prod.id}')">
           <div class="prod-card-name">${prod.name||prod.id}</div>
           <div class="prod-card-meta"><span style="color:${crFg(prod.controlRoom)};font-weight:800;">${prod.controlRoom||''}</span>${prod.dates?' · '+prod.dates:''}${prod.beltpacks.length?' · '+prod.beltpacks[0]+'–'+prod.beltpacks[prod.beltpacks.length-1]:''}</div>
@@ -3423,6 +3421,16 @@ function renderProductions(){
         </div>
       </div>`;
 
+    const _rw=card.querySelector('.prod-reorder-btns');
+    if(_rw){
+      const _up=document.createElement('button');
+      _up.className='prod-reorder-btn'; _up.textContent='▲'; _up.title='Move up';
+      _up.addEventListener('click',(e)=>{ e.stopPropagation(); moveProd(prod.id,-1); });
+      const _dn=document.createElement('button');
+      _dn.className='prod-reorder-btn'; _dn.textContent='▼'; _dn.title='Move down';
+      _dn.addEventListener('click',(e)=>{ e.stopPropagation(); moveProd(prod.id,1); });
+      _rw.appendChild(_up); _rw.appendChild(_dn);
+    }
     list.appendChild(card);
   });
 
@@ -3471,7 +3479,11 @@ function moveProd(id, direction){
   if(newIdx<0||newIdx>=prods.length) return;
   const tmp=prods[newIdx]; prods[newIdx]=prods[idx]; prods[idx]=tmp;
   prods.forEach((p,i)=>{ PRODUCTIONS[p.id].sortOrder=i; });
-  saveProds(); renderProductions();
+  // Block real-time reload while saving so it doesn't overwrite our sort change
+  _blockProdReload=true;
+  saveProds();
+  renderProductions();
+  setTimeout(()=>{ _blockProdReload=false; }, 3000);
 }
 
 function archiveProd(id){
