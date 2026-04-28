@@ -583,11 +583,9 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 .req-archive-body .req-resolved { opacity:.55; }
 
 .prod-card { cursor:default; }
-.prod-card.dragging { opacity:.4; }
-.prod-card.drag-over { border-top:2px solid var(--black); }
-.prod-drag-handle { display:flex; align-items:center; padding:0 10px 0 4px; color:rgba(0,0,0,.2); font-size:16px; cursor:grab; flex-shrink:0; user-select:none; letter-spacing:-2px; }
-.prod-drag-handle:hover { color:rgba(0,0,0,.5); }
-.prod-drag-handle:active { cursor:grabbing; }
+.prod-reorder-btns { display:flex; flex-direction:column; gap:1px; padding-right:8px; flex-shrink:0; }
+.prod-reorder-btn { background:none; border:none; font-size:9px; color:rgba(0,0,0,.25); cursor:pointer; padding:2px 4px; line-height:1; }
+.prod-reorder-btn:hover { color:var(--black); }
 </style>
 </head>
 <body>
@@ -3358,7 +3356,10 @@ function renderProductions(){
 
     card.innerHTML=`
       <div class="prod-card-header">
-        <div class="prod-drag-handle" title="Drag to reorder">&#8942;&#8942;</div>
+        <div class="prod-reorder-btns">
+          <button class="prod-reorder-btn" onclick="moveProd('${prod.id}',-1)" title="Move up">▲</button>
+          <button class="prod-reorder-btn" onclick="moveProd('${prod.id}',1)" title="Move down">▼</button>
+        </div>
         <div style="flex:1;min-width:0;cursor:pointer;" onclick="toggleProdCard('${prod.id}')">
           <div class="prod-card-name">${prod.name||prod.id}</div>
           <div class="prod-card-meta"><span style="color:${crFg(prod.controlRoom)};font-weight:800;">${prod.controlRoom||''}</span>${prod.dates?' · '+prod.dates:''}${prod.beltpacks.length?' · '+prod.beltpacks[0]+'–'+prod.beltpacks[prod.beltpacks.length-1]:''}</div>
@@ -3421,53 +3422,11 @@ function renderProductions(){
           </div>
         </div>
       </div>`;
-    // Per-card dragstart on the grip handle only
-    const handle=card.querySelector('.prod-drag-handle');
-    if(handle){
-      handle.draggable=true;
-      handle.addEventListener('dragstart',e=>{
-        e.dataTransfer.setData('text/plain',prod.id);
-        e.dataTransfer.effectAllowed='move';
-        setTimeout(()=>card.classList.add('dragging'),0);
-      });
-      handle.addEventListener('dragend',()=>{
-        card.classList.remove('dragging');
-        document.querySelectorAll('.prod-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
-      });
-    }
+
     list.appendChild(card);
   });
 
-  // Container-level delegation — far more reliable than per-card drop listeners
-  list.addEventListener('dragover',e=>{
-    e.preventDefault();
-    e.dataTransfer.dropEffect='move';
-    const target=e.target.closest('.prod-card');
-    document.querySelectorAll('.prod-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
-    if(target&&!target.classList.contains('dragging')) target.classList.add('drag-over');
-  });
-  list.addEventListener('dragleave',e=>{
-    if(!list.contains(e.relatedTarget)){
-      document.querySelectorAll('.prod-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
-    }
-  });
-  list.addEventListener('drop',e=>{
-    e.preventDefault();
-    document.querySelectorAll('.prod-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
-    const dragId=e.dataTransfer.getData('text/plain');
-    const targetCard=e.target.closest('.prod-card');
-    if(!dragId||!targetCard) return;
-    const targetId=targetCard.id.replace('prod-card-','');
-    if(dragId===targetId) return;
-    const prods=Object.values(PRODUCTIONS).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
-    const fromIdx=prods.findIndex(p=>p.id===dragId);
-    const toIdx=prods.findIndex(p=>p.id===targetId);
-    if(fromIdx<0||toIdx<0) return;
-    const moved=prods.splice(fromIdx,1)[0];
-    prods.splice(toIdx,0,moved);
-    prods.forEach((p,i)=>{ PRODUCTIONS[p.id].sortOrder=i; });
-    saveProds(); renderProductions();
-  });
+
 }
 
 function toggleProdCard(id){
@@ -3502,6 +3461,17 @@ function saveProd(id){
   PRODUCTIONS[id].dates=dates; PRODUCTIONS[id].startDate=startDate;
   PRODUCTIONS[id].endDate=endDate; PRODUCTIONS[id].beltpacks=bps;
   saveProds(); toast(`${showName} saved`, 'success'); renderProductions();
+}
+
+function moveProd(id, direction){
+  const prods=Object.values(PRODUCTIONS).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  const idx=prods.findIndex(p=>p.id===id);
+  if(idx<0) return;
+  const newIdx=idx+direction;
+  if(newIdx<0||newIdx>=prods.length) return;
+  const tmp=prods[newIdx]; prods[newIdx]=prods[idx]; prods[idx]=tmp;
+  prods.forEach((p,i)=>{ PRODUCTIONS[p.id].sortOrder=i; });
+  saveProds(); renderProductions();
 }
 
 function archiveProd(id){
