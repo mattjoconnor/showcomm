@@ -2089,7 +2089,16 @@ function buildKpCard(panel, prod, entry){
   hdr.appendChild(chev);
   hdr.addEventListener('click',function(){
     if(_kpCardOpen.has(cardKey)) _kpCardOpen.delete(cardKey); else _kpCardOpen.add(cardKey);
-    if(prod) refreshKpCard(panel.id, prod.id); else renderKeypanels();
+    if(prod){
+      refreshKpCard(panel.id, prod.id);
+    } else {
+      // Toggle body directly — avoid full re-render for unassigned panels
+      const _body=card.querySelector('.kp-card-body');
+      const _chev=card.querySelector('.kp-card-chevron');
+      const _nowOpen=_kpCardOpen.has(cardKey);
+      if(_body){ _body.style.display=_nowOpen?'block':'none'; _body.classList.toggle('open',_nowOpen); }
+      if(_chev) _chev.classList.toggle('open',_nowOpen);
+    }
   });
   _kpIn.appendChild(hdr);
 
