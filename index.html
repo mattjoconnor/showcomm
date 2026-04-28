@@ -1534,11 +1534,11 @@ function kpPanelMatchesFilter(panel, entry){
   }
   // production filtering handled by _kpFilter.rooms
   if(rooms.size > 0){
-    // rooms now stores production IDs
-    const inProd=Object.values(PRODUCTIONS).some(p=>
-      rooms.has(p.id) && p.keypanels && p.keypanels.some(kp=>kp.id===panel.id)
-    );
-    if(!inProd) return false;
+    // Filter by operational assignment: panel assigned to this production's control room
+    const selectedProds=Object.values(PRODUCTIONS).filter(p=>rooms.has(p.id));
+    const assignedRoom=entry?entry.activeRoom||'':'';
+    const inSelectedProd=assignedRoom && selectedProds.some(p=>p.controlRoom===assignedRoom);
+    if(!inSelectedProd) return false;
   }
   return true;
 }
@@ -3383,8 +3383,10 @@ function renderProductions(){
             </div>
           </div>
           <div class="prod-edit-actions">
-            <button class="btn-sm primary" onclick="saveProd('${prod.id}')">Save Changes</button>
-            ${!isArchived?`<button class="btn-sm danger" onclick="archiveProd('${prod.id}')">Archive Production</button>`:''}
+            ${!isArchived?`<button class="btn-sm primary" onclick="saveProd('${prod.id}')">Save Changes</button>`:''}
+            ${!isArchived?`<button class="btn-sm danger" onclick="archiveProd('${prod.id}')">Archive</button>`:''}
+            ${isArchived?`<button class="btn-sm outline" onclick="unarchiveProd('${prod.id}')">Reactivate</button>`:''}
+            ${isArchived?`<button class="btn-sm danger" onclick="deleteProd('${prod.id}')">Delete Production</button>`:''}
           </div>
         </div>
         <div class="prod-qr-panel">
@@ -3435,8 +3437,47 @@ function saveProd(id){
 }
 
 function archiveProd(id){
-  adminConfirm('Archive Production', prodLabel(PRODUCTIONS[id]), 'This production becomes read-only. You can un-archive it later.', 'Archive', ()=>{
-  PRODUCTIONS[id].status='archived'; saveProds(); toast('Archived', 'info'); renderProductions();
+  adminConfirm('Archive Production', prodLabel(PRODUCTIONS[id]),
+    'All beltpack and keypanel assignments for this production will be cleared and released.',
+    'Archive & Clear', ()=>{
+    PRODUCTIONS[id].status='archived';
+    // Clear all BP assignments
+    saveClaimed(id, {});
+    // Clear all KP assignments
+    saveClaimedKP(id, {});
+    saveProds();
+    toast('Archived and all assignments cleared', 'info');
+    renderProductions();
+    if(state.view==='keypanels') renderKeypanels();
+    else if(state.view==='allbeltpacks') renderAllBeltpacks();
+  });
+}
+
+function unarchiveProd(id){
+  adminConfirm('Reactivate Production', prodLabel(PRODUCTIONS[id]),
+    'This production will become active again. Assignments will need to be re-made.',
+    'Reactivate', ()=>{
+    PRODUCTIONS[id].status='active';
+    saveProds();
+    toast(prodLabel(PRODUCTIONS[id])+' reactivated', 'success');
+    renderProductions();
+  });
+}
+
+function deleteProd(id){
+  adminConfirm('Delete Production', prodLabel(PRODUCTIONS[id]),
+    'This permanently removes the production and cannot be undone.',
+    'Delete', ()=>{
+    saveClaimed(id, {});
+    saveClaimedKP(id, {});
+    if(SUPA) SUPA.from('productions').delete().eq('id', id).then(({error})=>{
+      if(error) console.warn('deleteProd error:', error);
+    });
+    delete PRODUCTIONS[id];
+    localStorage.removeItem('sc_admin_prods');
+    saveProds();
+    toast('Production deleted', 'danger');
+    renderProductions();
   });
 }
 
