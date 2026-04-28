@@ -662,9 +662,8 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
     <nav class="r-nav" id="sidebar-nav">
       <button class="ribbon-tab" data-view="keypanels">Keypanels</button>
       <button class="ribbon-tab" data-view="allbeltpacks">Beltpacks</button>
-      <button class="ribbon-tab" data-view="options">Options</button>
-      <button class="ribbon-tab" data-view="productions">Beltpack Blocks</button>
       <button class="ribbon-tab" data-view="requests" id="ribbon-tab-requests">Requests<span class="req-badge" id="req-badge" style="display:none"></span></button>
+      <button class="ribbon-tab" data-view="options">Options</button>
     </nav>
     <div class="r-right"><button class="r-logout" id="btn-logout">Sign out</button></div>
   </div>
@@ -721,6 +720,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
               <button class="opt-tab" onclick="activateOptTab('KPs')" data-cat="KPs">Keypanels</button>
               <button class="opt-tab" onclick="activateOptTab('BPs')" data-cat="BPs">Beltpacks</button>
               <button class="opt-tab" onclick="activateOptTab('CRs')" data-cat="CRs">Control Rooms</button>
+              <button class="opt-tab" onclick="activateOptTab('BBs')" data-cat="BBs">Beltpack Blocks</button>
             </div>
           </div>
         </div>
@@ -730,6 +730,9 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
           <select class="options-prod-select" id="options-prod-select"></select>
         </div>
         <div class="options-grid" id="options-grid"></div>
+        <div id="opt-prods-panel" style="display:none;flex:1;overflow-y:auto;">
+          <div class="prod-list" id="prod-list"></div>
+        </div>
       </div>
 
       <!-- REQUESTS -->
@@ -737,10 +740,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
         <div id="requests-content"></div>
       </div>
 
-      <!-- PRODUCTIONS -->
-      <div id="view-productions" class="view">
-        <div class="prod-list" id="prod-list"></div>
-      </div>
+
 
     </div>
   </main>
@@ -1116,6 +1116,7 @@ let _currentUser=null, _currentProfile=null, _currentRole=null, _selectedRole=nu
 
 function initAdminApp(){
   loadProds(); loadGlobalOptions(); initBpSelectors(); buildUnifiedFilters(); setView('keypanels');
+  if(SUPA) loadRequests();
   const clearBtn=document.getElementById('btn-clear-filters');
   if(clearBtn) clearBtn.addEventListener('click',()=>{
     _bpFilter.statuses.clear(); _bpFilter.rooms.clear(); _bpFilter.search='';
@@ -1313,8 +1314,7 @@ function setView(v){
   const T={
     keypanels:   ['Keypanels','All panels across all productions'],
     allbeltpacks:['Beltpacks','Every unit across all productions'],
-    options:     ['Options','Global alpha pool — PLs, IFBs, Keypanels, Beltpacks'],
-    productions: ['Beltpack Blocks','Date ranges and beltpack reservations per control room'],
+    options:     ['Options','Global alpha pool, control rooms, and beltpack blocks'],
     requests:    ['Requests','Pending device claims, change requests, and key requests'],
   };
   $('main-title').textContent=T[v]?.[0]||v; $('main-title-sub').textContent=T[v]?.[1]||'';
@@ -1340,7 +1340,7 @@ function setView(v){
     });
     if(si) si.value='';
   }
-  if(v==='options') activateOptTab(_optActiveTab||'PLs'); else if(v==='requests') loadRequests(); else ({allbeltpacks:renderAllBeltpacks, keypanels:renderKeypanels, productions:renderProductions})[v]?.();
+  if(v==='options') activateOptTab(_optActiveTab||'PLs'); else if(v==='requests') loadRequests(); else ({allbeltpacks:renderAllBeltpacks, keypanels:renderKeypanels})[v]?.();
   updateSidebarStats(); renderSidebarPending();
 }
 document.querySelectorAll('#sidebar-nav .nav-item,#sidebar-nav .ribbon-tab').forEach(function(n){ n.addEventListener('click', function(){ if(n.dataset.view) setView(n.dataset.view); }); });
@@ -1366,7 +1366,23 @@ function activateOptTab(cat){
     var uf = $('unified-filters');
     if(uf) uf.style.display='none';
     state.view='options';
-    renderOptionsTab(cat);
+    // BBs tab — show prod panel, hide regular opt content
+    var prodPanel=$('opt-prods-panel');
+    var optContent=$('opt-content');
+    var optGrid=$('options-grid');
+    var optProdSel=document.querySelector('.options-prod-selector');
+    if(cat==='BBs'){
+      if(prodPanel) prodPanel.style.display='flex';
+      if(optContent) optContent.style.display='none';
+      if(optGrid) optGrid.style.display='none';
+      if(optProdSel) optProdSel.style.display='none';
+      renderProductions();
+    } else {
+      if(prodPanel) prodPanel.style.display='none';
+      if(optContent) optContent.style.display='flex';
+      if(optGrid) optGrid.style.display='';
+      renderOptionsTab(cat);
+    }
   } catch(err){
     console.error('activateOptTab error:', err);
     toast('Options error: '+err.message, 'danger');
@@ -3347,7 +3363,7 @@ $('btn-create-prod').addEventListener('click',()=>{
     : 'Dates TBD';
   const code=genCode();
   PRODUCTIONS[code]={id:code,controlRoom,dates,startDate,endDate,status:'active',beltpacks:bps,keypanels:[]};
-  saveProds(); $('modal-overlay-prod').classList.remove('active'); toast(`${controlRoom} created — code ${code}`, 'success'); setView('productions');
+  saveProds(); $('modal-overlay-prod').classList.remove('active'); toast(`${controlRoom} created — code ${code}`, 'success'); setView('options'); activateOptTab('BBs');
 });
 
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('active'); }));
