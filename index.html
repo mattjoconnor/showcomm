@@ -1543,11 +1543,14 @@ function kpPanelMatchesFilter(panel, entry, prod){
   }
   // production filtering handled by _kpFilter.rooms
   if(rooms.size > 0){
-    // Filter by operational assignment: panel assigned to this production's control room
+    // Show panels assigned to the selected production's room, OR unassigned panels
     const selectedProds=Object.values(PRODUCTIONS).filter(p=>rooms.has(p.id));
-    const assignedRoom=entry?entry.activeRoom||'':'';
-    const inSelectedProd=assignedRoom && selectedProds.some(p=>p.controlRoom===assignedRoom);
-    if(!inSelectedProd) return false;
+    if(entry && entry.activeRoom){
+      // Panel is assigned — only show if its room matches a selected production
+      const inSelectedProd=selectedProds.some(p=>p.controlRoom===entry.activeRoom);
+      if(!inSelectedProd) return false;
+    }
+    // Unassigned panels always pass through so they're visible for assignment
   }
   return true;
 }
