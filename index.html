@@ -1673,7 +1673,7 @@ function openKpReassignModal(panelId, prodId){
   // Build production buttons dynamically
   _kpRoomSelected=null;
   const wrap=document.getElementById('kp-room-btns-wrap'); wrap.innerHTML='';
-  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).forEach(prod=>{
     const clr=crFg(prod.controlRoom)||'#888888';
     const btn=document.createElement('button');
     btn.className='room-btn kp-room-btn';
@@ -1915,7 +1915,7 @@ function rebuildRoomProdPills(){
   const activeKpProds=new Set(_kpFilter.rooms);
   const activeBpProds=new Set(_bpFilter.rooms);
   rpEl.innerHTML='';
-  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).forEach(prod=>{
     const clr=crFg(prod.controlRoom)||'#888888';
     const isKpActive=activeKpProds.has(prod.id);
     const isBpActive=activeBpProds.has(prod.id);
@@ -1938,7 +1938,7 @@ function rebuildRoomProdPills(){
 function buildProdPills(){
   const locEl=$('unified-loc-pills'); if(!locEl) return;
   locEl.innerHTML='';
-  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).forEach(prod=>{
     const clr=crFg(prod.controlRoom)||'#888888';
     const label=prodLabel(prod);
     const p=document.createElement('button'); p.type='button'; p.className='kp-filter-pill';
@@ -2090,7 +2090,7 @@ function buildKpCard(panel, prod, entry){
   hdr.appendChild(chev);
   hdr.addEventListener('click',function(){
     if(_kpCardOpen.has(cardKey)) _kpCardOpen.delete(cardKey); else _kpCardOpen.add(cardKey);
-    if(prod) refreshKpCard(panel.id, prod.id);
+    if(prod) refreshKpCard(panel.id, prod.id); else renderKeypanels();
   });
   _kpIn.appendChild(hdr);
 
@@ -2369,7 +2369,7 @@ function openKpRoomModal(panelId, prodId){
   _kpRoomSelected=null; _kpRoomProdId=null;
   // Build production buttons dynamically
   const wrap=document.getElementById('kp-room-btns-wrap'); wrap.innerHTML='';
-  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).forEach(prod=>{
     const clr=crFg(prod.controlRoom)||'#888888';
     const btn=document.createElement('button');
     btn.className='room-btn kp-room-btn';
@@ -2437,7 +2437,7 @@ function openBpRoomPicker(bp, code){
   _kpRoomSelected=null; _kpRoomReassign=false;
   // Build production buttons
   const wrap=document.getElementById('kp-room-btns-wrap'); wrap.innerHTML='';
-  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).forEach(prod=>{
     const clr=crFg(prod.controlRoom)||'#888888';
     const btn=document.createElement('button');
     btn.className='room-btn kp-room-btn';
@@ -2667,7 +2667,7 @@ function openAssignModal(bp,code){
     const grid=document.createElement('div');
     grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;';
     // Show active productions instead of hardcoded rooms
-    Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+    Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).forEach(prod=>{
       const clr=crFg(prod.controlRoom)||'#888';
       const btn=document.createElement('button');
       btn.className='assign-room-btn'; btn.dataset.room=prod.controlRoom; btn.dataset.prodId=prod.id;
