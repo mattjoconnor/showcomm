@@ -1064,8 +1064,45 @@ function loadClaimed(code){ const r=localStorage.getItem(`sc_bp_${code}`); if(r)
 function saveClaimed(code,data){ localStorage.setItem(`sc_bp_${code}`,JSON.stringify(data)); }
 function loadClaimedKP(code){ const r=localStorage.getItem(`sc_kp_${code}`); return r?JSON.parse(r):{}; }
 function saveClaimedKP(code,data){ localStorage.setItem(`sc_kp_${code}`,JSON.stringify(data)); }
-function loadProds(){ const r=localStorage.getItem('sc_admin_prods'); if(r) PRODUCTIONS={...PRODUCTIONS,...JSON.parse(r)}; }
-function saveProds(){ localStorage.setItem('sc_admin_prods',JSON.stringify(PRODUCTIONS)); }
+function prodToRow(p){
+  return { id:p.id, name:p.name||p.controlRoom||p.id, control_room:p.controlRoom||'', dates:p.dates||'',
+    start_date:p.startDate||null, end_date:p.endDate||null, status:p.status||'active',
+    beltpacks:p.beltpacks||[], keypanels:p.keypanels||[] };
+}
+function rowToProd(r){
+  return { id:r.id, name:r.name, controlRoom:r.control_room, dates:r.dates,
+    startDate:r.start_date, endDate:r.end_date, status:r.status,
+    beltpacks:r.beltpacks||[], keypanels:r.keypanels||[] };
+}
+
+async function loadProds(){
+  const local=localStorage.getItem('sc_admin_prods');
+  if(local){ try{ PRODUCTIONS={...PRODUCTIONS,...JSON.parse(local)}; }catch(e){} }
+  if(!SUPA) return;
+  const {data,error}=await SUPA.from('productions').select('*');
+  if(error){ console.warn('loadProds:',error); return; }
+  if(data && data.length>0){
+    PRODUCTIONS={};
+    data.forEach(r=>{ PRODUCTIONS[r.id]=rowToProd(r); });
+    localStorage.setItem('sc_admin_prods',JSON.stringify(PRODUCTIONS));
+    if(state && state.view==='options' && _optActiveTab==='BBs') renderProductions();
+  } else {
+    const rows=Object.values(PRODUCTIONS).map(prodToRow);
+    if(rows.length){
+      const {error:me}=await SUPA.from('productions').upsert(rows);
+      if(me) console.warn('Migration error:',me);
+      else toast('Productions synced to cloud','success');
+    }
+  }
+}
+
+function saveProds(){
+  localStorage.setItem('sc_admin_prods',JSON.stringify(PRODUCTIONS));
+  if(SUPA){
+    SUPA.from('productions').upsert(Object.values(PRODUCTIONS).map(prodToRow))
+      .then(({error})=>{ if(error) console.warn('saveProds:',error); });
+  }
+}
 
 // ── GLOBAL_OPTIONS HELPERS ──────────────────────────────────────────────────
 // Data format: {PLs:[{label,fg:[r,g,b],bg:[r,g,b]}, ...], ...}
@@ -1123,15 +1160,17 @@ try {
 let _currentUser=null, _currentProfile=null, _currentRole=null, _selectedRole=null;
 
 function initAdminApp(){
-  loadProds(); loadGlobalOptions(); initBpSelectors(); buildUnifiedFilters(); setView('keypanels');
+  loadGlobalOptions(); initBpSelectors(); buildUnifiedFilters(); setView('keypanels');
+  loadProds();
   if(SUPA){
     loadRequests();
     // ── Real-time subscriptions ──────────────────────────────
     SUPA.channel('showcomm-requests')
-      .on('postgres_changes',{event:'*',schema:'public',table:'device_claims'},  (p)=>{ console.log('[RT] device_claims',p); onRequestChange(); })
-      .on('postgres_changes',{event:'*',schema:'public',table:'change_requests'},(p)=>{ console.log('[RT] change_requests',p); onRequestChange(); })
-      .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'},   (p)=>{ console.log('[RT] key_requests',p); onRequestChange(); })
-      .subscribe((status)=>{ console.log('[RT] subscription status:', status); });
+      .on('postgres_changes',{event:'*',schema:'public',table:'device_claims'},  ()=>onRequestChange())
+      .on('postgres_changes',{event:'*',schema:'public',table:'change_requests'},()=>onRequestChange())
+      .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'},   ()=>onRequestChange())
+      .on('postgres_changes',{event:'*',schema:'public',table:'productions'},    ()=>loadProds())
+      .subscribe();
   }
   const clearBtn=document.getElementById('btn-clear-filters');
   if(clearBtn) clearBtn.addEventListener('click',()=>{
