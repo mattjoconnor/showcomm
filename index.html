@@ -1565,7 +1565,8 @@ function openKpPoolModal(panelId, prodId, keyIndex){
     const kt = panelInfo.model==='5032'?32:14;
     c[panelId]={userName:'',tok:'admin_'+Date.now(),keys:Array(kt).fill(null),status:'pending',activeRoom:'',submittedAt:new Date().toISOString(),submittedBy:'Admin',swaps:[]};
     saveClaimedKP(prodId,c);
-    if(prodId!=='__draft__') refreshKpCard(panelId,prodId); else renderKeypanels();
+    if(prodId!=='__draft__') refreshKpCard(panelId,prodId);
+    // Draft entries don't need re-render here; kpKeyAssign handles it after key is picked
   }
   _poolModalState = {panelId:panelId, prodId:prodId, keyIndex:keyIndex}; _poolCat='PLs';
 
@@ -2044,13 +2045,12 @@ function renderKeypanels(){
 function buildKpCard(panel, prod, entry){
   const cardKey = prod?(prod.id+'_'+panel.id):('avail_'+panel.id.replace(/\s/g,'_'));
   const isOpen  = _kpCardOpen.has(cardKey);
-  const status  = !entry?'available': entry.status==='confirmed'?'confirmed':'pending';
-
-  // For unassigned panels, check for draft keys
+  // Load draft keys before computing status
   if(!prod && !entry){
     const draftC=loadClaimedKP('__draft__');
     if(draftC[panel.id]) entry=draftC[panel.id];
   }
+  const status  = !entry?'available': entry.status==='confirmed'?'confirmed':'pending';
   const card = document.createElement('div');
   card.className = 'kp-card '+status+'-card';
   card.id = 'kp-card-'+panel.id.replace(/\s/g,'_');
@@ -2200,7 +2200,7 @@ function buildKpCard(panel, prod, entry){
       const confBtn=document.createElement('button');
       confBtn.className='act-co';
       confBtn.textContent='Confirm';
-      confBtn.addEventListener('click',()=>confirmKP(panel.id,prod.id));
+      confBtn.addEventListener('click',()=>{ if(prod) confirmKP(panel.id,prod.id); else toast('Select a production before confirming','pending'); });
       actBar.appendChild(confBtn);
     }
     actBar.appendChild(reBtn);
@@ -2208,7 +2208,7 @@ function buildKpCard(panel, prod, entry){
     const clrBtn=document.createElement('button');
     clrBtn.className='act-dng';
     clrBtn.textContent='Clear';
-    clrBtn.addEventListener('click',()=>adminClearKP(panel.id,prod.id));
+    clrBtn.addEventListener('click',()=>{ if(!prod){ const dc=loadClaimedKP('__draft__'); delete dc[panel.id]; saveClaimedKP('__draft__',dc); renderKeypanels(); return; } adminClearKP(panel.id,prod.id); });
     actBar.appendChild(clrBtn);
   } else {
     const setBtn=document.createElement('button');
