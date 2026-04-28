@@ -6,9 +6,495 @@
 <title>ShowComm Admin · v47</title>
 <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,600,700,800,900&f[]=zodiak@400,700,400i,700i&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
+// ── TM VIEW ──────────────────────────────────────────────────
+let _tmProductions = []; // productions assigned to this TM
+let _tmActiveProd = null;
+
+async function initTMApp(){
+  if(!SUPA||!_currentUser) return;
+  document.getElementById('tm-user-label').textContent = _currentProfile?.display_name||'';
+
+  // Fetch assigned productions
+  const {data,error} = await SUPA
+    .from('tm_productions')
+    .select('production_id')
+    .eq('tm_id', _currentUser.id);
+  if(error){ console.warn('TM prods:', error); return; }
+
+  const prodIds = (data||[]).map(r=>r.production_id);
+  _tmProductions = prodIds.map(id=>PRODUCTIONS[id]).filter(Boolean);
+
+  renderTMTabs();
+  if(_tmProductions.length) setTMProd(_tmProductions[0].id);
+}
+
+function renderTMTabs(){
+  const tabs = document.getElementById('tm-prod-tabs');
+  tabs.innerHTML = '';
+  _tmProductions.forEach(prod=>{
+    const btn=document.createElement('button');
+    btn.className='tm-prod-tab';
+    btn.textContent=prod.name||prod.controlRoom||prod.id;
+    btn.addEventListener('click',()=>setTMProd(prod.id));
+    tabs.appendChild(btn);
+  });
+}
+
+function setTMProd(prodId){
+  _tmActiveProd=prodId;
+  document.querySelectorAll('.tm-prod-tab').forEach((t,i)=>{
+    t.classList.toggle('active', _tmProductions[i]&&_tmProductions[i].id===prodId);
+  });
+  renderTMProdView(prodId);
+}
+
+function renderTMProdView(prodId){
+  const body=document.getElementById('tm-body');
+  const prod=PRODUCTIONS[prodId]; if(!prod){ body.innerHTML=''; return; }
+  const clr=crFg(prod.controlRoom)||'#888';
+  const claimed=loadClaimed(prodId);
+  const claimedKP=loadClaimedKP(prodId);
+
+  // Beltpack list
+  const bps=(prod.beltpacks||[]).map(bp=>{
+    const id=typeof bp==='string'?bp:bp.id;
+    const entry=claimed[id];
+    const status=!entry?'available':entry.status==='confirmed'?'confirmed':'pending';
+    const dotClass='tm-status-dot '+status;
+    const keys=entry?entry.keys:[null,null,null,null];
+    const keyHtml=(keys||[]).map(k=>{
+      const nk=normKey(k);
+      if(nk&&nk.label){
+        const opt=findOpt(nk.category,nk.label);
+        const bg=opt?rgbStr(optBgRgb(opt)):'#222';
+        const fg=opt?rgbStr(optFgRgb(opt)):'#fff';
+        const lbl=nk.label.length>4?nk.label.slice(0,4)+'…':nk.label;
+        return '<div class="tm-bp-key assigned" style="background:'+bg+';color:'+fg+';">'+lbl+'</div>';
+      }
+      return '<div class="tm-bp-key">—</div>';
+    }).join('');
+    const nameHtml=entry&&entry.userName
+      ?'<div class="tm-bp-name">'+entry.userName+'</div>'
+      :'<div class="tm-bp-available">Available</div>';
+    return '<div class="tm-bp-card">'
+      +'<div class="'+dotClass+'"></div>'
+      +'<div class="tm-bp-num">'+id+'</div>'
+      +nameHtml
+      +'<div class="tm-bp-keys">'+keyHtml+'</div>'
+      +'</div>';
+  }).join('');
+
+  // Keypanel list
+  const kpEntries=Object.entries(claimedKP);
+  const kpHtml=kpEntries.length?kpEntries.map(([panelId,entry])=>{
+    const panel=KP_PANELS.find(p=>p.id===panelId)||{name:panelId,location:'',port:''};
+    const status=entry.status==='confirmed'?'confirmed':'pending';
+    const dotClass='tm-status-dot '+status;
+    const locClr=crFg(prod.controlRoom)||'#888';
+    return '<div class="tm-kp-card">'
+      +'<div class="tm-kp-loc" style="background:'+locClr+';"></div>'
+      +'<div class="tm-kp-name">'+panel.name+'</div>'
+      +'<div class="tm-kp-port">Port '+panel.port+'</div>'
+      +'<div class="'+dotClass+'"></div>'
+      +'</div>';
+  }).join(''):'<div class="tm-empty">No panels assigned</div>';
+
+  const bpCount=(prod.beltpacks||[]).length;
+  const kpCount=kpEntries.length;
+  const pendingBp=Object.values(claimed).filter(e=>e.status==='pending').length;
+  const confirmedBp=Object.values(claimed).filter(e=>e.status==='confirmed').length;
+
+  body.innerHTML=
+    '<div class="tm-prod-header">'
+    +'<div><div class="tm-prod-name">'+prod.name+'</div></div>'
+    +'<div class="tm-prod-cr" style="background:'+clr+'22;color:'+clr+';">'+prod.controlRoom+'</div>'
+    +'<div class="tm-prod-dates">'+prod.dates+'</div>'
+    +'</div>'
+    +'<div class="tm-req-bar">'
+    +'<button class="tm-req-btn primary" onclick="openTMReqModal()">+ Submit Request</button>'
+    +'<span style="font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.35);letter-spacing:.08em;">'
+    +confirmedBp+' confirmed · '+pendingBp+' pending · '+(bpCount-confirmedBp-pendingBp)+' available</span>'
+    +'</div>'
+    +'<div class="tm-sections">'
+    +'<div class="tm-section">'
+    +'<div class="tm-section-hdr"><span class="tm-section-title">Beltpacks</span><span class="tm-section-count">'+bpCount+' units</span></div>'
+    +(bps||'<div class="tm-empty">No beltpacks</div>')
+    +'</div>'
+    +'<div class="tm-section">'
+    +'<div class="tm-section-hdr"><span class="tm-section-title">Keypanels</span><span class="tm-section-count">'+kpCount+' panels</span></div>'
+    +kpHtml
+    +'</div>'
+    +'</div>';
+}
+
+function openTMReqModal(){
+  const prod=PRODUCTIONS[_tmActiveProd];
+  document.getElementById('tm-req-modal-title').textContent='Submit Request — '+(prod?prod.name:'');
+  document.getElementById('tm-req-device').value='';
+  document.getElementById('tm-req-note').value='';
+  document.getElementById('tm-req-type').value='change';
+  document.getElementById('tm-req-modal').classList.add('active');
+}
+
+async function tmSubmitRequest(){
+  if(!SUPA||!_tmActiveProd) return;
+  const type=document.getElementById('tm-req-type').value;
+  const device=document.getElementById('tm-req-device').value.trim();
+  const note=document.getElementById('tm-req-note').value.trim();
+  if(!note){ toast('Add a description','danger'); return; }
+
+  let error;
+  if(type==='change'){
+    if(!device){ toast('Enter a device ID','danger'); return; }
+    ({error}=await SUPA.from('change_requests').insert({
+      device_id:device, device_type:'unknown', note,
+      requester_role:'tm', status:'pending',
+      production_id:_tmActiveProd
+    }));
+  } else {
+    ({error}=await SUPA.from('key_requests').insert({
+      description:device||note, key_type:'PL', note,
+      requester_role:'tm', status:'open',
+      production_id:_tmActiveProd
+    }));
+  }
+
+  document.getElementById('tm-req-modal').classList.remove('active');
+  if(error){ toast('Error: '+error.message,'danger'); return; }
+  toast('Request submitted','success');
+}
+
+document.getElementById('tm-req-modal').addEventListener('click',function(e){
+  if(e.target===this) this.classList.remove('active');
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
+// ── TM VIEW ──────────────────────────────────────────────────
+let _tmProductions = []; // productions assigned to this TM
+let _tmActiveProd = null;
+
+async function initTMApp(){
+  if(!SUPA||!_currentUser) return;
+  document.getElementById('tm-user-label').textContent = _currentProfile?.display_name||'';
+
+  // Fetch assigned productions
+  const {data,error} = await SUPA
+    .from('tm_productions')
+    .select('production_id')
+    .eq('tm_id', _currentUser.id);
+  if(error){ console.warn('TM prods:', error); return; }
+
+  const prodIds = (data||[]).map(r=>r.production_id);
+  _tmProductions = prodIds.map(id=>PRODUCTIONS[id]).filter(Boolean);
+
+  renderTMTabs();
+  if(_tmProductions.length) setTMProd(_tmProductions[0].id);
+}
+
+function renderTMTabs(){
+  const tabs = document.getElementById('tm-prod-tabs');
+  tabs.innerHTML = '';
+  _tmProductions.forEach(prod=>{
+    const btn=document.createElement('button');
+    btn.className='tm-prod-tab';
+    btn.textContent=prod.name||prod.controlRoom||prod.id;
+    btn.addEventListener('click',()=>setTMProd(prod.id));
+    tabs.appendChild(btn);
+  });
+}
+
+function setTMProd(prodId){
+  _tmActiveProd=prodId;
+  document.querySelectorAll('.tm-prod-tab').forEach((t,i)=>{
+    t.classList.toggle('active', _tmProductions[i]&&_tmProductions[i].id===prodId);
+  });
+  renderTMProdView(prodId);
+}
+
+function renderTMProdView(prodId){
+  const body=document.getElementById('tm-body');
+  const prod=PRODUCTIONS[prodId]; if(!prod){ body.innerHTML=''; return; }
+  const clr=crFg(prod.controlRoom)||'#888';
+  const claimed=loadClaimed(prodId);
+  const claimedKP=loadClaimedKP(prodId);
+
+  // Beltpack list
+  const bps=(prod.beltpacks||[]).map(bp=>{
+    const id=typeof bp==='string'?bp:bp.id;
+    const entry=claimed[id];
+    const status=!entry?'available':entry.status==='confirmed'?'confirmed':'pending';
+    const dotClass='tm-status-dot '+status;
+    const keys=entry?entry.keys:[null,null,null,null];
+    const keyHtml=(keys||[]).map(k=>{
+      const nk=normKey(k);
+      if(nk&&nk.label){
+        const opt=findOpt(nk.category,nk.label);
+        const bg=opt?rgbStr(optBgRgb(opt)):'#222';
+        const fg=opt?rgbStr(optFgRgb(opt)):'#fff';
+        const lbl=nk.label.length>4?nk.label.slice(0,4)+'…':nk.label;
+        return '<div class="tm-bp-key assigned" style="background:'+bg+';color:'+fg+';">'+lbl+'</div>';
+      }
+      return '<div class="tm-bp-key">—</div>';
+    }).join('');
+    const nameHtml=entry&&entry.userName
+      ?'<div class="tm-bp-name">'+entry.userName+'</div>'
+      :'<div class="tm-bp-available">Available</div>';
+    return '<div class="tm-bp-card">'
+      +'<div class="'+dotClass+'"></div>'
+      +'<div class="tm-bp-num">'+id+'</div>'
+      +nameHtml
+      +'<div class="tm-bp-keys">'+keyHtml+'</div>'
+      +'</div>';
+  }).join('');
+
+  // Keypanel list
+  const kpEntries=Object.entries(claimedKP);
+  const kpHtml=kpEntries.length?kpEntries.map(([panelId,entry])=>{
+    const panel=KP_PANELS.find(p=>p.id===panelId)||{name:panelId,location:'',port:''};
+    const status=entry.status==='confirmed'?'confirmed':'pending';
+    const dotClass='tm-status-dot '+status;
+    const locClr=crFg(prod.controlRoom)||'#888';
+    return '<div class="tm-kp-card">'
+      +'<div class="tm-kp-loc" style="background:'+locClr+';"></div>'
+      +'<div class="tm-kp-name">'+panel.name+'</div>'
+      +'<div class="tm-kp-port">Port '+panel.port+'</div>'
+      +'<div class="'+dotClass+'"></div>'
+      +'</div>';
+  }).join(''):'<div class="tm-empty">No panels assigned</div>';
+
+  const bpCount=(prod.beltpacks||[]).length;
+  const kpCount=kpEntries.length;
+  const pendingBp=Object.values(claimed).filter(e=>e.status==='pending').length;
+  const confirmedBp=Object.values(claimed).filter(e=>e.status==='confirmed').length;
+
+  body.innerHTML=
+    '<div class="tm-prod-header">'
+    +'<div><div class="tm-prod-name">'+prod.name+'</div></div>'
+    +'<div class="tm-prod-cr" style="background:'+clr+'22;color:'+clr+';">'+prod.controlRoom+'</div>'
+    +'<div class="tm-prod-dates">'+prod.dates+'</div>'
+    +'</div>'
+    +'<div class="tm-req-bar">'
+    +'<button class="tm-req-btn primary" onclick="openTMReqModal()">+ Submit Request</button>'
+    +'<span style="font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.35);letter-spacing:.08em;">'
+    +confirmedBp+' confirmed · '+pendingBp+' pending · '+(bpCount-confirmedBp-pendingBp)+' available</span>'
+    +'</div>'
+    +'<div class="tm-sections">'
+    +'<div class="tm-section">'
+    +'<div class="tm-section-hdr"><span class="tm-section-title">Beltpacks</span><span class="tm-section-count">'+bpCount+' units</span></div>'
+    +(bps||'<div class="tm-empty">No beltpacks</div>')
+    +'</div>'
+    +'<div class="tm-section">'
+    +'<div class="tm-section-hdr"><span class="tm-section-title">Keypanels</span><span class="tm-section-count">'+kpCount+' panels</span></div>'
+    +kpHtml
+    +'</div>'
+    +'</div>';
+}
+
+function openTMReqModal(){
+  const prod=PRODUCTIONS[_tmActiveProd];
+  document.getElementById('tm-req-modal-title').textContent='Submit Request — '+(prod?prod.name:'');
+  document.getElementById('tm-req-device').value='';
+  document.getElementById('tm-req-note').value='';
+  document.getElementById('tm-req-type').value='change';
+  document.getElementById('tm-req-modal').classList.add('active');
+}
+
+async function tmSubmitRequest(){
+  if(!SUPA||!_tmActiveProd) return;
+  const type=document.getElementById('tm-req-type').value;
+  const device=document.getElementById('tm-req-device').value.trim();
+  const note=document.getElementById('tm-req-note').value.trim();
+  if(!note){ toast('Add a description','danger'); return; }
+
+  let error;
+  if(type==='change'){
+    if(!device){ toast('Enter a device ID','danger'); return; }
+    ({error}=await SUPA.from('change_requests').insert({
+      device_id:device, device_type:'unknown', note,
+      requester_role:'tm', status:'pending',
+      production_id:_tmActiveProd
+    }));
+  } else {
+    ({error}=await SUPA.from('key_requests').insert({
+      description:device||note, key_type:'PL', note,
+      requester_role:'tm', status:'open',
+      production_id:_tmActiveProd
+    }));
+  }
+
+  document.getElementById('tm-req-modal').classList.remove('active');
+  if(error){ toast('Error: '+error.message,'danger'); return; }
+  toast('Request submitted','success');
+}
+
+document.getElementById('tm-req-modal').addEventListener('click',function(e){
+  if(e.target===this) this.classList.remove('active');
+});
+</script>
+<script>
+// ── TM VIEW ──────────────────────────────────────────────────
+let _tmProductions = []; // productions assigned to this TM
+let _tmActiveProd = null;
+
+async function initTMApp(){
+  if(!SUPA||!_currentUser) return;
+  document.getElementById('tm-user-label').textContent = _currentProfile?.display_name||'';
+
+  // Fetch assigned productions
+  const {data,error} = await SUPA
+    .from('tm_productions')
+    .select('production_id')
+    .eq('tm_id', _currentUser.id);
+  if(error){ console.warn('TM prods:', error); return; }
+
+  const prodIds = (data||[]).map(r=>r.production_id);
+  _tmProductions = prodIds.map(id=>PRODUCTIONS[id]).filter(Boolean);
+
+  renderTMTabs();
+  if(_tmProductions.length) setTMProd(_tmProductions[0].id);
+}
+
+function renderTMTabs(){
+  const tabs = document.getElementById('tm-prod-tabs');
+  tabs.innerHTML = '';
+  _tmProductions.forEach(prod=>{
+    const btn=document.createElement('button');
+    btn.className='tm-prod-tab';
+    btn.textContent=prod.name||prod.controlRoom||prod.id;
+    btn.addEventListener('click',()=>setTMProd(prod.id));
+    tabs.appendChild(btn);
+  });
+}
+
+function setTMProd(prodId){
+  _tmActiveProd=prodId;
+  document.querySelectorAll('.tm-prod-tab').forEach((t,i)=>{
+    t.classList.toggle('active', _tmProductions[i]&&_tmProductions[i].id===prodId);
+  });
+  renderTMProdView(prodId);
+}
+
+function renderTMProdView(prodId){
+  const body=document.getElementById('tm-body');
+  const prod=PRODUCTIONS[prodId]; if(!prod){ body.innerHTML=''; return; }
+  const clr=crFg(prod.controlRoom)||'#888';
+  const claimed=loadClaimed(prodId);
+  const claimedKP=loadClaimedKP(prodId);
+
+  // Beltpack list
+  const bps=(prod.beltpacks||[]).map(bp=>{
+    const id=typeof bp==='string'?bp:bp.id;
+    const entry=claimed[id];
+    const status=!entry?'available':entry.status==='confirmed'?'confirmed':'pending';
+    const dotClass='tm-status-dot '+status;
+    const keys=entry?entry.keys:[null,null,null,null];
+    const keyHtml=(keys||[]).map(k=>{
+      const nk=normKey(k);
+      if(nk&&nk.label){
+        const opt=findOpt(nk.category,nk.label);
+        const bg=opt?rgbStr(optBgRgb(opt)):'#222';
+        const fg=opt?rgbStr(optFgRgb(opt)):'#fff';
+        const lbl=nk.label.length>4?nk.label.slice(0,4)+'…':nk.label;
+        return '<div class="tm-bp-key assigned" style="background:'+bg+';color:'+fg+';">'+lbl+'</div>';
+      }
+      return '<div class="tm-bp-key">—</div>';
+    }).join('');
+    const nameHtml=entry&&entry.userName
+      ?'<div class="tm-bp-name">'+entry.userName+'</div>'
+      :'<div class="tm-bp-available">Available</div>';
+    return '<div class="tm-bp-card">'
+      +'<div class="'+dotClass+'"></div>'
+      +'<div class="tm-bp-num">'+id+'</div>'
+      +nameHtml
+      +'<div class="tm-bp-keys">'+keyHtml+'</div>'
+      +'</div>';
+  }).join('');
+
+  // Keypanel list
+  const kpEntries=Object.entries(claimedKP);
+  const kpHtml=kpEntries.length?kpEntries.map(([panelId,entry])=>{
+    const panel=KP_PANELS.find(p=>p.id===panelId)||{name:panelId,location:'',port:''};
+    const status=entry.status==='confirmed'?'confirmed':'pending';
+    const dotClass='tm-status-dot '+status;
+    const locClr=crFg(prod.controlRoom)||'#888';
+    return '<div class="tm-kp-card">'
+      +'<div class="tm-kp-loc" style="background:'+locClr+';"></div>'
+      +'<div class="tm-kp-name">'+panel.name+'</div>'
+      +'<div class="tm-kp-port">Port '+panel.port+'</div>'
+      +'<div class="'+dotClass+'"></div>'
+      +'</div>';
+  }).join(''):'<div class="tm-empty">No panels assigned</div>';
+
+  const bpCount=(prod.beltpacks||[]).length;
+  const kpCount=kpEntries.length;
+  const pendingBp=Object.values(claimed).filter(e=>e.status==='pending').length;
+  const confirmedBp=Object.values(claimed).filter(e=>e.status==='confirmed').length;
+
+  body.innerHTML=
+    '<div class="tm-prod-header">'
+    +'<div><div class="tm-prod-name">'+prod.name+'</div></div>'
+    +'<div class="tm-prod-cr" style="background:'+clr+'22;color:'+clr+';">'+prod.controlRoom+'</div>'
+    +'<div class="tm-prod-dates">'+prod.dates+'</div>'
+    +'</div>'
+    +'<div class="tm-req-bar">'
+    +'<button class="tm-req-btn primary" onclick="openTMReqModal()">+ Submit Request</button>'
+    +'<span style="font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.35);letter-spacing:.08em;">'
+    +confirmedBp+' confirmed · '+pendingBp+' pending · '+(bpCount-confirmedBp-pendingBp)+' available</span>'
+    +'</div>'
+    +'<div class="tm-sections">'
+    +'<div class="tm-section">'
+    +'<div class="tm-section-hdr"><span class="tm-section-title">Beltpacks</span><span class="tm-section-count">'+bpCount+' units</span></div>'
+    +(bps||'<div class="tm-empty">No beltpacks</div>')
+    +'</div>'
+    +'<div class="tm-section">'
+    +'<div class="tm-section-hdr"><span class="tm-section-title">Keypanels</span><span class="tm-section-count">'+kpCount+' panels</span></div>'
+    +kpHtml
+    +'</div>'
+    +'</div>';
+}
+
+function openTMReqModal(){
+  const prod=PRODUCTIONS[_tmActiveProd];
+  document.getElementById('tm-req-modal-title').textContent='Submit Request — '+(prod?prod.name:'');
+  document.getElementById('tm-req-device').value='';
+  document.getElementById('tm-req-note').value='';
+  document.getElementById('tm-req-type').value='change';
+  document.getElementById('tm-req-modal').classList.add('active');
+}
+
+async function tmSubmitRequest(){
+  if(!SUPA||!_tmActiveProd) return;
+  const type=document.getElementById('tm-req-type').value;
+  const device=document.getElementById('tm-req-device').value.trim();
+  const note=document.getElementById('tm-req-note').value.trim();
+  if(!note){ toast('Add a description','danger'); return; }
+
+  let error;
+  if(type==='change'){
+    if(!device){ toast('Enter a device ID','danger'); return; }
+    ({error}=await SUPA.from('change_requests').insert({
+      device_id:device, device_type:'unknown', note,
+      requester_role:'tm', status:'pending',
+      production_id:_tmActiveProd
+    }));
+  } else {
+    ({error}=await SUPA.from('key_requests').insert({
+      description:device||note, key_type:'PL', note,
+      requester_role:'tm', status:'open',
+      production_id:_tmActiveProd
+    }));
+  }
+
+  document.getElementById('tm-req-modal').classList.remove('active');
+  if(error){ toast('Error: '+error.message,'danger'); return; }
+  toast('Request submitted','success');
+}
+
+document.getElementById('tm-req-modal').addEventListener('click',function(e){
+  if(e.target===this) this.classList.remove('active');
+});
+</script>
 <style>
 
 /* ── FONT ROLES ────────────────────────────────────────────
@@ -587,6 +1073,63 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 .prod-reorder-btns { display:flex; flex-direction:column; gap:1px; padding-right:8px; flex-shrink:0; }
 .prod-reorder-btn { background:none; border:none; font-size:9px; color:rgba(0,0,0,.25); cursor:pointer; padding:2px 4px; line-height:1; }
 .prod-reorder-btn:hover { color:var(--black); }
+
+/* ─── TM VIEW ─── */
+#screen-tm { display:none; height:100vh; flex-direction:column; background:var(--bg); overflow:hidden; }
+.tm-topbar { display:flex; align-items:center; gap:16px; padding:0 clamp(16px,2vw,28px); height:52px; background:var(--black); flex-shrink:0; }
+.tm-wordmark { font-family:var(--f-ui); font-size:14px; font-weight:900; letter-spacing:.18em; color:#fff; text-transform:uppercase; }
+.tm-wordmark span { color:var(--green); }
+.tm-role-badge { font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; padding:3px 8px; background:#7C3AED; color:#fff; }
+.tm-user { font-family:var(--f-mono); font-size:11px; color:rgba(255,255,255,.5); margin-left:auto; }
+.tm-signout { font-family:var(--f-mono); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; padding:6px 14px; background:transparent; color:rgba(255,255,255,.4); border:1px solid rgba(255,255,255,.15); cursor:pointer; }
+.tm-signout:hover { color:#fff; border-color:#fff; }
+.tm-prod-tabs { display:flex; gap:0; border-bottom:1px solid var(--border-md); background:var(--surface); flex-shrink:0; overflow-x:auto; }
+.tm-prod-tab { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; padding:0 20px; height:40px; border:none; background:transparent; cursor:pointer; color:rgba(0,0,0,.4); border-bottom:2px solid transparent; white-space:nowrap; }
+.tm-prod-tab.active { color:var(--black); border-bottom-color:var(--green); }
+.tm-body { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
+.tm-prod-view { display:none; flex-direction:column; }
+.tm-prod-view.active { display:flex; }
+.tm-prod-header { display:flex; align-items:center; gap:16px; padding:clamp(14px,2vh,18px) clamp(16px,2vw,28px); border-bottom:1px solid var(--border-md); background:var(--surface); }
+.tm-prod-name { font-family:var(--f-ui); font-size:clamp(1rem,1.6vw,1.3rem); font-weight:900; letter-spacing:-.02em; }
+.tm-prod-cr { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; padding:3px 10px; margin-left:8px; }
+.tm-prod-dates { font-family:var(--f-mono); font-size:clamp(.55rem,.65vw,.62rem); color:rgba(0,0,0,.38); letter-spacing:.1em; margin-left:auto; }
+.tm-sections { display:grid; grid-template-columns:1fr 1fr; gap:0; border-top:1px solid var(--border-md); flex:1; }
+@media(max-width:900px){ .tm-sections { grid-template-columns:1fr; } }
+.tm-section { display:flex; flex-direction:column; border-right:1px solid var(--border-md); }
+.tm-section:last-child { border-right:none; }
+.tm-section-hdr { display:flex; align-items:center; gap:12px; padding:10px clamp(12px,1.6vw,20px); border-bottom:1px solid var(--border-md); background:rgba(0,0,0,.02); position:sticky; top:0; z-index:1; }
+.tm-section-title { font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; color:rgba(0,0,0,.45); flex:1; }
+.tm-section-count { font-family:var(--f-mono); font-size:9px; color:rgba(0,0,0,.3); letter-spacing:.08em; }
+.tm-bp-card { display:flex; align-items:center; gap:10px; padding:10px clamp(12px,1.6vw,20px); border-bottom:1px solid var(--border-md); }
+.tm-bp-num { font-family:var(--f-mono); font-size:clamp(.62rem,.72vw,.68rem); font-weight:700; letter-spacing:.12em; color:rgba(0,0,0,.45); width:52px; flex-shrink:0; }
+.tm-bp-name { font-family:var(--f-ui); font-size:clamp(.78rem,1vw,.88rem); font-weight:800; flex:1; min-width:0; }
+.tm-bp-available { font-family:var(--f-mono); font-size:9px; color:rgba(0,0,0,.3); letter-spacing:.1em; text-transform:uppercase; flex:1; }
+.tm-bp-keys { display:flex; gap:2px; }
+.tm-bp-key { width:28px; height:22px; display:flex; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:8px; font-weight:800; letter-spacing:.04em; background:rgba(0,0,0,.06); color:rgba(0,0,0,.3); overflow:hidden; }
+.tm-bp-key.assigned { }
+.tm-status-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.tm-status-dot.confirmed { background:var(--green); }
+.tm-status-dot.pending { background:var(--amber); }
+.tm-status-dot.available { background:rgba(0,0,0,.15); }
+.tm-kp-card { display:flex; align-items:center; gap:10px; padding:10px clamp(12px,1.6vw,20px); border-bottom:1px solid var(--border-md); }
+.tm-kp-loc { width:6px; height:32px; flex-shrink:0; border-radius:1px; }
+.tm-kp-name { font-family:var(--f-mono); font-size:clamp(.62rem,.72vw,.68rem); font-weight:700; letter-spacing:.08em; flex:1; }
+.tm-kp-port { font-family:var(--f-mono); font-size:9px; color:rgba(0,0,0,.3); letter-spacing:.08em; }
+.tm-req-bar { display:flex; align-items:center; gap:8px; padding:10px clamp(12px,1.6vw,20px); border-bottom:1px solid var(--border-md); background:var(--surface); }
+.tm-req-btn { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; padding:6px 14px; background:transparent; border:1px solid var(--border-hi); cursor:pointer; color:rgba(0,0,0,.58); }
+.tm-req-btn:hover { border-color:var(--black); color:var(--black); }
+.tm-req-btn.primary { background:var(--black); color:#fff; border-color:var(--black); }
+.tm-req-btn.primary:hover { background:#333; }
+.tm-empty { padding:24px; font-family:var(--f-mono); font-size:11px; color:rgba(0,0,0,.3); letter-spacing:.1em; text-transform:uppercase; }
+/* TM Request Modal */
+.tm-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; display:none; align-items:center; justify-content:center; }
+.tm-modal-overlay.active { display:flex; }
+.tm-modal { background:var(--surface); border-top:4px solid #7C3AED; width:440px; padding:28px; }
+.tm-modal-title { font-family:var(--f-ui); font-size:15px; font-weight:900; margin-bottom:20px; }
+.tm-field { margin-bottom:16px; }
+.tm-field label { display:block; font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:rgba(0,0,0,.45); margin-bottom:6px; }
+.tm-field input, .tm-field textarea, .tm-field select { width:100%; border:none; border-bottom:1px solid var(--border-md); font-family:var(--f-mono); font-size:13px; padding:8px 0; outline:none; background:transparent; resize:none; }
+.tm-modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
 </style>
 </head>
 <body>
@@ -634,13 +1177,43 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
   </div>
 </div>
 <!-- TM PLACEHOLDER -->
-<div id="screen-tm" style="display:none;">
-  <div class="placeholder-screen">
-    <div class="login-wordmark">SHOWCOMM<span style="color:var(--green)">·</span></div>
-    <div style="margin-bottom:16px;"></div>
-    <div class="placeholder-role-badge tm">Technical Manager</div>
-    <div class="placeholder-msg">TM view — coming soon</div>
-    <button class="placeholder-logout" id="btn-tm-logout">Sign out</button>
+<div id="screen-tm">
+  <!-- TM TOPBAR -->
+  <div class="tm-topbar">
+    <div class="tm-wordmark">ShowComm<span>·</span></div>
+    <div class="tm-role-badge">TM</div>
+    <div class="tm-user" id="tm-user-label"></div>
+    <button class="tm-signout" id="btn-tm-logout">Sign Out</button>
+  </div>
+  <!-- PRODUCTION TABS -->
+  <div class="tm-prod-tabs" id="tm-prod-tabs"></div>
+  <!-- BODY -->
+  <div class="tm-body" id="tm-body"></div>
+</div>
+
+<!-- TM REQUEST MODAL -->
+<div class="tm-modal-overlay" id="tm-req-modal">
+  <div class="tm-modal">
+    <div class="tm-modal-title" id="tm-req-modal-title">Submit Request</div>
+    <div class="tm-field">
+      <label>Type</label>
+      <select id="tm-req-type">
+        <option value="change">Change Request</option>
+        <option value="key">New Key Request</option>
+      </select>
+    </div>
+    <div class="tm-field" id="tm-req-device-wrap">
+      <label>Device ID</label>
+      <input type="text" id="tm-req-device" placeholder="e.g. WB-03 or NYP1 GX" autocomplete="off">
+    </div>
+    <div class="tm-field">
+      <label>Description / Note</label>
+      <textarea id="tm-req-note" rows="3" placeholder="Describe what you need…"></textarea>
+    </div>
+    <div class="tm-modal-actions">
+      <button class="tm-req-btn" onclick="document.getElementById('tm-req-modal').classList.remove('active')">Cancel</button>
+      <button class="tm-req-btn primary" onclick="tmSubmitRequest()">Submit</button>
+    </div>
   </div>
 </div>
 <!-- CREW PLACEHOLDER -->
@@ -1248,7 +1821,7 @@ function showScreen(role){
   document.getElementById('screen-crew').style.display='none';
   $('app').classList.remove('active');
   if(role==='admin'){ $('app').classList.add('active'); initAdminApp(); }
-  else if(role==='tm'){ document.getElementById('screen-tm').style.display='flex'; }
+  else if(role==='tm'){ document.getElementById('screen-tm').style.display='flex'; initTMApp(); }
   else if(role==='crew'){
     const n=_currentProfile?_currentProfile.display_name:''; const p=_currentProfile?_currentProfile.position:'';
     const m=document.getElementById('crew-welcome-msg'); if(m) m.textContent='Welcome, '+n+(p?' · '+p:'');
@@ -3939,6 +4512,168 @@ document.getElementById('deny-overlay').addEventListener('click', function(e){
 function openModify(id){
   toast('Modify flow coming in a future session', 'info');
 }
+
+// ── TM VIEW ──────────────────────────────────────────────────
+let _tmProductions = []; // productions assigned to this TM
+let _tmActiveProd = null;
+
+async function initTMApp(){
+  if(!SUPA||!_currentUser) return;
+  document.getElementById('tm-user-label').textContent = _currentProfile?.display_name||'';
+
+  // Fetch assigned productions
+  const {data,error} = await SUPA
+    .from('tm_productions')
+    .select('production_id')
+    .eq('tm_id', _currentUser.id);
+  if(error){ console.warn('TM prods:', error); return; }
+
+  const prodIds = (data||[]).map(r=>r.production_id);
+  _tmProductions = prodIds.map(id=>PRODUCTIONS[id]).filter(Boolean);
+
+  renderTMTabs();
+  if(_tmProductions.length) setTMProd(_tmProductions[0].id);
+}
+
+function renderTMTabs(){
+  const tabs = document.getElementById('tm-prod-tabs');
+  tabs.innerHTML = '';
+  _tmProductions.forEach(prod=>{
+    const btn=document.createElement('button');
+    btn.className='tm-prod-tab';
+    btn.textContent=prod.name||prod.controlRoom||prod.id;
+    btn.addEventListener('click',()=>setTMProd(prod.id));
+    tabs.appendChild(btn);
+  });
+}
+
+function setTMProd(prodId){
+  _tmActiveProd=prodId;
+  document.querySelectorAll('.tm-prod-tab').forEach((t,i)=>{
+    t.classList.toggle('active', _tmProductions[i]&&_tmProductions[i].id===prodId);
+  });
+  renderTMProdView(prodId);
+}
+
+function renderTMProdView(prodId){
+  const body=document.getElementById('tm-body');
+  const prod=PRODUCTIONS[prodId]; if(!prod){ body.innerHTML=''; return; }
+  const clr=crFg(prod.controlRoom)||'#888';
+  const claimed=loadClaimed(prodId);
+  const claimedKP=loadClaimedKP(prodId);
+
+  // Beltpack list
+  const bps=(prod.beltpacks||[]).map(bp=>{
+    const id=typeof bp==='string'?bp:bp.id;
+    const entry=claimed[id];
+    const status=!entry?'available':entry.status==='confirmed'?'confirmed':'pending';
+    const dotClass='tm-status-dot '+status;
+    const keys=entry?entry.keys:[null,null,null,null];
+    const keyHtml=(keys||[]).map(k=>{
+      const nk=normKey(k);
+      if(nk&&nk.label){
+        const opt=findOpt(nk.category,nk.label);
+        const bg=opt?rgbStr(optBgRgb(opt)):'#222';
+        const fg=opt?rgbStr(optFgRgb(opt)):'#fff';
+        const lbl=nk.label.length>4?nk.label.slice(0,4)+'…':nk.label;
+        return '<div class="tm-bp-key assigned" style="background:'+bg+';color:'+fg+';">'+lbl+'</div>';
+      }
+      return '<div class="tm-bp-key">—</div>';
+    }).join('');
+    const nameHtml=entry&&entry.userName
+      ?'<div class="tm-bp-name">'+entry.userName+'</div>'
+      :'<div class="tm-bp-available">Available</div>';
+    return '<div class="tm-bp-card">'
+      +'<div class="'+dotClass+'"></div>'
+      +'<div class="tm-bp-num">'+id+'</div>'
+      +nameHtml
+      +'<div class="tm-bp-keys">'+keyHtml+'</div>'
+      +'</div>';
+  }).join('');
+
+  // Keypanel list
+  const kpEntries=Object.entries(claimedKP);
+  const kpHtml=kpEntries.length?kpEntries.map(([panelId,entry])=>{
+    const panel=KP_PANELS.find(p=>p.id===panelId)||{name:panelId,location:'',port:''};
+    const status=entry.status==='confirmed'?'confirmed':'pending';
+    const dotClass='tm-status-dot '+status;
+    const locClr=crFg(prod.controlRoom)||'#888';
+    return '<div class="tm-kp-card">'
+      +'<div class="tm-kp-loc" style="background:'+locClr+';"></div>'
+      +'<div class="tm-kp-name">'+panel.name+'</div>'
+      +'<div class="tm-kp-port">Port '+panel.port+'</div>'
+      +'<div class="'+dotClass+'"></div>'
+      +'</div>';
+  }).join(''):'<div class="tm-empty">No panels assigned</div>';
+
+  const bpCount=(prod.beltpacks||[]).length;
+  const kpCount=kpEntries.length;
+  const pendingBp=Object.values(claimed).filter(e=>e.status==='pending').length;
+  const confirmedBp=Object.values(claimed).filter(e=>e.status==='confirmed').length;
+
+  body.innerHTML=
+    '<div class="tm-prod-header">'
+    +'<div><div class="tm-prod-name">'+prod.name+'</div></div>'
+    +'<div class="tm-prod-cr" style="background:'+clr+'22;color:'+clr+';">'+prod.controlRoom+'</div>'
+    +'<div class="tm-prod-dates">'+prod.dates+'</div>'
+    +'</div>'
+    +'<div class="tm-req-bar">'
+    +'<button class="tm-req-btn primary" onclick="openTMReqModal()">+ Submit Request</button>'
+    +'<span style="font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.35);letter-spacing:.08em;">'
+    +confirmedBp+' confirmed · '+pendingBp+' pending · '+(bpCount-confirmedBp-pendingBp)+' available</span>'
+    +'</div>'
+    +'<div class="tm-sections">'
+    +'<div class="tm-section">'
+    +'<div class="tm-section-hdr"><span class="tm-section-title">Beltpacks</span><span class="tm-section-count">'+bpCount+' units</span></div>'
+    +(bps||'<div class="tm-empty">No beltpacks</div>')
+    +'</div>'
+    +'<div class="tm-section">'
+    +'<div class="tm-section-hdr"><span class="tm-section-title">Keypanels</span><span class="tm-section-count">'+kpCount+' panels</span></div>'
+    +kpHtml
+    +'</div>'
+    +'</div>';
+}
+
+function openTMReqModal(){
+  const prod=PRODUCTIONS[_tmActiveProd];
+  document.getElementById('tm-req-modal-title').textContent='Submit Request — '+(prod?prod.name:'');
+  document.getElementById('tm-req-device').value='';
+  document.getElementById('tm-req-note').value='';
+  document.getElementById('tm-req-type').value='change';
+  document.getElementById('tm-req-modal').classList.add('active');
+}
+
+async function tmSubmitRequest(){
+  if(!SUPA||!_tmActiveProd) return;
+  const type=document.getElementById('tm-req-type').value;
+  const device=document.getElementById('tm-req-device').value.trim();
+  const note=document.getElementById('tm-req-note').value.trim();
+  if(!note){ toast('Add a description','danger'); return; }
+
+  let error;
+  if(type==='change'){
+    if(!device){ toast('Enter a device ID','danger'); return; }
+    ({error}=await SUPA.from('change_requests').insert({
+      device_id:device, device_type:'unknown', note,
+      requester_role:'tm', status:'pending',
+      production_id:_tmActiveProd
+    }));
+  } else {
+    ({error}=await SUPA.from('key_requests').insert({
+      description:device||note, key_type:'PL', note,
+      requester_role:'tm', status:'open',
+      production_id:_tmActiveProd
+    }));
+  }
+
+  document.getElementById('tm-req-modal').classList.remove('active');
+  if(error){ toast('Error: '+error.message,'danger'); return; }
+  toast('Request submitted','success');
+}
+
+document.getElementById('tm-req-modal').addEventListener('click',function(e){
+  if(e.target===this) this.classList.remove('active');
+});
 </script>
 </body>
 </html>
