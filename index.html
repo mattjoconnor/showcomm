@@ -1104,7 +1104,6 @@ function loadGlobalOptions(){
 }
 function saveGlobalOptions(){ localStorage.setItem('sc_global_opts',JSON.stringify(GLOBAL_OPTIONS)); }
 
-window.onerror=function(m,s,l,c,e){console.error('[SCRIPT ERR]',m,'line:'+l,e);};
 // ─── SUPABASE ──────────────────────────────────────────────────
 let SUPA = null;
 try {
@@ -1230,10 +1229,8 @@ function doLogout(){
   $('screen-login').style.display='';
 }
 
-console.log('[INIT] Registering role btn listeners, count:', document.querySelectorAll('.login-role-btn').length);
 document.querySelectorAll('.login-role-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
-    console.log('[ROLE BTN] clicked:', btn.dataset.role);
     _selectedRole=btn.dataset.role;
     document.querySelectorAll('.login-role-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
