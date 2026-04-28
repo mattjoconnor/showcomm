@@ -1080,12 +1080,12 @@ async function loadClaimedFromDB(code){
 function loadClaimedKP(code){ const r=localStorage.getItem(`sc_kp_${code}`); return r?JSON.parse(r):{}; }
 function saveClaimedKP(code,data){
   localStorage.setItem('sc_kp_'+code,JSON.stringify(data));
-  if(SUPA&&code!=='__draft__') SUPA.from('keypanel_assignments').upsert({production_id:code,data:data,updated_at:new Date().toISOString()})
+  if(SUPA&&code!=='__draft__') SUPA.from('kp_assignments').upsert({production_id:code,data:data,updated_at:new Date().toISOString()})
     .then(function(r){ if(r.error) console.warn('saveClaimedKP:',r.error); });
 }
 async function loadClaimedKPFromDB(code){
   if(!SUPA||code==='__draft__') return;
-  var r=await SUPA.from('keypanel_assignments').select('data').eq('production_id',code).maybeSingle();
+  var r=await SUPA.from('kp_assignments').select('data').eq('production_id',code).maybeSingle();
   if(r.error||!r.data) return;
   localStorage.setItem('sc_kp_'+code,JSON.stringify(r.data.data));
 }
@@ -1217,7 +1217,7 @@ function initAdminApp(){
         if(p.new&&p.new.production_id) localStorage.setItem('sc_bp_'+p.new.production_id,JSON.stringify(p.new.data));
         if(state.view==='allbeltpacks') renderAllBeltpacks();
       })
-      .on('postgres_changes',{event:'*',schema:'public',table:'keypanel_assignments'},function(p){
+      .on('postgres_changes',{event:'*',schema:'public',table:'kp_assignments'},function(p){
         if(p.new&&p.new.production_id) localStorage.setItem('sc_kp_'+p.new.production_id,JSON.stringify(p.new.data));
         if(state.view==='keypanels') renderKeypanels();
       })
