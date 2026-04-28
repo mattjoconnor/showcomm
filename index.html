@@ -125,6 +125,8 @@ body { background:var(--bg); color:var(--black); }
 .ribbon-tab:hover { color:rgba(255,255,255,.6); }
 .ribbon-tab.active { color:#fff; }
 .ribbon-tab.active::after { content:''; position:absolute; bottom:0; left:clamp(12px,1.6vw,20px); right:clamp(12px,1.6vw,20px); height:2px; background:var(--green); }
+.ribbon-tab.has-pending { color:#fff !important; }
+.ribbon-tab.has-pending .req-badge { background:#fff; color:var(--red); }
 .r-right { margin-left:auto; display:flex; align-items:center; padding:0 clamp(14px,2vw,24px); border-left:1px solid #1e1e1e; }
 .r-logout { font-family:var(--f-mono); font-size:clamp(.55rem,.68vw,.62rem); font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.2); background:none; border:none; cursor:pointer; transition:color .08s; }
 .r-logout:hover { color:rgba(255,255,255,.5); }
@@ -534,7 +536,8 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 .csel-option.selected { background:rgba(0,0,0,.05); }
 
 /* ─── REQUESTS TAB ─── */
-.req-badge { display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; background:var(--red); color:#fff; font-family:var(--f-mono); font-size:9px; font-weight:800; border-radius:8px; padding:0 4px; margin-left:6px; }
+.req-badge { display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; background:#fff; color:var(--red); font-family:var(--f-mono); font-size:9px; font-weight:800; border-radius:8px; padding:0 4px; margin-left:6px; }
+#ribbon-tab-requests:not([style*="background"]) .req-badge { background:var(--red); color:#fff; }
 .req-section { margin-bottom:0; }
 .req-section-hdr { display:flex; align-items:center; gap:12px; padding:clamp(10px,1.4vh,14px) clamp(16px,2.2vw,28px); border-bottom:1px solid var(--border-md); background:var(--surface); position:sticky; top:0; z-index:2; }
 .req-section-title { font-family:var(--f-ui); font-size:clamp(.75rem,1.1vw,.9rem); font-weight:800; letter-spacing:-.01em; flex:1; }
@@ -3470,6 +3473,17 @@ async function loadRequests(){
 
   const badge = document.getElementById('req-badge');
   if(badge){ badge.textContent = pendingCount; badge.style.display = pendingCount ? 'inline-flex' : 'none'; }
+  // Red fill on ribbon tab when pending requests exist
+  const reqTab = document.getElementById('ribbon-tab-requests');
+  if(reqTab){
+    if(pendingCount){
+      reqTab.style.background = 'var(--red)';
+      reqTab.style.color = '#fff';
+    } else {
+      reqTab.style.background = '';
+      reqTab.style.color = '';
+    }
+  }
   // Update browser tab title
   const baseTitle = 'ShowComm Admin';
   document.title = pendingCount ? '(' + pendingCount + ') ' + baseTitle : baseTitle;
