@@ -728,7 +728,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
               <button class="opt-tab" onclick="activateOptTab('KPs')" data-cat="KPs">Keypanels</button>
               <button class="opt-tab" onclick="activateOptTab('BPs')" data-cat="BPs">Beltpacks</button>
               <button class="opt-tab" onclick="activateOptTab('CRs')" data-cat="CRs">Control Rooms</button>
-              <button class="opt-tab" onclick="activateOptTab('BBs')" data-cat="BBs">Beltpack Blocks</button>
+              <button class="opt-tab" onclick="activateOptTab('BBs')" data-cat="BBs">Productions</button>
             </div>
           </div>
         </div>
@@ -772,6 +772,10 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 <div class="modal-overlay" id="modal-overlay-prod">
   <div class="modal" style="max-width:680px;">
     <div class="modal-title">New Production</div>
+    <div class="form-field" style="margin-bottom:16px;">
+      <label class="field-label" for="np-show-name">Show Name</label>
+      <input class="field-input" id="np-show-name" type="text" placeholder="e.g. NBC Nightly News" maxlength="60" autocomplete="off">
+    </div>
     <div class="form-row" style="margin-bottom:14px;">
       <div class="form-field" style="margin-bottom:0;">
         <label class="field-label" for="np-ctrl-room">Control Room</label>
@@ -948,7 +952,7 @@ const CATS = [
 
 // ── CONTROL ROOM HELPERS ──────────────────────────────────────
 const CTRL_ROOMS = ['PCR1','PCR2','MFR1','MFR2'];
-function prodLabel(prod){ return prod ? (prod.controlRoom || prod.name || prod.id) : '—'; }
+function prodLabel(prod){ return prod ? (prod.name || prod.controlRoom || prod.id) : '—'; }
 function prodDisplay(prod){ return `${prodLabel(prod)}${prod.dates?' · '+prod.dates:''}`; }
 
 function ctrlRoomSelectHTML(currentVal, onchangeJS){
@@ -3276,7 +3280,7 @@ function getSelectedBps(prefix){
 function renderProductions(){
   const list=$('prod-list'); list.innerHTML='';
   const act=$('main-actions'); act.innerHTML='';
-  act.innerHTML='<button class="btn-sm primary" onclick="$(\'modal-overlay-prod\').classList.add(\'active\')" style="font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:7px 16px;background:var(--black);color:#fff;border:none;cursor:pointer;">+ New Production</button>';
+  act.innerHTML='<button class="btn-sm primary" onclick="openNewProd()" style="font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:7px 16px;background:var(--black);color:#fff;border:none;cursor:pointer;">+ New Production</button>';
 
   Object.values(PRODUCTIONS).forEach(prod=>{
     const claimed=loadClaimed(prod.id);
@@ -3289,8 +3293,8 @@ function renderProductions(){
     card.innerHTML=`
       <div class="prod-card-header" onclick="toggleProdCard('${prod.id}')">
         <div style="flex:1;min-width:0;">
-          <div class="prod-card-name" style="color:${crFg(prod.controlRoom||prod.name||'')};">${prodLabel(prod)}</div>
-          <div class="prod-card-meta">${prod.dates} · ${prod.beltpacks[0]}–${prod.beltpacks[prod.beltpacks.length-1]}</div>
+          <div class="prod-card-name">${prod.name||prod.id}</div>
+          <div class="prod-card-meta"><span style="color:${crFg(prod.controlRoom)};font-weight:800;">${prod.controlRoom||''}</span>${prod.dates?' · '+prod.dates:''}${prod.beltpacks.length?' · '+prod.beltpacks[0]+'–'+prod.beltpacks[prod.beltpacks.length-1]:''}</div>
         </div>
 
         <div class="prod-card-stats">
@@ -3305,12 +3309,15 @@ function renderProductions(){
       </div>
       <div class="prod-card-body" id="prod-body-${prod.id}">
         <div class="prod-edit-panel">
+          <div class="prod-edit-field" style="margin-bottom:12px;">
+            <label class="prod-edit-label">Show Name</label>
+            <input class="prod-edit-input" id="pe-show-name-${prod.id}" type="text" value="${prod.name||''}" placeholder="e.g. NBC Nightly News" maxlength="60">
+          </div>
           <div class="prod-edit-row">
             <div class="prod-edit-field">
               <label class="prod-edit-label">Control Room</label>
               ${customSelectHTML('csel-pe-ctrl-'+prod.id, 'pe-ctrl-'+prod.id, ['PCR1','PCR2','MFR1','MFR2','OTHER'], prod.controlRoom||'')}
             </div>
-
           </div>
           <div class="prod-edit-row">
             <div class="prod-edit-field">
@@ -3363,8 +3370,11 @@ function toggleProdCard(id){
 }
 
 function saveProd(id){
+  const showNameEl=document.getElementById(`pe-show-name-${id}`);
+  const showName=showNameEl?showNameEl.value.trim():PRODUCTIONS[id].name||'';
+  if(!showName){toast('Enter a show name', 'danger');return;}
   const ctrlRoomEl=document.getElementById(`pe-ctrl-${id}`);
-  const controlRoom=ctrlRoomEl?ctrlRoomEl.value:(PRODUCTIONS[id].controlRoom||PRODUCTIONS[id].name||'');
+  const controlRoom=ctrlRoomEl?ctrlRoomEl.value:(PRODUCTIONS[id].controlRoom||'');
   const startDate=$(`pe-start-${id}`).value;
   const endDate=$(`pe-end-${id}`).value;
   if(!controlRoom){toast('Select a control room', 'danger');return;}
@@ -3375,10 +3385,10 @@ function saveProd(id){
     ? `${new Date(startDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}–${new Date(endDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
     : PRODUCTIONS[id].dates;
 
-  PRODUCTIONS[id].controlRoom=controlRoom; PRODUCTIONS[id].dates=dates;
-  PRODUCTIONS[id].startDate=startDate; PRODUCTIONS[id].endDate=endDate;
-  PRODUCTIONS[id].beltpacks=bps;
-  saveProds(); toast(`${controlRoom} saved`, 'success'); renderProductions();
+  PRODUCTIONS[id].name=showName; PRODUCTIONS[id].controlRoom=controlRoom;
+  PRODUCTIONS[id].dates=dates; PRODUCTIONS[id].startDate=startDate;
+  PRODUCTIONS[id].endDate=endDate; PRODUCTIONS[id].beltpacks=bps;
+  saveProds(); toast(`${showName} saved`, 'success'); renderProductions();
 }
 
 function archiveProd(id){
@@ -3396,11 +3406,12 @@ function printQR(id,name){
 
 // ─── NEW PRODUCTION ───────────────────────────────────────────
 function openNewProd(){
+  $('np-show-name').value='';
   $('np-ctrl-room').value=''; $('np-name').value=''; $('np-name').style.display='none';
   $('np-start').value=''; $('np-end').value='';
   buildBpGrid('np',[]);
   $('modal-overlay-prod').classList.add('active');
-  setTimeout(()=>$('np-ctrl-room').focus(),100);
+  setTimeout(()=>$('np-show-name').focus(),100);
 }
 $('btn-cancel-prod').addEventListener('click',()=>$('modal-overlay-prod').classList.remove('active'));
 $('np-ctrl-room').addEventListener('change',function(){
@@ -3408,6 +3419,7 @@ $('np-ctrl-room').addEventListener('change',function(){
   if(this.value!=='OTHER') $('np-name').value='';
 });
 $('btn-create-prod').addEventListener('click',()=>{
+  const showName=$('np-show-name').value.trim(); if(!showName){toast('Enter a show name', 'danger');return;}
   const ctrlRoom=$('np-ctrl-room').value; if(!ctrlRoom){toast('Select a control room', 'danger');return;}
   const customName=$('np-name').value.trim().toUpperCase();
   const controlRoom = ctrlRoom==='OTHER'?(customName||'OTHER'):ctrlRoom;
@@ -3418,8 +3430,8 @@ $('btn-create-prod').addEventListener('click',()=>{
     ? `${new Date(startDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}–${new Date(endDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
     : 'Dates TBD';
   const code=genCode();
-  PRODUCTIONS[code]={id:code,controlRoom,dates,startDate,endDate,status:'active',beltpacks:bps,keypanels:[]};
-  saveProds(); $('modal-overlay-prod').classList.remove('active'); toast(`${controlRoom} created — code ${code}`, 'success'); setView('options'); activateOptTab('BBs');
+  PRODUCTIONS[code]={id:code,name:showName,controlRoom,dates,startDate,endDate,status:'active',beltpacks:bps,keypanels:[]};
+  saveProds(); $('modal-overlay-prod').classList.remove('active'); toast(`${showName} created`, 'success'); setView('options'); activateOptTab('BBs');
 });
 
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('active'); }));
