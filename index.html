@@ -589,51 +589,69 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 
 /* ─── TM VIEW ─── */
 #screen-tm { display:none; height:100vh; flex-direction:column; background:var(--bg); overflow:hidden; }
-.tm-topbar { display:flex; align-items:center; gap:16px; padding:0 clamp(16px,2vw,28px); height:52px; background:var(--black); flex-shrink:0; }
-.tm-wordmark { font-family:var(--f-ui); font-size:14px; font-weight:900; letter-spacing:.18em; color:#fff; text-transform:uppercase; }
+
+/* Topbar — identical to admin */
+.tm-topbar { display:flex; align-items:center; gap:0; height:52px; background:var(--black); flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.08); }
+.tm-wordmark { font-family:var(--f-ui); font-size:14px; font-weight:900; letter-spacing:.18em; color:#fff; text-transform:uppercase; padding:0 clamp(16px,2vw,24px); }
 .tm-wordmark span { color:var(--green); }
-.tm-role-badge { font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; padding:3px 8px; background:#7C3AED; color:#fff; }
-.tm-user { font-family:var(--f-mono); font-size:11px; color:rgba(255,255,255,.5); margin-left:auto; }
-.tm-signout { font-family:var(--f-mono); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; padding:6px 14px; background:transparent; color:rgba(255,255,255,.4); border:1px solid rgba(255,255,255,.15); cursor:pointer; }
-.tm-signout:hover { color:#fff; border-color:#fff; }
-.tm-prod-tabs { display:flex; gap:0; border-bottom:1px solid var(--border-md); background:var(--surface); flex-shrink:0; overflow-x:auto; }
-.tm-prod-tab { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; padding:0 20px; height:40px; border:none; background:transparent; cursor:pointer; color:rgba(0,0,0,.4); border-bottom:2px solid transparent; white-space:nowrap; }
-.tm-prod-tab.active { color:var(--black); border-bottom-color:var(--green); }
-.tm-body { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
-.tm-prod-view { display:none; flex-direction:column; }
-.tm-prod-view.active { display:flex; }
-.tm-prod-header { display:flex; align-items:center; gap:16px; padding:clamp(14px,2vh,18px) clamp(16px,2vw,28px); border-bottom:1px solid var(--border-md); background:var(--surface); }
-.tm-prod-name { font-family:var(--f-ui); font-size:clamp(1rem,1.6vw,1.3rem); font-weight:900; letter-spacing:-.02em; }
-.tm-prod-cr { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; padding:3px 10px; margin-left:8px; }
-.tm-prod-dates { font-family:var(--f-mono); font-size:clamp(.55rem,.65vw,.62rem); color:rgba(0,0,0,.38); letter-spacing:.1em; margin-left:auto; }
-.tm-sections { display:grid; grid-template-columns:1fr 1fr; gap:0; border-top:1px solid var(--border-md); flex:1; }
-@media(max-width:900px){ .tm-sections { grid-template-columns:1fr; } }
-.tm-section { display:flex; flex-direction:column; border-right:1px solid var(--border-md); }
+.tm-role-badge { font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; padding:4px 10px; background:#7C3AED; color:#fff; }
+.tm-user { font-family:var(--f-mono); font-size:11px; color:rgba(255,255,255,.45); margin-left:auto; padding-right:16px; }
+.tm-signout { font-family:var(--f-mono); font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; padding:0 clamp(14px,1.8vw,22px); height:52px; background:transparent; color:rgba(255,255,255,.35); border:none; border-left:1px solid rgba(255,255,255,.08); cursor:pointer; }
+.tm-signout:hover { color:#fff; background:rgba(255,255,255,.04); }
+
+/* Ribbon tabs — identical to admin ribbon */
+.tm-ribbon { display:flex; background:var(--black); border-bottom:3px solid var(--black); flex-shrink:0; overflow-x:auto; }
+.tm-ribbon-tab { font-family:var(--f-mono); font-size:clamp(.62rem,.72vw,.68rem); font-weight:800; letter-spacing:.18em; text-transform:uppercase; padding:0 clamp(16px,2.2vw,28px); height:clamp(36px,4.5vh,44px); border:none; background:transparent; cursor:pointer; color:rgba(255,255,255,.35); position:relative; white-space:nowrap; }
+.tm-ribbon-tab.active { color:#fff; }
+.tm-ribbon-tab.active::after { content:''; position:absolute; bottom:0; left:clamp(12px,1.6vw,20px); right:clamp(12px,1.6vw,20px); height:2px; background:var(--green); }
+
+/* Page header — same as admin sec-head */
+.tm-page-hdr { padding:clamp(10px,1.4vh,14px) clamp(16px,2.2vw,28px); border-bottom:3px solid var(--black); background:var(--surface); display:flex; align-items:baseline; gap:12px; }
+.tm-page-name { font-family:var(--f-ui); font-size:clamp(1.1rem,2vw,1.6rem); font-weight:900; letter-spacing:-.02em; }
+.tm-page-sub { font-family:var(--f-mono); font-size:clamp(.52rem,.62vw,.6rem); font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:rgba(0,0,0,.38); }
+.tm-page-cr { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; padding:3px 10px; margin-left:4px; }
+
+/* Body */
+.tm-body { flex:1; overflow-y:auto; }
+.tm-req-bar { display:flex; align-items:center; gap:12px; padding:clamp(10px,1.4vh,14px) clamp(16px,2.2vw,28px); border-bottom:1px solid var(--border-md); background:var(--surface); }
+.tm-req-btn { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; padding:7px 16px; background:var(--black); color:#fff; border:none; cursor:pointer; }
+.tm-req-btn:hover { background:#333; }
+.tm-stat-text { font-family:var(--f-mono); font-size:clamp(.55rem,.65vw,.62rem); color:rgba(0,0,0,.38); letter-spacing:.1em; }
+
+/* Two-col sections */
+.tm-sections { display:grid; grid-template-columns:1fr 1fr; }
+@media(max-width:860px){ .tm-sections { grid-template-columns:1fr; } }
+.tm-section { border-right:1px solid var(--border-md); }
 .tm-section:last-child { border-right:none; }
-.tm-section-hdr { display:flex; align-items:center; gap:12px; padding:10px clamp(12px,1.6vw,20px); border-bottom:1px solid var(--border-md); background:rgba(0,0,0,.02); position:sticky; top:0; z-index:1; }
-.tm-section-title { font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; color:rgba(0,0,0,.45); flex:1; }
-.tm-section-count { font-family:var(--f-mono); font-size:9px; color:rgba(0,0,0,.3); letter-spacing:.08em; }
-.tm-bp-card { display:flex; align-items:center; gap:10px; padding:10px clamp(12px,1.6vw,20px); border-bottom:1px solid var(--border-md); }
-.tm-bp-num { font-family:var(--f-mono); font-size:clamp(.62rem,.72vw,.68rem); font-weight:700; letter-spacing:.12em; color:rgba(0,0,0,.45); width:52px; flex-shrink:0; }
-.tm-bp-name { font-family:var(--f-ui); font-size:clamp(.78rem,1vw,.88rem); font-weight:800; flex:1; min-width:0; }
-.tm-bp-available { font-family:var(--f-mono); font-size:9px; color:rgba(0,0,0,.3); letter-spacing:.1em; text-transform:uppercase; flex:1; }
-.tm-bp-keys { display:flex; gap:2px; }
-.tm-bp-key { width:28px; height:22px; display:flex; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:8px; font-weight:800; letter-spacing:.04em; background:rgba(0,0,0,.06); color:rgba(0,0,0,.3); overflow:hidden; }
-.tm-bp-key.assigned { }
-.tm-status-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
-.tm-status-dot.confirmed { background:var(--green); }
-.tm-status-dot.pending { background:var(--amber); }
-.tm-status-dot.available { background:rgba(0,0,0,.15); }
-.tm-kp-card { display:flex; align-items:center; gap:10px; padding:10px clamp(12px,1.6vw,20px); border-bottom:1px solid var(--border-md); }
-.tm-kp-loc { width:6px; height:32px; flex-shrink:0; border-radius:1px; }
-.tm-kp-name { font-family:var(--f-mono); font-size:clamp(.62rem,.72vw,.68rem); font-weight:700; letter-spacing:.08em; flex:1; }
-.tm-kp-port { font-family:var(--f-mono); font-size:9px; color:rgba(0,0,0,.3); letter-spacing:.08em; }
-.tm-req-bar { display:flex; align-items:center; gap:8px; padding:10px clamp(12px,1.6vw,20px); border-bottom:1px solid var(--border-md); background:var(--surface); }
-.tm-req-btn { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; padding:6px 14px; background:transparent; border:1px solid var(--border-hi); cursor:pointer; color:rgba(0,0,0,.58); }
-.tm-req-btn:hover { border-color:var(--black); color:var(--black); }
-.tm-req-btn.primary { background:var(--black); color:#fff; border-color:var(--black); }
-.tm-req-btn.primary:hover { background:#333; }
-.tm-empty { padding:24px; font-family:var(--f-mono); font-size:11px; color:rgba(0,0,0,.3); letter-spacing:.1em; text-transform:uppercase; }
+.tm-section-hdr { display:flex; align-items:center; gap:12px; padding:clamp(10px,1.4vh,14px) clamp(16px,2.2vw,28px); border-bottom:1px solid var(--border-md); background:rgba(0,0,0,.02); position:sticky; top:0; z-index:1; }
+.tm-section-title { font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; color:rgba(0,0,0,.38); flex:1; }
+.tm-section-count { font-family:var(--f-mono); font-size:9px; color:rgba(0,0,0,.28); letter-spacing:.08em; }
+
+/* BP cards — same structure as admin */
+.tm-bp-card { display:flex; gap:0; border-bottom:1px solid var(--border-md); background:var(--surface); min-height:62px; }
+.tm-bp-strip { width:5px; flex-shrink:0; }
+.tm-bp-inner { flex:1; padding:clamp(8px,1.2vh,12px) clamp(12px,1.6vw,18px); display:flex; flex-direction:column; gap:4px; min-width:0; }
+.tm-bp-top { display:flex; align-items:baseline; gap:8px; }
+.tm-bp-num { font-family:var(--f-mono); font-size:clamp(.58rem,.68vw,.65rem); font-weight:700; letter-spacing:.14em; color:rgba(0,0,0,.38); text-transform:uppercase; }
+.tm-bp-name { font-family:var(--f-ui); font-size:clamp(.82rem,1.05vw,.92rem); font-weight:800; color:var(--black); letter-spacing:-.01em; }
+.tm-bp-available { font-family:var(--f-mono); font-size:9px; color:rgba(0,0,0,.28); letter-spacing:.1em; text-transform:uppercase; }
+.tm-bp-keys { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; }
+.tm-bp-key { height:clamp(22px,3vh,28px); display:flex; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:clamp(7px,0.7vw,9px); font-weight:800; letter-spacing:.04em; background:rgba(0,0,0,.05); color:rgba(0,0,0,.28); overflow:hidden; }
+.tm-bp-badge { display:inline-flex; align-items:center; gap:4px; font-family:var(--f-mono); font-size:8px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+.tm-bp-badge::before { content:''; width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.tm-bp-badge.confirmed { color:var(--green); } .tm-bp-badge.confirmed::before { background:var(--green); }
+.tm-bp-badge.pending { color:var(--amber); } .tm-bp-badge.pending::before { background:var(--amber); }
+.tm-bp-badge.available { color:rgba(0,0,0,.25); } .tm-bp-badge.available::before { background:rgba(0,0,0,.15); }
+
+/* KP cards — same structure as admin */
+.tm-kp-card { display:flex; gap:0; border-bottom:1px solid var(--border-md); background:var(--surface); }
+.tm-kp-strip { width:5px; flex-shrink:0; }
+.tm-kp-inner { flex:1; padding:clamp(8px,1.2vh,12px) clamp(12px,1.6vw,18px); display:flex; align-items:center; gap:12px; }
+.tm-kp-name { font-family:var(--f-mono); font-size:clamp(.65rem,.78vw,.72rem); font-weight:800; letter-spacing:.06em; flex:1; }
+.tm-kp-meta { font-family:var(--f-mono); font-size:9px; color:rgba(0,0,0,.32); letter-spacing:.08em; }
+
+.tm-empty { padding:clamp(20px,3vh,32px) clamp(16px,2.2vw,28px); font-family:var(--f-mono); font-size:clamp(.58rem,.68vw,.65rem); color:rgba(0,0,0,.28); letter-spacing:.14em; text-transform:uppercase; }
+
 /* TM Request Modal */
 .tm-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; display:none; align-items:center; justify-content:center; }
 .tm-modal-overlay.active { display:flex; }
@@ -643,6 +661,9 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 .tm-field label { display:block; font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:rgba(0,0,0,.45); margin-bottom:6px; }
 .tm-field input, .tm-field textarea, .tm-field select { width:100%; border:none; border-bottom:1px solid var(--border-md); font-family:var(--f-mono); font-size:13px; padding:8px 0; outline:none; background:transparent; resize:none; }
 .tm-modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+.tm-modal-btn { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; padding:8px 18px; border:none; cursor:pointer; }
+.tm-modal-btn.cancel { background:transparent; color:rgba(0,0,0,.45); border:1px solid var(--border-md); }
+.tm-modal-btn.submit { background:var(--black); color:#fff; }
 </style>
 </head>
 <body>
@@ -691,16 +712,13 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 </div>
 <!-- TM PLACEHOLDER -->
 <div id="screen-tm">
-  <!-- TM TOPBAR -->
   <div class="tm-topbar">
     <div class="tm-wordmark">ShowComm<span>·</span></div>
     <div class="tm-role-badge">TM</div>
     <div class="tm-user" id="tm-user-label"></div>
     <button class="tm-signout" id="btn-tm-logout">Sign Out</button>
   </div>
-  <!-- PRODUCTION TABS -->
-  <div class="tm-prod-tabs" id="tm-prod-tabs"></div>
-  <!-- BODY -->
+  <div class="tm-ribbon" id="tm-prod-tabs"></div>
   <div class="tm-body" id="tm-body"></div>
 </div>
 
@@ -724,8 +742,8 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
       <textarea id="tm-req-note" rows="3" placeholder="Describe what you need…"></textarea>
     </div>
     <div class="tm-modal-actions">
-      <button class="tm-req-btn" onclick="document.getElementById('tm-req-modal').classList.remove('active')">Cancel</button>
-      <button class="tm-req-btn primary" onclick="tmSubmitRequest()">Submit</button>
+      <button class="tm-modal-btn cancel" onclick="document.getElementById('tm-req-modal').classList.remove('active')">Cancel</button>
+      <button class="tm-modal-btn submit" onclick="tmSubmitRequest()">Submit</button>
     </div>
   </div>
 </div>
@@ -4055,7 +4073,7 @@ function renderTMTabs(){
   tabs.innerHTML = '';
   _tmProductions.forEach(prod=>{
     const btn=document.createElement('button');
-    btn.className='tm-prod-tab';
+    btn.className='tm-ribbon-tab';
     btn.textContent=prod.name||prod.controlRoom||prod.id;
     btn.addEventListener('click',()=>setTMProd(prod.id));
     tabs.appendChild(btn);
@@ -4064,7 +4082,7 @@ function renderTMTabs(){
 
 function setTMProd(prodId){
   _tmActiveProd=prodId;
-  document.querySelectorAll('.tm-prod-tab').forEach((t,i)=>{
+  document.querySelectorAll('.tm-ribbon-tab').forEach((t,i)=>{
     t.classList.toggle('active', _tmProductions[i]&&_tmProductions[i].id===prodId);
   });
   renderTMProdView(prodId);
@@ -4077,74 +4095,72 @@ function renderTMProdView(prodId){
   const claimed=loadClaimed(prodId);
   const claimedKP=loadClaimedKP(prodId);
 
-  // Beltpack list
-  const bps=(prod.beltpacks||[]).map(bp=>{
-    const id=typeof bp==='string'?bp:bp.id;
+  // BP cards — admin style
+  const bpIds=(prod.beltpacks||[]).map(bp=>typeof bp==='string'?bp:bp.id);
+  const bpCards=bpIds.map(id=>{
     const entry=claimed[id];
     const status=!entry?'available':entry.status==='confirmed'?'confirmed':'pending';
-    const dotClass='tm-status-dot '+status;
     const keys=entry?entry.keys:[null,null,null,null];
-    const keyHtml=(keys||[]).map(k=>{
+    const keyHtml=(keys||[null,null,null,null]).map(k=>{
       const nk=normKey(k);
       if(nk&&nk.label){
         const opt=findOpt(nk.category,nk.label);
         const bg=opt?rgbStr(optBgRgb(opt)):'#222';
         const fg=opt?rgbStr(optFgRgb(opt)):'#fff';
-        const lbl=nk.label.length>4?nk.label.slice(0,4)+'…':nk.label;
-        return '<div class="tm-bp-key assigned" style="background:'+bg+';color:'+fg+';">'+lbl+'</div>';
+        const pts=nk.label.length>4?[nk.label.slice(0,4),nk.label.slice(4)]:[nk.label];
+        return '<div class="tm-bp-key" style="background:'+bg+';color:'+fg+';">'+pts.map(p=>'<span style="display:block;line-height:1.1;">'+p+'</span>').join('')+'</div>';
       }
       return '<div class="tm-bp-key">—</div>';
     }).join('');
-    const nameHtml=entry&&entry.userName
-      ?'<div class="tm-bp-name">'+entry.userName+'</div>'
-      :'<div class="tm-bp-available">Available</div>';
+    const topLine=entry&&entry.userName
+      ?'<span class="tm-bp-name">'+entry.userName+'</span>'
+      :'<span class="tm-bp-available">Available</span>';
     return '<div class="tm-bp-card">'
-      +'<div class="'+dotClass+'"></div>'
-      +'<div class="tm-bp-num">'+id+'</div>'
-      +nameHtml
+      +'<div class="tm-bp-strip" style="background:'+clr+';"></div>'
+      +'<div class="tm-bp-inner">'
+      +'<div class="tm-bp-top"><span class="tm-bp-num">'+id+'</span>'+topLine+'<span class="tm-bp-badge '+status+'">'+status+'</span></div>'
       +'<div class="tm-bp-keys">'+keyHtml+'</div>'
-      +'</div>';
+      +'</div></div>';
   }).join('');
 
-  // Keypanel list
+  // KP cards — admin style
   const kpEntries=Object.entries(claimedKP);
-  const kpHtml=kpEntries.length?kpEntries.map(([panelId,entry])=>{
+  const kpCards=kpEntries.length?kpEntries.map(([panelId,entry])=>{
     const panel=KP_PANELS.find(p=>p.id===panelId)||{name:panelId,location:'',port:''};
+    const locClr=crFg(panel.location)||clr;
     const status=entry.status==='confirmed'?'confirmed':'pending';
-    const dotClass='tm-status-dot '+status;
-    const locClr=crFg(prod.controlRoom)||'#888';
     return '<div class="tm-kp-card">'
-      +'<div class="tm-kp-loc" style="background:'+locClr+';"></div>'
-      +'<div class="tm-kp-name">'+panel.name+'</div>'
-      +'<div class="tm-kp-port">Port '+panel.port+'</div>'
-      +'<div class="'+dotClass+'"></div>'
-      +'</div>';
+      +'<div class="tm-kp-strip" style="background:'+locClr+';"></div>'
+      +'<div class="tm-kp-inner">'
+      +'<span class="tm-kp-name">'+panel.name+'</span>'
+      +'<span class="tm-kp-meta">Port '+panel.port+' · '+panel.location+'</span>'
+      +'<span class="tm-bp-badge '+status+'">'+status+'</span>'
+      +'</div></div>';
   }).join(''):'<div class="tm-empty">No panels assigned</div>';
 
-  const bpCount=(prod.beltpacks||[]).length;
+  const bpCount=bpIds.length;
   const kpCount=kpEntries.length;
   const pendingBp=Object.values(claimed).filter(e=>e.status==='pending').length;
   const confirmedBp=Object.values(claimed).filter(e=>e.status==='confirmed').length;
 
   body.innerHTML=
-    '<div class="tm-prod-header">'
-    +'<div><div class="tm-prod-name">'+prod.name+'</div></div>'
-    +'<div class="tm-prod-cr" style="background:'+clr+'22;color:'+clr+';">'+prod.controlRoom+'</div>'
-    +'<div class="tm-prod-dates">'+prod.dates+'</div>'
+    '<div class="tm-page-hdr">'
+    +'<span class="tm-page-name">'+prod.name+'</span>'
+    +'<span class="tm-page-cr" style="background:'+clr+'22;color:'+clr+';">'+prod.controlRoom+'</span>'
+    +'<span class="tm-page-sub" style="margin-left:auto;">'+prod.dates+'</span>'
     +'</div>'
     +'<div class="tm-req-bar">'
-    +'<button class="tm-req-btn primary" onclick="openTMReqModal()">+ Submit Request</button>'
-    +'<span style="font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.35);letter-spacing:.08em;">'
-    +confirmedBp+' confirmed · '+pendingBp+' pending · '+(bpCount-confirmedBp-pendingBp)+' available</span>'
+    +'<button class="tm-req-btn" onclick="openTMReqModal()">+ Submit Request</button>'
+    +'<span class="tm-stat-text">'+confirmedBp+' confirmed · '+pendingBp+' pending · '+(bpCount-confirmedBp-pendingBp)+' available</span>'
     +'</div>'
     +'<div class="tm-sections">'
     +'<div class="tm-section">'
     +'<div class="tm-section-hdr"><span class="tm-section-title">Beltpacks</span><span class="tm-section-count">'+bpCount+' units</span></div>'
-    +(bps||'<div class="tm-empty">No beltpacks</div>')
+    +(bpCards||'<div class="tm-empty">No beltpacks</div>')
     +'</div>'
     +'<div class="tm-section">'
     +'<div class="tm-section-hdr"><span class="tm-section-title">Keypanels</span><span class="tm-section-count">'+kpCount+' panels</span></div>'
-    +kpHtml
+    +kpCards
     +'</div>'
     +'</div>';
 }
