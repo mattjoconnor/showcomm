@@ -1121,7 +1121,15 @@ let _currentUser=null, _currentProfile=null, _currentRole=null, _selectedRole=nu
 
 function initAdminApp(){
   loadProds(); loadGlobalOptions(); initBpSelectors(); buildUnifiedFilters(); setView('keypanels');
-  if(SUPA) loadRequests();
+  if(SUPA){
+    loadRequests();
+    // ── Real-time subscriptions ──────────────────────────────
+    SUPA.channel('showcomm-requests')
+      .on('postgres_changes',{event:'*',schema:'public',table:'device_claims'},  ()=>onRequestChange())
+      .on('postgres_changes',{event:'*',schema:'public',table:'change_requests'},()=>onRequestChange())
+      .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'},   ()=>onRequestChange())
+      .subscribe();
+  }
   const clearBtn=document.getElementById('btn-clear-filters');
   if(clearBtn) clearBtn.addEventListener('click',()=>{
     _bpFilter.statuses.clear(); _bpFilter.rooms.clear(); _bpFilter.search='';
@@ -3428,6 +3436,18 @@ function relTime(ts){
   return Math.floor(s/86400)+'d ago';
 }
 
+function onRequestChange(){
+  loadRequests();
+  // Flash the Requests ribbon tab to draw attention
+  const tab=document.getElementById('ribbon-tab-requests');
+  if(tab && state.view!=='requests'){
+    tab.style.transition='color .1s';
+    tab.style.color='#fff';
+    setTimeout(()=>{ tab.style.color=''; }, 800);
+    toast('New request received', 'info');
+  }
+}
+
 async function loadRequests(){
   if(!SUPA) return;
   const el = document.getElementById('requests-content');
@@ -3450,6 +3470,9 @@ async function loadRequests(){
 
   const badge = document.getElementById('req-badge');
   if(badge){ badge.textContent = pendingCount; badge.style.display = pendingCount ? 'inline-flex' : 'none'; }
+  // Update browser tab title
+  const baseTitle = 'ShowComm Admin';
+  document.title = pendingCount ? '(' + pendingCount + ') ' + baseTitle : baseTitle;
 
   el.innerHTML = renderReqSection('Device Claims', 'claim', claims,
     r=>r.status==='pending', r=>renderClaimCard(r))
