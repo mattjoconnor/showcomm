@@ -1128,10 +1128,10 @@ function initAdminApp(){
     loadRequests();
     // ── Real-time subscriptions ──────────────────────────────
     SUPA.channel('showcomm-requests')
-      .on('postgres_changes',{event:'*',schema:'public',table:'device_claims'},  ()=>onRequestChange())
-      .on('postgres_changes',{event:'*',schema:'public',table:'change_requests'},()=>onRequestChange())
-      .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'},   ()=>onRequestChange())
-      .subscribe();
+      .on('postgres_changes',{event:'*',schema:'public',table:'device_claims'},  (p)=>{ console.log('[RT] device_claims',p); onRequestChange(); })
+      .on('postgres_changes',{event:'*',schema:'public',table:'change_requests'},(p)=>{ console.log('[RT] change_requests',p); onRequestChange(); })
+      .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'},   (p)=>{ console.log('[RT] key_requests',p); onRequestChange(); })
+      .subscribe((status)=>{ console.log('[RT] subscription status:', status); });
   }
   const clearBtn=document.getElementById('btn-clear-filters');
   if(clearBtn) clearBtn.addEventListener('click',()=>{
