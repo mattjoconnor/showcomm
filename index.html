@@ -2208,6 +2208,18 @@ function buildKpCard(panel, prod, entry){
   const actBar=document.createElement('div');
   actBar.className='kp-acts';
 
+  // Clear button — always defined, always last
+  const clrBtn=document.createElement('button');
+  clrBtn.className='act-dng';
+  clrBtn.textContent='Clear';
+  clrBtn.addEventListener('click',()=>{
+    if(!prod){
+      adminConfirm('Clear Draft Keys', panel.name||panel.id, 'All programmed keys will be removed.', 'Clear', ()=>{
+        const _dc=loadClaimedKP('__draft__'); delete _dc[panel.id]; saveClaimedKP('__draft__',_dc); renderKeypanels();
+      });
+    } else { adminClearKP(panel.id,prod.id); }
+  });
+
   if(entry){
     if(entry.status==='pending' && prod){
       const confBtn=document.createElement('button');
@@ -2216,18 +2228,6 @@ function buildKpCard(panel, prod, entry){
       confBtn.addEventListener('click',()=>confirmKP(panel.id,prod.id));
       actBar.appendChild(confBtn);
     }
-
-    const clrBtn=document.createElement('button');
-    clrBtn.className='act-dng';
-    clrBtn.textContent='Clear';
-    clrBtn.addEventListener('click',()=>{
-      if(!prod){
-        adminConfirm('Clear Draft Keys', panel.name||panel.id, 'All programmed keys will be removed.', 'Clear', ()=>{
-          const _dc=loadClaimedKP('__draft__'); delete _dc[panel.id]; saveClaimedKP('__draft__',_dc); renderKeypanels();
-        });
-      } else { adminClearKP(panel.id,prod.id); }
-    });
-    // Always show Select Production when no prod assigned (even with draft keys)
     if(!prod){
       const setBtn=document.createElement('button');
       setBtn.className='act-out';
@@ -2235,15 +2235,14 @@ function buildKpCard(panel, prod, entry){
       setBtn.addEventListener('click',()=>openKpRoomModal(panel.id,''));
       actBar.appendChild(setBtn);
     }
-    actBar.appendChild(clrBtn); // always last (margin-left:auto pins it right)
   } else {
     const setBtn=document.createElement('button');
     setBtn.className='act-out';
     setBtn.textContent='Select Production';
     setBtn.addEventListener('click',()=>openKpRoomModal(panel.id,''));
     actBar.appendChild(setBtn);
-    actBar.appendChild(clrBtn);
   }
+  actBar.appendChild(clrBtn); // always last — margin-left:auto pins it right
   body.appendChild(actBar);
   _kpIn.appendChild(body);
   card.appendChild(_kpIn);
