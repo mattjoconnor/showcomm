@@ -1986,16 +1986,13 @@ function renderKeypanels(){
 
   const LOCS=['PCR1','ACR1','MOPS','PCR2','MFR1','MFR2','INGEST','ASST'];
   let totalShown=0;
-  console.log('[RK] start, KP_PANELS:',KP_PANELS?.length, 'PRODUCTIONS:',Object.keys(PRODUCTIONS).length);
 
   LOCS.forEach(loc=>{
     const panels=KP_PANELS.filter(p=>{
       if(p.location!==loc) return false;
       const entry=panelEntryMap[p.id];
       const prod=panelProdMap[p.id];
-      const _r=kpPanelMatchesFilter(p,entry,prod);
-      if(!_r) console.log('[RK filter]',p.id,'FAILED entry:',!!entry,'rooms:',_kpFilter.rooms.size);
-      return _r;
+      return kpPanelMatchesFilter(p,entry,prod);
     });
     if(!panels.length) return;
     totalShown+=panels.length;
@@ -2041,7 +2038,6 @@ function renderKeypanels(){
     main.appendChild(secEl);
   });
 
-  console.log('[RK] totalShown:',totalShown,'rooms:',_kpFilter.rooms.size,'statuses:',_kpFilter.statuses.size);
   if(!totalShown){
     main.innerHTML='<div class="empty-state"><div class="empty-text">No keypanels match the current filter</div></div>';
   }
@@ -2214,7 +2210,6 @@ function buildKpCard(panel, prod, entry){
       confBtn.addEventListener('click',()=>{ if(prod) confirmKP(panel.id,prod.id); else toast('Select a production before confirming','pending'); });
       actBar.appendChild(confBtn);
     }
-    actBar.appendChild(reBtn);
 
     const clrBtn=document.createElement('button');
     clrBtn.className='act-dng';
