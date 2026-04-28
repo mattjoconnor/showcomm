@@ -1568,7 +1568,8 @@ function openKpPoolModal(panelId, prodId, keyIndex){
     const kt = panelInfo.model==='5032'?32:14;
     c[panelId]={userName:'',tok:'admin_'+Date.now(),keys:Array(kt).fill(null),status:'pending',activeRoom:'',submittedAt:new Date().toISOString(),submittedBy:'Admin',swaps:[]};
     saveClaimedKP(prodId,c);
-    refreshKpCard(panelId,prodId);
+    if(prodId!=='__draft__') refreshKpCard(panelId,prodId);
+    // Draft: no render needed here — kpKeyAssign will render after key is picked
   }
   _poolModalState = {panelId:panelId, prodId:prodId, keyIndex:keyIndex}; _poolCat='PLs';
 
@@ -1629,7 +1630,7 @@ function kpKeyAssign(panelId, prodId, keyIndex, cat, label){
   // If was confirmed, revert to pending (needs re-confirmation)
   if(c[panelId].status==='confirmed') c[panelId].status='pending';
   saveClaimedKP(prodId, c);
-  refreshKpCard(panelId, prodId);
+  if(prodId==='__draft__') renderKeypanels(); else refreshKpCard(panelId, prodId);
 }
 
 function kpPoolModalAssign(cat, label){
@@ -2047,6 +2048,11 @@ function renderKeypanels(){
 function buildKpCard(panel, prod, entry){
   const cardKey = prod?(prod.id+'_'+panel.id):('avail_'+panel.id.replace(/\s/g,'_'));
   const isOpen  = _kpCardOpen.has(cardKey);
+  // Load draft keys for unassigned panels
+  if(!prod && !entry){
+    const _draftC=loadClaimedKP('__draft__');
+    if(_draftC[panel.id]) entry=_draftC[panel.id];
+  }
   const status  = !entry?'available': entry.status==='confirmed'?'confirmed':'pending';
   const card = document.createElement('div');
   card.className = 'kp-card '+status+'-card';
@@ -2189,8 +2195,7 @@ function buildKpCard(panel, prod, entry){
 
       cell.addEventListener('click',function(e){
         if(e.target.textContent==='×'&&e.target.tagName==='BUTTON') return;
-        if(!prod){ toast('Select a production first','pending'); return; }
-        kpKeyClick(panel.id, prod.id, i);
+        kpKeyClick(panel.id, prod?prod.id:'__draft__', i);
       });
       rowEl.appendChild(cell);
     }
@@ -2203,18 +2208,18 @@ function buildKpCard(panel, prod, entry){
   actBar.className='kp-acts';
 
   if(entry){
-    if(entry.status==='pending'){
+    if(entry.status==='pending' && prod){
       const confBtn=document.createElement('button');
       confBtn.className='act-co';
       confBtn.textContent='Confirm';
-      confBtn.addEventListener('click',()=>{ if(prod) confirmKP(panel.id,prod.id); else toast('Select a production before confirming','pending'); });
+      confBtn.addEventListener('click',()=>confirmKP(panel.id,prod.id));
       actBar.appendChild(confBtn);
     }
 
     const clrBtn=document.createElement('button');
     clrBtn.className='act-dng';
     clrBtn.textContent='Clear';
-    clrBtn.addEventListener('click',()=>adminClearKP(panel.id,prod.id));
+    clrBtn.addEventListener('click',()=>{ if(!prod){ const _dc=loadClaimedKP('__draft__'); delete _dc[panel.id]; saveClaimedKP('__draft__',_dc); renderKeypanels(); return; } adminClearKP(panel.id,prod.id); });
     actBar.appendChild(clrBtn);
   } else {
     const setBtn=document.createElement('button');
@@ -2474,7 +2479,11 @@ function setKpRoom(panelId, code, room){
   }
   const keyCount = panel.model==='5032'?32:14;
   if(!c[panelId]){
-    c[panelId] = {userName:'',tok:'admin_'+Date.now(),keys:Array(keyCount).fill(null),status:'pending',activeRoom:room,submittedAt:new Date().toISOString(),submittedBy:'Admin',swaps:[]};
+    // Merge draft keys if panel was pre-programmed before production assignment
+    const _draft=loadClaimedKP('__draft__');
+    const _draftKeys=_draft[panelId]?_draft[panelId].keys:Array(keyCount).fill(null);
+    if(_draft[panelId]){ delete _draft[panelId]; saveClaimedKP('__draft__',_draft); }
+    c[panelId] = {userName:'',tok:'admin_'+Date.now(),keys:_draftKeys,status:'pending',activeRoom:room,submittedAt:new Date().toISOString(),submittedBy:'Admin',swaps:[]};
   } else {
     c[panelId].activeRoom = room;
   }
