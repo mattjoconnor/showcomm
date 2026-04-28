@@ -3472,6 +3472,7 @@ function saveProd(id){
 }
 
 function moveProd(id, direction){
+  toast('moveProd called: '+id+' dir:'+direction, 'info');
   const prods=Object.values(PRODUCTIONS).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
   const idx=prods.findIndex(p=>p.id===id);
   if(idx<0) return;
