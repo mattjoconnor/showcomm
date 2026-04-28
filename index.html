@@ -1173,7 +1173,7 @@ function loadGlobalOptions(){
     else { localStorage.removeItem('sc_global_opts'); saveGlobalOptions(); }
   } else { saveGlobalOptions(); }
   if(SUPA){
-    SUPA.from('global_options').select('data').eq('key','main').maybeSingle().then(function(res){
+    SUPA.from('go_options').select('data').eq('key','main').maybeSingle().then(function(res){
       if(res.error||!res.data) return;
       var s=res.data.data;
       if(s&&s.PLs){ GLOBAL_OPTIONS=s; localStorage.setItem('sc_global_opts',JSON.stringify(GLOBAL_OPTIONS)); }
@@ -1182,7 +1182,7 @@ function loadGlobalOptions(){
 }
 function saveGlobalOptions(){
   localStorage.setItem('sc_global_opts',JSON.stringify(GLOBAL_OPTIONS));
-  if(SUPA) SUPA.from('global_options').upsert({key:'main',data:GLOBAL_OPTIONS})
+  if(SUPA) SUPA.from('go_options').upsert({key:'main',data:GLOBAL_OPTIONS})
     .then(function(r){ if(r.error) console.warn('saveGlobalOptions:',r.error); });
 }
 
@@ -1221,7 +1221,7 @@ function initAdminApp(){
         if(p.new&&p.new.production_id) localStorage.setItem('sc_kp_'+p.new.production_id,JSON.stringify(p.new.data));
         if(state.view==='keypanels') renderKeypanels();
       })
-      .on('postgres_changes',{event:'*',schema:'public',table:'global_options'},()=>loadGlobalOptions())
+      .on('postgres_changes',{event:'*',schema:'public',table:'go_options'},()=>loadGlobalOptions())
       .subscribe();
   }
   const clearBtn=document.getElementById('btn-clear-filters');
