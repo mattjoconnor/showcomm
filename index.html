@@ -585,6 +585,9 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 .prod-card { cursor:default; }
 .prod-card.dragging { opacity:.4; }
 .prod-card.drag-over { border-top:2px solid var(--black); }
+.prod-drag-handle { display:flex; align-items:center; padding:0 10px 0 4px; color:rgba(0,0,0,.2); font-size:16px; cursor:grab; flex-shrink:0; user-select:none; letter-spacing:-2px; }
+.prod-drag-handle:hover { color:rgba(0,0,0,.5); }
+.prod-drag-handle:active { cursor:grabbing; }
 </style>
 </head>
 <body>
@@ -3354,13 +3357,15 @@ function renderProductions(){
     const card=document.createElement('div'); card.className='prod-card';
 
     card.innerHTML=`
-      <div class="prod-card-header" onclick="toggleProdCard('${prod.id}')">
-        <div style="flex:1;min-width:0;">
+      <div class="prod-card-header">
+        <div class="prod-drag-handle" title="Drag to reorder">&#8942;&#8942;</div>
+        <div style="flex:1;min-width:0;" onclick="toggleProdCard('${prod.id}')">
           <div class="prod-card-name">${prod.name||prod.id}</div>
           <div class="prod-card-meta"><span style="color:${crFg(prod.controlRoom)};font-weight:800;">${prod.controlRoom||''}</span>${prod.dates?' · '+prod.dates:''}${prod.beltpacks.length?' · '+prod.beltpacks[0]+'–'+prod.beltpacks[prod.beltpacks.length-1]:''}</div>
         </div>
 
-        <div class="prod-card-stats">
+        </div>
+        <div class="prod-card-stats" onclick="toggleProdCard('${prod.id}')">
           <div class="prod-stat"><div class="prod-stat-val">${total}</div><div class="prod-stat-lbl">Total</div></div>
           <div class="prod-stat"><div class="prod-stat-val">${assigned}</div><div class="prod-stat-lbl">Assigned</div></div>
           <div class="prod-stat"><div class="prod-stat-val" style="color:${pending>0?'var(--pending)':'inherit'}">${pending}</div><div class="prod-stat-lbl">Pending</div></div>
@@ -3418,16 +3423,28 @@ function renderProductions(){
           </div>
         </div>
       </div>`;
-    // Drag to reorder
-    card.draggable=true;
-    card.addEventListener('dragstart',e=>{ e.dataTransfer.setData('prodId',prod.id); card.classList.add('dragging'); });
-    card.addEventListener('dragend',()=>card.classList.remove('dragging'));
-    card.addEventListener('dragover',e=>{ e.preventDefault(); document.querySelectorAll('.prod-card').forEach(c=>c.classList.remove('drag-over')); card.classList.add('drag-over'); });
-    card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
+    // Drag handle — only the grip icon initiates drag
+    const handle=card.querySelector('.prod-drag-handle');
+    if(handle){
+      handle.draggable=true;
+      handle.addEventListener('dragstart',e=>{
+        e.dataTransfer.setData('prodId',prod.id);
+        e.dataTransfer.effectAllowed='move';
+        setTimeout(()=>card.classList.add('dragging'),0);
+      });
+      handle.addEventListener('dragend',()=>card.classList.remove('dragging'));
+    }
+    card.addEventListener('dragover',e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move';
+      document.querySelectorAll('.prod-card').forEach(c=>c.classList.remove('drag-over'));
+      card.classList.add('drag-over');
+    });
+    card.addEventListener('dragleave',e=>{
+      if(!card.contains(e.relatedTarget)) card.classList.remove('drag-over');
+    });
     card.addEventListener('drop',e=>{
       e.preventDefault(); card.classList.remove('drag-over');
       const dragId=e.dataTransfer.getData('prodId');
-      if(dragId===prod.id) return;
+      if(!dragId||dragId===prod.id) return;
       const prods=Object.values(PRODUCTIONS).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
       const fromIdx=prods.findIndex(p=>p.id===dragId);
       const toIdx=prods.findIndex(p=>p.id===prod.id);
