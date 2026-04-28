@@ -581,6 +581,10 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 .req-archive-hdr:hover { background:rgba(0,0,0,.04); }
 .req-archive-label { font-family:var(--f-mono); font-size:clamp(.55rem,.65vw,.62rem); font-weight:700; color:rgba(0,0,0,.42); letter-spacing:.1em; text-transform:uppercase; }
 .req-archive-body .req-resolved { opacity:.55; }
+
+.prod-card { cursor:default; }
+.prod-card.dragging { opacity:.4; }
+.prod-card.drag-over { border-top:2px solid var(--black); }
 </style>
 </head>
 <body>
@@ -984,6 +988,8 @@ function splitLabel(l){ if(!l||l.length<=4) return l; return l.slice(0,4)+'<br>'
 
 const ALL_BP = Array.from({length:36},(_,i)=>`WB-${String(i+1).padStart(2,'0')}`);
 
+const KP_PANELS = [{id:'NYP1 GX',name:'NYP1 GX',model:'5032',location:'PCR1',port:84},{id:'NYP1 AP',name:'NYP1 AP',model:'5032',location:'PCR1',port:85},{id:'NYP1 PRO',name:'NYP1 PRO',model:'5032',location:'PCR1',port:86},{id:'NYP1 DIR',name:'NYP1 DIR',model:'5032',location:'PCR1',port:87},{id:'NYP1 TD',name:'NYP1 TD',model:'5032',location:'PCR1',port:88},{id:'NYP1 TM1',name:'NYP1 TM1',model:'5032',location:'PCR1',port:89},{id:'NYP1 EX1',name:'NYP1 EX1',model:'5032',location:'PCR1',port:90},{id:'NYP1 TM2',name:'NYP1 TM2',model:'5032',location:'PCR1',port:91},{id:'NYP1PMPT',name:'NYP1PMPT',model:'5032',location:'PCR1',port:92},{id:'NYP1ENG1',name:'NYP1ENG1',model:'5032',location:'PCR1',port:93},{id:'NYP1ENG2',name:'NYP1ENG2',model:'5032',location:'PCR1',port:94},{id:'ACR1COMS',name:'ACR1COMS',model:'5032',location:'ACR1',port:95},{id:'ACR1 A1',name:'ACR1 A1',model:'5032',location:'ACR1',port:96},{id:'MOPSRBO1',name:'MOPSRBO1',model:'5032',location:'MOPS',port:97},{id:'MOPSRBO2',name:'MOPSRBO2',model:'5032',location:'MOPS',port:98},{id:'MOPS GFX',name:'MOPS GFX',model:'5032',location:'MOPS',port:99},{id:'MOPSFLX1',name:'MOPSFLX1',model:'5032',location:'MOPS',port:100},{id:'MOPSFLX2',name:'MOPSFLX2',model:'5032',location:'MOPS',port:101},{id:'MOPS V1',name:'MOPS V1',model:'5032',location:'MOPS',port:102},{id:'MOPSLITE',name:'MOPSLITE',model:'5032',location:'MOPS',port:103},{id:'MOPS AD',name:'MOPS AD',model:'5032',location:'MOPS',port:104},{id:'MOPSRPY1',name:'MOPSRPY1',model:'5032',location:'MOPS',port:105},{id:'MOPSRPY2',name:'MOPSRPY2',model:'5032',location:'MOPS',port:106},{id:'NYP2 FT1',name:'NYP2 FT1',model:'5032',location:'PCR2',port:122},{id:'NYP2 FT2',name:'NYP2 FT2',model:'5032',location:'PCR2',port:123},{id:'NYP2 FT3',name:'NYP2 FT3',model:'5032',location:'PCR2',port:124},{id:'NYP2 FT4',name:'NYP2 FT4',model:'5032',location:'PCR2',port:125},{id:'NYP2 BK1',name:'NYP2 BK1',model:'5032',location:'PCR2',port:126},{id:'NYP2 BK2',name:'NYP2 BK2',model:'5032',location:'PCR2',port:127},{id:'NYP2 BK3',name:'NYP2 BK3',model:'5032',location:'PCR2',port:128},{id:'NYP2 BK4',name:'NYP2 BK4',model:'5032',location:'PCR2',port:129},{id:'MFR1 TD',name:'MFR1 TD',model:'5032',location:'MFR1',port:111},{id:'MFR1 DIR',name:'MFR1 DIR',model:'4016',location:'MFR1',port:112},{id:'MFR1 PRO',name:'MFR1 PRO',model:'4016',location:'MFR1',port:113},{id:'MFR1 A1',name:'MFR1 A1',model:'4016',location:'MFR1',port:114},{id:'MFR1 TM',name:'MFR1 TM',model:'4016',location:'MFR1',port:115},{id:'MFR2 TD',name:'MFR2 TD',model:'5032',location:'MFR2',port:116},{id:'MFR2 DIR',name:'MFR2 DIR',model:'4016',location:'MFR2',port:117},{id:'MFR2 PRO',name:'MFR2 PRO',model:'4016',location:'MFR2',port:118},{id:'MFR2 A1',name:'MFR2 A1',model:'4016',location:'MFR2',port:119},{id:'MFR2 TM',name:'MFR2 TM',model:'4016',location:'MFR2',port:120},{id:'INGEST',name:'INGEST',model:'4016',location:'INGEST',port:121},{id:'KIT1',name:'KIT1',model:'5032',location:'ASST',port:81},{id:'STU',name:'STU',model:'5032',location:'ASST',port:82},{id:'2TR',name:'2TR',model:'5032',location:'ASST',port:83},{id:'ENG',name:'ENG',model:'5032',location:'ASST',port:107},{id:'CER1',name:'CER1',model:'5032',location:'ASST',port:108},{id:'CER2',name:'CER2',model:'5032',location:'ASST',port:109},{id:'LITECART',name:'LITECART',model:'5032',location:'ASST',port:110},{id:'ACR2 A1',name:'ACR2 A1',model:'5032',location:'ASST',port:130},{id:'NYP1 TAG',name:'NYP1 TAG',model:'4016',location:'ASST',port:131},{id:'FL6 RACK',name:'FL6 RACK',model:'5032',location:'ASST',port:144},{id:'ATL KP3',name:'ATL KP3',model:'5032',location:'ASST',port:227},{id:'ATL KP1',name:'ATL KP1',model:'5032',location:'ASST',port:228},{id:'ATL KP2',name:'ATL KP2',model:'5032',location:'ASST',port:229},{id:'STUAFT01',name:'STUAFT01',model:'5032',location:'ASST',port:285},{id:'STUAFT02',name:'STUAFT02',model:'5032',location:'ASST',port:286},{id:'STUAFT03',name:'STUAFT03',model:'5032',location:'ASST',port:287},{id:'STUAFT04',name:'STUAFT04',model:'5032',location:'ASST',port:288},{id:'STUABK01',name:'STUABK01',model:'5032',location:'ASST',port:301},{id:'STUABK02',name:'STUABK02',model:'5032',location:'ASST',port:302},{id:'STUABK03',name:'STUABK03',model:'5032',location:'ASST',port:303},{id:'STUABK04',name:'STUABK04',model:'5032',location:'ASST',port:304}];
+
 let PRODUCTIONS = {
   'NWS001':{ id:'NWS001', controlRoom:'PCR1', dates:'APR 17–20, 2026', startDate:'2026-04-17', endDate:'2026-04-20', status:'active', beltpacks:ALL_BP.slice(0,12),
     keypanels:[{id:'NYP1 GX',name:'NYP1 GX',model:'5032',location:'PCR1',port:84},{id:'NYP1 AP',name:'NYP1 AP',model:'5032',location:'PCR1',port:85},{id:'NYP1 PRO',name:'NYP1 PRO',model:'5032',location:'PCR1',port:86},{id:'NYP1 DIR',name:'NYP1 DIR',model:'5032',location:'PCR1',port:87},{id:'NYP1 TD',name:'NYP1 TD',model:'5032',location:'PCR1',port:88},{id:'NYP1 TM1',name:'NYP1 TM1',model:'5032',location:'PCR1',port:89},{id:'NYP1 EX1',name:'NYP1 EX1',model:'5032',location:'PCR1',port:90},{id:'NYP1 TM2',name:'NYP1 TM2',model:'5032',location:'PCR1',port:91},{id:'NYP1PMPT',name:'NYP1PMPT',model:'5032',location:'PCR1',port:92},{id:'NYP1ENG1',name:'NYP1ENG1',model:'5032',location:'PCR1',port:93},{id:'NYP1ENG2',name:'NYP1ENG2',model:'5032',location:'PCR1',port:94},{id:'ACR1COMS',name:'ACR1COMS',model:'5032',location:'ACR1',port:95},{id:'ACR1 A1',name:'ACR1 A1',model:'5032',location:'ACR1',port:96},{id:'MOPSRBO1',name:'MOPSRBO1',model:'5032',location:'MOPS',port:97},{id:'MOPSRBO2',name:'MOPSRBO2',model:'5032',location:'MOPS',port:98},{id:'MOPS GFX',name:'MOPS GFX',model:'5032',location:'MOPS',port:99},{id:'MOPSFLX1',name:'MOPSFLX1',model:'5032',location:'MOPS',port:100},{id:'MOPSFLX2',name:'MOPSFLX2',model:'5032',location:'MOPS',port:101},{id:'MOPS V1',name:'MOPS V1',model:'5032',location:'MOPS',port:102},{id:'MOPSLITE',name:'MOPSLITE',model:'5032',location:'MOPS',port:103},{id:'MOPS AD',name:'MOPS AD',model:'5032',location:'MOPS',port:104},{id:'MOPSRPY1',name:'MOPSRPY1',model:'5032',location:'MOPS',port:105},{id:'MOPSRPY2',name:'MOPSRPY2',model:'5032',location:'MOPS',port:106},{id:'NYP2 FT1',name:'NYP2 FT1',model:'5032',location:'PCR2',port:122},{id:'NYP2 FT2',name:'NYP2 FT2',model:'5032',location:'PCR2',port:123},{id:'NYP2 FT3',name:'NYP2 FT3',model:'5032',location:'PCR2',port:124},{id:'NYP2 FT4',name:'NYP2 FT4',model:'5032',location:'PCR2',port:125},{id:'NYP2 BK1',name:'NYP2 BK1',model:'5032',location:'PCR2',port:126},{id:'NYP2 BK2',name:'NYP2 BK2',model:'5032',location:'PCR2',port:127},{id:'NYP2 BK3',name:'NYP2 BK3',model:'5032',location:'PCR2',port:128},{id:'NYP2 BK4',name:'NYP2 BK4',model:'5032',location:'PCR2',port:129},{id:'MFR1 TD',name:'MFR1 TD',model:'5032',location:'MFR1',port:111},{id:'MFR1 DIR',name:'MFR1 DIR',model:'4016',location:'MFR1',port:112},{id:'MFR1 PRO',name:'MFR1 PRO',model:'4016',location:'MFR1',port:113},{id:'MFR1 A1',name:'MFR1 A1',model:'4016',location:'MFR1',port:114},{id:'MFR1 TM',name:'MFR1 TM',model:'4016',location:'MFR1',port:115},{id:'MFR2 TD',name:'MFR2 TD',model:'5032',location:'MFR2',port:116},{id:'MFR2 DIR',name:'MFR2 DIR',model:'4016',location:'MFR2',port:117},{id:'MFR2 PRO',name:'MFR2 PRO',model:'4016',location:'MFR2',port:118},{id:'MFR2 A1',name:'MFR2 A1',model:'4016',location:'MFR2',port:119},{id:'MFR2 TM',name:'MFR2 TM',model:'4016',location:'MFR2',port:120},{id:'INGEST',name:'INGEST',model:'4016',location:'INGEST',port:121},{id:'KIT1',name:'KIT1',model:'5032',location:'ASST',port:81},{id:'STU',name:'STU',model:'5032',location:'ASST',port:82},{id:'2TR',name:'2TR',model:'5032',location:'ASST',port:83},{id:'ENG',name:'ENG',model:'5032',location:'ASST',port:107},{id:'CER1',name:'CER1',model:'5032',location:'ASST',port:108},{id:'CER2',name:'CER2',model:'5032',location:'ASST',port:109},{id:'LITECART',name:'LITECART',model:'5032',location:'ASST',port:110},{id:'ACR2 A1',name:'ACR2 A1',model:'5032',location:'ASST',port:130},{id:'NYP1 TAG',name:'NYP1 TAG',model:'4016',location:'ASST',port:131},{id:'FL6 RACK',name:'FL6 RACK',model:'5032',location:'ASST',port:144},{id:'ATL KP3',name:'ATL KP3',model:'5032',location:'ASST',port:227},{id:'ATL KP1',name:'ATL KP1',model:'5032',location:'ASST',port:228},{id:'ATL KP2',name:'ATL KP2',model:'5032',location:'ASST',port:229},{id:'STUAFT01',name:'STUAFT01',model:'5032',location:'ASST',port:285},{id:'STUAFT02',name:'STUAFT02',model:'5032',location:'ASST',port:286},{id:'STUAFT03',name:'STUAFT03',model:'5032',location:'ASST',port:287},{id:'STUAFT04',name:'STUAFT04',model:'5032',location:'ASST',port:288},{id:'STUABK01',name:'STUABK01',model:'5032',location:'ASST',port:301},{id:'STUABK02',name:'STUABK02',model:'5032',location:'ASST',port:302},{id:'STUABK03',name:'STUABK03',model:'5032',location:'ASST',port:303},{id:'STUABK04',name:'STUABK04',model:'5032',location:'ASST',port:304}]
@@ -1064,12 +1070,12 @@ function saveClaimedKP(code,data){ localStorage.setItem(`sc_kp_${code}`,JSON.str
 function prodToRow(p){
   return { id:p.id, name:p.name||p.controlRoom||p.id, control_room:p.controlRoom||'', dates:p.dates||'',
     start_date:p.startDate||null, end_date:p.endDate||null, status:p.status||'active',
-    beltpacks:p.beltpacks||[], keypanels:p.keypanels||[] };
+    beltpacks:p.beltpacks||[], keypanels:p.keypanels||[], sort_order:p.sortOrder||0 };
 }
 function rowToProd(r){
   return { id:r.id, name:r.name, controlRoom:r.control_room, dates:r.dates,
     startDate:r.start_date, endDate:r.end_date, status:r.status,
-    beltpacks:r.beltpacks||[], keypanels:r.keypanels||[] };
+    beltpacks:r.beltpacks||[], keypanels:r.keypanels||[], sortOrder:r.sort_order||0 };
 }
 
 async function loadProds(){
@@ -1523,7 +1529,7 @@ function buildKpFilterPills(){
   });
 }
 
-function kpPanelMatchesFilter(panel, entry){
+function kpPanelMatchesFilter(panel, entry, prod){
   const {search, locs, rooms, statuses} = _kpFilter;
   if(search){
     const q = search.toUpperCase();
@@ -1797,7 +1803,7 @@ let _renameCb = null;
 // ─── SIDEBAR STATS ─────────────────────────────────────────────
 function updateSidebarStats(){
   let totalBP=0, totalAssigned=0, totalAvail=0, allActions=0;
-  Object.values(PRODUCTIONS).forEach(prod=>{
+  Object.values(PRODUCTIONS).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).forEach(prod=>{
     if(prod.status==='archived') return;
     const claimed=loadClaimed(prod.id);
     totalBP+=prod.beltpacks.length;
@@ -1952,73 +1958,87 @@ function buildProdPills(){
 
 function renderKeypanels(){
   buildProdPills();
-  const main = $('kp-main-content');
+  rebuildRoomProdPills();
+  const main=$('kp-main-content');
   if(!main) return;
-  main.innerHTML = '';
-  _kpActivePanel = null;
-  // Inject section header
+  main.innerHTML='';
+  _kpActivePanel=null;
+
   const _hz=$('view-header-zone');
-  if(_hz){
-    _hz.innerHTML='<div class="sec-head"><div><div class="sec-name">Keypanels</div><div class="sec-full">All Active Productions</div></div></div>';
-  }
-  const prodsWithKP = Object.values(PRODUCTIONS).filter(p=>p.status!=='archived'&&(p.keypanels||[]).length>0);
-  if(!prodsWithKP.length){
-    main.innerHTML='<div class="empty-state"><div class="empty-text">No keypanels in any active production</div></div>';
-    return;
-  }
+  if(_hz) _hz.innerHTML='<div class="sec-head"><div><div class="sec-name">Keypanels</div><div class="sec-full">All Active Productions</div></div></div>';
 
-  prodsWithKP.forEach(prod=>{
-    const claimedKP = loadClaimedKP(prod.id);
-    const kps = prod.keypanels||[];
-    const LOCS=['PCR1','ACR1','MOPS','PCR2','MFR1','MFR2','INGEST','ASST'];
-
-    LOCS.forEach(loc=>{
-      const panels = kps.filter(p=>p.location===loc&&kpPanelMatchesFilter(p, claimedKP[p.id]));
-      if(!panels.length) return;
-
-      const locKey = prod.id+'_'+loc;
-      const isLocOpen = _kpLocOpen.has(locKey);
-
-      // Section header
-      const secHdr = document.createElement('div');
-      const locColors={PCR1:crFg('PCR1'),PCR2:crFg('PCR2'),MFR1:crFg('MFR1'),MFR2:crFg('MFR2'),MOPS:'#00CC88',ACR1:'#00CCBB',INGEST:'#FFB800',ASST:'#888888'};
-      const locClr = locColors[loc]||'#888888';
-      secHdr.className = 'kp-section-hdr';
-      secHdr.style.borderLeftColor = locClr;
-      const chevEl = document.createElement('span');
-      chevEl.className = 'kp-section-chevron'+(isLocOpen?' open':'');
-      chevEl.textContent = '›';
-      const nameEl = document.createElement('span');
-      nameEl.className = 'kp-section-name';
-      nameEl.style.color = locClr;  // room color text
-      nameEl.textContent = loc;
-      const countEl = document.createElement('span');
-      countEl.className = 'kp-section-count';
-      // Count statuses
-      const pend = panels.filter(p=>claimedKP[p.id]&&claimedKP[p.id].status==='pending').length;
-      const conf = panels.filter(p=>claimedKP[p.id]&&claimedKP[p.id].status==='confirmed').length;
-      const avail = panels.length - pend - conf;
-      countEl.innerHTML = panels.length+' panels'
-        +(conf?` · <span style="color:var(--confirmed);">${conf} confirmed</span>`:'')
-        +(pend?` · <span style="color:var(--pending);">${pend} pending</span>`:'')
-        +(avail?` · <span style="color:var(--text-muted);">${avail} available</span>`:'');
-      secHdr.appendChild(chevEl); secHdr.appendChild(nameEl); secHdr.appendChild(countEl);
-      secHdr.addEventListener('click',()=>{
-        if(_kpLocOpen.has(locKey)) _kpLocOpen.delete(locKey); else _kpLocOpen.add(locKey);
-        renderKeypanels();
-      });
-      main.appendChild(secHdr);
-
-      if(!isLocOpen) return; // collapsed
-
-      // Panels
-      panels.forEach(panel=>{
-        main.appendChild(buildKpCard(panel, prod, claimedKP[panel.id]));
-      });
-      // no spacer
+  // Build panel→entry map across all active productions
+  const panelEntryMap={};
+  const panelProdMap={};
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+    const claimed=loadClaimedKP(prod.id);
+    Object.entries(claimed).forEach(([panelId,entry])=>{
+      if(!panelEntryMap[panelId]){
+        panelEntryMap[panelId]=entry;
+        panelProdMap[panelId]=prod;
+      }
     });
   });
+
+  const LOCS=['PCR1','ACR1','MOPS','PCR2','MFR1','MFR2','INGEST','ASST'];
+  let totalShown=0;
+
+  LOCS.forEach(loc=>{
+    const panels=KP_PANELS.filter(p=>{
+      if(p.location!==loc) return false;
+      const entry=panelEntryMap[p.id];
+      const prod=panelProdMap[p.id];
+      return kpPanelMatchesFilter(p,entry,prod);
+    });
+    if(!panels.length) return;
+    totalShown+=panels.length;
+
+    const locKey='loc_'+loc;
+    const isLocOpen=_kpLocOpen.has(locKey);
+
+    // Section header
+    const locColors={PCR1:crFg('PCR1'),PCR2:crFg('PCR2'),MFR1:crFg('MFR1'),MFR2:crFg('MFR2'),
+      MOPS:'#00CC88',ACR1:'#00CCBB',INGEST:'#FFB800',ASST:'#888888'};
+    const locClr=locColors[loc]||'#888888';
+    const confirmed=panels.filter(p=>panelEntryMap[p.id]&&panelEntryMap[p.id].status==='confirmed').length;
+    const pending=panels.filter(p=>panelEntryMap[p.id]&&panelEntryMap[p.id].status==='pending').length;
+    const available=panels.length-confirmed-pending;
+    const countTxt=panels.length+' panels'
+      +(confirmed?' · <span style="color:var(--green)">'+confirmed+' confirmed</span>':'')
+      +(pending?' · <span style="color:var(--amber)">'+pending+' pending</span>':'')
+      +(available?' · '+available+' available':'');
+
+    const secEl=document.createElement('div'); secEl.className='kp-section';
+    const hdrEl=document.createElement('div'); hdrEl.className='kp-section-hdr';
+    hdrEl.style.borderLeftColor=locClr;
+    hdrEl.innerHTML='<span class="kp-section-chevron'+(isLocOpen?' open':'')+'">›</span>'
+      +'<span class="kp-section-name" style="color:'+locClr+'">'+loc+'</span>'
+      +'<span class="kp-section-count">'+countTxt+'</span>';
+    hdrEl.addEventListener('click',()=>{
+      if(_kpLocOpen.has(locKey)) _kpLocOpen.delete(locKey); else _kpLocOpen.add(locKey);
+      renderKeypanels();
+    });
+
+    const bodyEl=document.createElement('div'); bodyEl.className='kp-section-body'+(isLocOpen?' open':'');
+
+    if(isLocOpen){
+      panels.forEach(panel=>{
+        const entry=panelEntryMap[panel.id]||null;
+        const prod=panelProdMap[panel.id]||null;
+        const card=buildKpCard(panel,prod,entry);
+        if(card) bodyEl.appendChild(card);
+      });
+    }
+
+    secEl.appendChild(hdrEl); secEl.appendChild(bodyEl);
+    main.appendChild(secEl);
+  });
+
+  if(!totalShown){
+    main.innerHTML='<div class="empty-state"><div class="empty-text">No keypanels match the current filter</div></div>';
+  }
 }
+
 
 function buildKpCard(panel, prod, entry){
   const cardKey = prod.id+'_'+panel.id;
@@ -3398,6 +3418,25 @@ function renderProductions(){
           </div>
         </div>
       </div>`;
+    // Drag to reorder
+    card.draggable=true;
+    card.addEventListener('dragstart',e=>{ e.dataTransfer.setData('prodId',prod.id); card.classList.add('dragging'); });
+    card.addEventListener('dragend',()=>card.classList.remove('dragging'));
+    card.addEventListener('dragover',e=>{ e.preventDefault(); document.querySelectorAll('.prod-card').forEach(c=>c.classList.remove('drag-over')); card.classList.add('drag-over'); });
+    card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
+    card.addEventListener('drop',e=>{
+      e.preventDefault(); card.classList.remove('drag-over');
+      const dragId=e.dataTransfer.getData('prodId');
+      if(dragId===prod.id) return;
+      const prods=Object.values(PRODUCTIONS).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+      const fromIdx=prods.findIndex(p=>p.id===dragId);
+      const toIdx=prods.findIndex(p=>p.id===prod.id);
+      if(fromIdx<0||toIdx<0) return;
+      const moved=prods.splice(fromIdx,1)[0];
+      prods.splice(toIdx,0,moved);
+      prods.forEach((p,i)=>{ PRODUCTIONS[p.id].sortOrder=i; });
+      saveProds(); renderProductions();
+    });
     list.appendChild(card);
   });
 }
