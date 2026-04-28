@@ -1086,6 +1086,7 @@ async function loadProds(){
   const {data,error}=await SUPA.from('productions').select('*');
   if(error){ console.warn('loadProds:',error); return; }
   if(data && data.length>0){
+    if(_blockProdReload){ console.log('[loadProds] blocked — local changes in flight'); return; }
     PRODUCTIONS={};
     data.forEach(r=>{ PRODUCTIONS[r.id]=rowToProd(r); });
     localStorage.setItem('sc_admin_prods',JSON.stringify(PRODUCTIONS));
@@ -2043,7 +2044,7 @@ function renderKeypanels(){
 
 
 function buildKpCard(panel, prod, entry){
-  const cardKey = prod.id+'_'+panel.id;
+  const cardKey = prod?(prod.id+'_'+panel.id):('avail_'+panel.id.replace(/\s/g,'_'));
   const isOpen  = _kpCardOpen.has(cardKey);
   const status  = !entry?'available': entry.status==='confirmed'?'confirmed':'pending';
 
@@ -2088,7 +2089,7 @@ function buildKpCard(panel, prod, entry){
   hdr.appendChild(chev);
   hdr.addEventListener('click',function(){
     if(_kpCardOpen.has(cardKey)) _kpCardOpen.delete(cardKey); else _kpCardOpen.add(cardKey);
-    refreshKpCard(panel.id, prod.id);
+    if(prod) refreshKpCard(panel.id, prod.id);
   });
   _kpIn.appendChild(hdr);
 
@@ -2214,7 +2215,7 @@ function buildKpCard(panel, prod, entry){
     const setBtn=document.createElement('button');
     setBtn.className='act-out';
     setBtn.textContent='Select Production';
-    setBtn.addEventListener('click',()=>openKpRoomModal(panel.id,prod.id));
+    setBtn.addEventListener('click',()=>openKpRoomModal(panel.id,prod?prod.id:''));
     actBar.appendChild(setBtn);
   }
   body.appendChild(actBar);
@@ -3474,19 +3475,15 @@ function saveProd(id){
 function moveProd(id, direction){
   const prods=Object.values(PRODUCTIONS).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
   const idx=prods.findIndex(p=>p.id===id);
-  toast('moveProd: idx='+idx+' newIdx='+(idx+direction)+' total='+prods.length, 'info');
   if(idx<0) return;
   const newIdx=idx+direction;
-  if(newIdx<0||newIdx>=prods.length){ toast('At boundary, cannot move', 'pending'); return; }
+  if(newIdx<0||newIdx>=prods.length) return;
   const tmp=prods[newIdx]; prods[newIdx]=prods[idx]; prods[idx]=tmp;
   prods.forEach((p,i)=>{ PRODUCTIONS[p.id].sortOrder=i; });
-  const newOrder=prods.map(p=>p.id.slice(-4)).join(',');
-  toast('New order: '+newOrder, 'pending');
   _blockProdReload=true;
   saveProds();
   renderProductions();
-  toast('renderProductions called', 'success');
-  setTimeout(()=>{ _blockProdReload=false; }, 3000);
+  setTimeout(()=>{ _blockProdReload=false; }, 5000);
 }
 
 function archiveProd(id){
