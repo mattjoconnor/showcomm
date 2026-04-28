@@ -277,8 +277,8 @@ body { background:var(--bg); color:var(--black); }
 .bp-action-row .act-co:hover { background:var(--green); color:#fff; border-color:var(--green); }
 .bp-action-row .act-out { background:transparent; color:rgba(0,0,0,.58); border:1px solid rgba(0,0,0,.3); }
 .bp-action-row .act-out:hover { border-color:var(--black); color:var(--black); }
-.bp-action-row .act-dng { background:transparent; color:rgba(180,28,28,.55); border:none; }
-.bp-action-row .act-dng:hover { color:var(--red); }
+.bp-action-row .act-dng { background:transparent; color:var(--red); border:1px solid rgba(200,28,28,.35); margin-left:auto!important; }
+.bp-action-row .act-dng:hover { background:var(--red); color:#fff; border-color:var(--red); }
 .bp-action-row .btn-assign { background:var(--black); color:#fff; border:none; }
 .bp-action-row .btn-assign:hover { background:var(--green); }
 .conflict-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; background:rgba(192,120,24,.1); color:var(--amber); border:1px solid rgba(192,120,24,.3); }
@@ -2185,7 +2185,10 @@ function buildKpCard(panel, prod, entry){
         brk.style.cssText='width:8px;border-left:2px solid rgba(0,0,0,0.08);';
         rowEl.appendChild(brk);
       }
-      const k=entry?entry.keys[i]:null;
+      // Load draft keys when no prod/entry
+      var _draftBp=null;
+      if(!entry&&!prod){ var _dc=loadClaimed('__bpdraft__'); if(_dc[bp]) _draftBp=_dc[bp]; }
+      const k=entry?entry.keys[i]:(_draftBp?_draftBp.keys[i]:null);
       const nk=normKey(k);
       const cat=nk?nk.category:'', lbl=nk?nk.label:'';
 
@@ -2466,10 +2469,15 @@ function adminRenameKP(panelId, code){
 
 // BP key assignment using same pool modal as KP
 function openBpKeyModal(bp, code, keyIndex){
-  // Ensure entry exists
   const c=loadClaimed(code);
   if(!c[bp]){
-    toast('Assign beltpack first','danger'); return;
+    if(code==='__bpdraft__'){
+      // Create draft entry
+      c[bp]={userName:'',keys:[null,null,null,null],status:'pending',controlRoom:''};
+      saveClaimed('__bpdraft__',c);
+    } else {
+      toast('Assign beltpack first','danger'); return;
+    }
   }
   // Reuse KP pool modal with bp context
   _poolModalState={panelId:'__bp__'+bp, prodId:code, keyIndex, activeCats:new Set(['PLs','IFBs','KPs','BPs']),
@@ -2582,7 +2590,13 @@ document.addEventListener('click',function(e){
   if(act==='assign') openAssignModal(bp2,code2);
   else if(act==='warnassign') warnAssign(bp2,code2,btn.dataset.conflict);
   else if(act==='confirm') quickConfirm(bp2,code2);
-  else if(act==='clear') adminClearBP(bp2,code2);
+  else if(act==='clear'){
+    if(code2==='__bpdraft__'){
+      adminConfirm('Clear Draft Keys', bp2, 'All programmed keys will be removed.', 'Clear', function(){
+        var _d=loadClaimed('__bpdraft__'); delete _d[bp2]; saveClaimed('__bpdraft__',_d); renderAllBeltpacks();
+      });
+    } else { adminClearBP(bp2,code2); }
+  }
   else if(act==='rename') adminRenameBP(bp2,code2);
   else if(act==='room') openBpRoomPicker(bp2,code2);
   else if(act==='keyslot'&&!isNaN(ki)) openBpKeyModal(bp2,code2,ki);
@@ -2667,9 +2681,13 @@ function renderBpCards(bpToProd){
     // Row 3 — key slots always rendered; hidden placeholder for available cards
     // Always show key grid — click to assign if no entry yet
     const keySlots=Array.from({length:4},function(_,i){
-      const k=entry?entry.keys[i]:null;
+      // Load draft keys when no prod/entry
+      var _draftBp=null;
+      if(!entry&&!prod){ var _dc=loadClaimed('__bpdraft__'); if(_dc[bp]) _draftBp=_dc[bp]; }
+      const k=entry?entry.keys[i]:(_draftBp?_draftBp.keys[i]:null);
       const nk=normKey(k);
-      const _da=prod?(' data-action="keyslot" data-bp="'+bp+'" data-code="'+prod.id+'" data-ki="'+i+'"'):'';
+      const _bpCode=prod?prod.id:'__bpdraft__';
+      const _da=' data-action="keyslot" data-bp="'+bp+'" data-code="'+_bpCode+'" data-ki="'+i+'"';
       if(nk&&nk.label){
         const opt=findOpt(nk.category,nk.label);
         const bg=opt?rgbStr(optBgRgb(opt)):'#222';
@@ -2689,7 +2707,9 @@ function renderBpCards(bpToProd){
     else if(!entry&&prod&&conflict) action='<button class="btn-assign" style="background:var(--amber);color:#fff;" data-action="warnassign" data-bp="'+bp+'" data-code="'+prod.id+'" data-conflict="'+conflict.id+'">Assign Anyway</button>';
     else if(entry&&entry.status==='pending'&&!hasPendingSwap) action='<button class="act-co" data-action="confirm" data-bp="'+bp+'" data-code="'+prod.id+'">Confirm</button>';
     const _pid=prod?prod.id:'';
-    const clearBtn=entry&&prod?'<button class="act-dng" data-action="clear" data-bp="'+bp+'" data-code="'+_pid+'">Clear</button>':'';
+    // Show clear if entry assigned, OR if draft keys exist
+    const _bpHasDraft=(function(){ var _d=loadClaimed('__bpdraft__'); return _d[bp]&&_d[bp].keys.some(function(k){return k;}); })();
+    const clearBtn=(entry&&prod)||_bpHasDraft?'<button class="act-dng" data-action="clear" data-bp="'+bp+'" data-code="'+(_bpHasDraft&&!prod?'__bpdraft__':_pid)+'">Clear</button>':''
     const renBtn=entry&&prod?'<button class="act-out" data-action="rename" data-bp="'+bp+'" data-code="'+_pid+'">Rename</button>':'';
     const _bpProdLabel=prod?prodLabel(prod):'';
     const _bpProdClr=prod?(crFg(prod.controlRoom)||'rgba(0,0,0,.35)'):'rgba(0,0,0,.35)';
@@ -2814,9 +2834,13 @@ $('btn-do-assign').addEventListener('click',()=>{
     :_assignRoom;
   const code=state.pendingAssignCode, bp=state.pendingAssignBP;
   const c=loadClaimed(code), now=new Date().toISOString();
+  // Merge draft keys if pre-programmed before assign
+  const _bdraft=loadClaimed('__bpdraft__');
+  const _draftKeys=_bdraft[bp]&&_bdraft[bp].keys.some(k=>k)?_bdraft[bp].keys:[null,null,null,null];
+  if(_bdraft[bp]){ delete _bdraft[bp]; saveClaimed('__bpdraft__',_bdraft); }
   c[bp]={userName:name,deviceToken:'__admin_'+Date.now()+'__',status:'pending',
     submittedAt:now,adminNote:'',swapRequests:[],
-    keys:[null,null,null,null],controlRoom:finalRoom||''};
+    keys:_draftKeys,controlRoom:finalRoom||''};
   saveClaimed(code,c);
   $('modal-overlay-assign').classList.remove('active');
   toast(bp+' → '+name+(finalRoom?' / '+finalRoom:''),'success');
