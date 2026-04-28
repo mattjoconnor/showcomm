@@ -3472,18 +3472,20 @@ function saveProd(id){
 }
 
 function moveProd(id, direction){
-  toast('moveProd called: '+id+' dir:'+direction, 'info');
   const prods=Object.values(PRODUCTIONS).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
   const idx=prods.findIndex(p=>p.id===id);
+  toast('moveProd: idx='+idx+' newIdx='+(idx+direction)+' total='+prods.length, 'info');
   if(idx<0) return;
   const newIdx=idx+direction;
-  if(newIdx<0||newIdx>=prods.length) return;
+  if(newIdx<0||newIdx>=prods.length){ toast('At boundary, cannot move', 'pending'); return; }
   const tmp=prods[newIdx]; prods[newIdx]=prods[idx]; prods[idx]=tmp;
   prods.forEach((p,i)=>{ PRODUCTIONS[p.id].sortOrder=i; });
-  // Block real-time reload while saving so it doesn't overwrite our sort change
+  const newOrder=prods.map(p=>p.id.slice(-4)).join(',');
+  toast('New order: '+newOrder, 'pending');
   _blockProdReload=true;
   saveProds();
   renderProductions();
+  toast('renderProductions called', 'success');
   setTimeout(()=>{ _blockProdReload=false; }, 3000);
 }
 
