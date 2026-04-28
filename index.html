@@ -2187,7 +2187,7 @@ function buildKpCard(panel, prod, entry){
       }
       // Load draft keys when no prod/entry
       var _draftBp=null;
-      if(!entry&&!prod){ var _dc=loadClaimed('__bpdraft__'); if(_dc[panel.id]) _draftBp=_dc[panel.id]; }
+      if(!entry&&!prod){ var _dc=loadClaimed('__bpdraft__'); if(_dc[bp]) _draftBp=_dc[bp]; }
       const k=entry?entry.keys[i]:(_draftBp?_draftBp.keys[i]:null);
       const nk=normKey(k);
       const cat=nk?nk.category:'', lbl=nk?nk.label:'';
@@ -2680,7 +2680,7 @@ function renderBpCards(bpToProd){
     const keySlots=Array.from({length:4},function(_,i){
       // Load draft keys when no prod/entry
       var _draftBp=null;
-      if(!entry&&!prod){ var _dc=loadClaimed('__bpdraft__'); if(_dc[panel.id]) _draftBp=_dc[panel.id]; }
+      if(!entry&&!prod){ var _dc=loadClaimed('__bpdraft__'); if(_dc[bp]) _draftBp=_dc[bp]; }
       const k=entry?entry.keys[i]:(_draftBp?_draftBp.keys[i]:null);
       const nk=normKey(k);
       const _bpCode=prod?prod.id:'__bpdraft__';
