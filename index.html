@@ -989,11 +989,11 @@ function splitLabel(l){ if(!l||l.length<=4) return l; return l.slice(0,4)+'<br>'
 
 const ALL_BP = Array.from({length:36},(_,i)=>`WB-${String(i+1).padStart(2,'0')}`);
 
-const KP_PANELS = [{id:'NYP1 GX',name:'NYP1 GX',model:'5032',location:'PCR1',port:84},{id:'NYP1 AP',name:'NYP1 AP',model:'5032',location:'PCR1',port:85},{id:'NYP1 PRO',name:'NYP1 PRO',model:'5032',location:'PCR1',port:86},{id:'NYP1 DIR',name:'NYP1 DIR',model:'5032',location:'PCR1',port:87},{id:'NYP1 TD',name:'NYP1 TD',model:'5032',location:'PCR1',port:88},{id:'NYP1 TM1',name:'NYP1 TM1',model:'5032',location:'PCR1',port:89},{id:'NYP1 EX1',name:'NYP1 EX1',model:'5032',location:'PCR1',port:90},{id:'NYP1 TM2',name:'NYP1 TM2',model:'5032',location:'PCR1',port:91},{id:'NYP1PMPT',name:'NYP1PMPT',model:'5032',location:'PCR1',port:92},{id:'NYP1ENG1',name:'NYP1ENG1',model:'5032',location:'PCR1',port:93},{id:'NYP1ENG2',name:'NYP1ENG2',model:'5032',location:'PCR1',port:94},{id:'ACR1COMS',name:'ACR1COMS',model:'5032',location:'ACR1',port:95},{id:'ACR1 A1',name:'ACR1 A1',model:'5032',location:'ACR1',port:96},{id:'MOPSRBO1',name:'MOPSRBO1',model:'5032',location:'MOPS',port:97},{id:'MOPSRBO2',name:'MOPSRBO2',model:'5032',location:'MOPS',port:98},{id:'MOPS GFX',name:'MOPS GFX',model:'5032',location:'MOPS',port:99},{id:'MOPSFLX1',name:'MOPSFLX1',model:'5032',location:'MOPS',port:100},{id:'MOPSFLX2',name:'MOPSFLX2',model:'5032',location:'MOPS',port:101},{id:'MOPS V1',name:'MOPS V1',model:'5032',location:'MOPS',port:102},{id:'MOPSLITE',name:'MOPSLITE',model:'5032',location:'MOPS',port:103},{id:'MOPS AD',name:'MOPS AD',model:'5032',location:'MOPS',port:104},{id:'MOPSRPY1',name:'MOPSRPY1',model:'5032',location:'MOPS',port:105},{id:'MOPSRPY2',name:'MOPSRPY2',model:'5032',location:'MOPS',port:106},{id:'NYP2 FT1',name:'NYP2 FT1',model:'5032',location:'PCR2',port:122},{id:'NYP2 FT2',name:'NYP2 FT2',model:'5032',location:'PCR2',port:123},{id:'NYP2 FT3',name:'NYP2 FT3',model:'5032',location:'PCR2',port:124},{id:'NYP2 FT4',name:'NYP2 FT4',model:'5032',location:'PCR2',port:125},{id:'NYP2 BK1',name:'NYP2 BK1',model:'5032',location:'PCR2',port:126},{id:'NYP2 BK2',name:'NYP2 BK2',model:'5032',location:'PCR2',port:127},{id:'NYP2 BK3',name:'NYP2 BK3',model:'5032',location:'PCR2',port:128},{id:'NYP2 BK4',name:'NYP2 BK4',model:'5032',location:'PCR2',port:129},{id:'MFR1 TD',name:'MFR1 TD',model:'5032',location:'MFR1',port:111},{id:'MFR1 DIR',name:'MFR1 DIR',model:'4016',location:'MFR1',port:112},{id:'MFR1 PRO',name:'MFR1 PRO',model:'4016',location:'MFR1',port:113},{id:'MFR1 A1',name:'MFR1 A1',model:'4016',location:'MFR1',port:114},{id:'MFR1 TM',name:'MFR1 TM',model:'4016',location:'MFR1',port:115},{id:'MFR2 TD',name:'MFR2 TD',model:'5032',location:'MFR2',port:116},{id:'MFR2 DIR',name:'MFR2 DIR',model:'4016',location:'MFR2',port:117},{id:'MFR2 PRO',name:'MFR2 PRO',model:'4016',location:'MFR2',port:118},{id:'MFR2 A1',name:'MFR2 A1',model:'4016',location:'MFR2',port:119},{id:'MFR2 TM',name:'MFR2 TM',model:'4016',location:'MFR2',port:120},{id:'INGEST',name:'INGEST',model:'4016',location:'INGEST',port:121},{id:'KIT1',name:'KIT1',model:'5032',location:'ASST',port:81},{id:'STU',name:'STU',model:'5032',location:'ASST',port:82},{id:'2TR',name:'2TR',model:'5032',location:'ASST',port:83},{id:'ENG',name:'ENG',model:'5032',location:'ASST',port:107},{id:'CER1',name:'CER1',model:'5032',location:'ASST',port:108},{id:'CER2',name:'CER2',model:'5032',location:'ASST',port:109},{id:'LITECART',name:'LITECART',model:'5032',location:'ASST',port:110},{id:'ACR2 A1',name:'ACR2 A1',model:'5032',location:'ASST',port:130},{id:'NYP1 TAG',name:'NYP1 TAG',model:'4016',location:'ASST',port:131},{id:'FL6 RACK',name:'FL6 RACK',model:'5032',location:'ASST',port:144},{id:'ATL KP3',name:'ATL KP3',model:'5032',location:'ASST',port:227},{id:'ATL KP1',name:'ATL KP1',model:'5032',location:'ASST',port:228},{id:'ATL KP2',name:'ATL KP2',model:'5032',location:'ASST',port:229},{id:'STUAFT01',name:'STUAFT01',model:'5032',location:'ASST',port:285},{id:'STUAFT02',name:'STUAFT02',model:'5032',location:'ASST',port:286},{id:'STUAFT03',name:'STUAFT03',model:'5032',location:'ASST',port:287},{id:'STUAFT04',name:'STUAFT04',model:'5032',location:'ASST',port:288},{id:'STUABK01',name:'STUABK01',model:'5032',location:'ASST',port:301},{id:'STUABK02',name:'STUABK02',model:'5032',location:'ASST',port:302},{id:'STUABK03',name:'STUABK03',model:'5032',location:'ASST',port:303},{id:'STUABK04',name:'STUABK04',model:'5032',location:'ASST',port:304}];
+const KP_PANELS = [{id:'NYP1 GX',name:'NYP1 GX',model:'5032',location:'PCR1',port:84},{id:'NYP1 AP',name:'NYP1 AP',model:'5032',location:'PCR1',port:85},{id:'NYP1 PRO',name:'NYP1 PRO',model:'5032',location:'PCR1',port:86},{id:'NYP1 DIR',name:'NYP1 DIR',model:'5032',location:'PCR1',port:87},{id:'NYP1 TD',name:'NYP1 TD',model:'5032',location:'PCR1',port:88},{id:'NYP1 TM1',name:'NYP1 TM1',model:'5032',location:'PCR1',port:89},{id:'NYP1 EX1',name:'NYP1 EX1',model:'5032',location:'PCR1',port:90},{id:'NYP1 TM2',name:'NYP1 TM2',model:'5032',location:'PCR1',port:91},{id:'NYP1PMPT',name:'NYP1PMPT',model:'5032',location:'PCR1',port:92},{id:'NYP1ENG1',name:'NYP1ENG1',model:'5032',location:'PCR1',port:93},{id:'NYP1ENG2',name:'NYP1ENG2',model:'5032',location:'PCR1',port:94},{id:'ACR1COMS',name:'ACR1COMS',model:'5032',location:'ACR1',port:95},{id:'ACR1 A1',name:'ACR1 A1',model:'5032',location:'ACR1',port:96},{id:'MOPSRBO1',name:'MOPSRBO1',model:'5032',location:'MOPS',port:97},{id:'MOPSRBO2',name:'MOPSRBO2',model:'5032',location:'MOPS',port:98},{id:'MOPS GFX',name:'MOPS GFX',model:'5032',location:'MOPS',port:99},{id:'MOPSFLX1',name:'MOPSFLX1',model:'5032',location:'MOPS',port:100},{id:'MOPSFLX2',name:'MOPSFLX2',model:'5032',location:'MOPS',port:101},{id:'MOPS V1',name:'MOPS V1',model:'5032',location:'MOPS',port:102},{id:'MOPSLITE',name:'MOPSLITE',model:'5032',location:'MOPS',port:103},{id:'MOPS AD',name:'MOPS AD',model:'5032',location:'MOPS',port:104},{id:'MOPSRPY1',name:'MOPSRPY1',model:'5032',location:'MOPS',port:105},{id:'MOPSRPY2',name:'MOPSRPY2',model:'5032',location:'MOPS',port:106},{id:'NYP2 FT1',name:'NYP2 FT1',model:'5032',location:'PCR2',port:122},{id:'NYP2 FT2',name:'NYP2 FT2',model:'5032',location:'PCR2',port:123},{id:'NYP2 FT3',name:'NYP2 FT3',model:'5032',location:'PCR2',port:124},{id:'NYP2 FT4',name:'NYP2 FT4',model:'5032',location:'PCR2',port:125},{id:'NYP2 BK1',name:'NYP2 BK1',model:'5032',location:'PCR2',port:126},{id:'NYP2 BK2',name:'NYP2 BK2',model:'5032',location:'PCR2',port:127},{id:'NYP2 BK3',name:'NYP2 BK3',model:'5032',location:'PCR2',port:128},{id:'NYP2 BK4',name:'NYP2 BK4',model:'5032',location:'PCR2',port:129},{id:'MFR1 TD',name:'MFR1 TD',model:'5032',location:'MFR1',port:111},{id:'MFR1 DIR',name:'MFR1 DIR',model:'4016',location:'MFR1',port:112},{id:'MFR1 PRO',name:'MFR1 PRO',model:'4016',location:'MFR1',port:113},{id:'MFR1 A1',name:'MFR1 A1',model:'4016',location:'MFR1',port:114},{id:'MFR1 TM',name:'MFR1 TM',model:'4016',location:'MFR1',port:115},{id:'MFR2 TD',name:'MFR2 TD',model:'5032',location:'MFR2',port:116},{id:'MFR2 DIR',name:'MFR2 DIR',model:'4016',location:'MFR2',port:117},{id:'MFR2 PRO',name:'MFR2 PRO',model:'4016',location:'MFR2',port:118},{id:'MFR2 A1',name:'MFR2 A1',model:'4016',location:'MFR2',port:119},{id:'MFR2 TM',name:'MFR2 TM',model:'4016',location:'MFR2',port:120},{id:'INGEST',name:'INGEST',model:'5032',location:'INGEST',port:121},{id:'KIT1',name:'KIT1',model:'5032',location:'ASST',port:81},{id:'STU',name:'STU',model:'5032',location:'ASST',port:82},{id:'2TR',name:'2TR',model:'5032',location:'ASST',port:83},{id:'ENG',name:'ENG',model:'5032',location:'ASST',port:107},{id:'CER1',name:'CER1',model:'5032',location:'ASST',port:108},{id:'CER2',name:'CER2',model:'5032',location:'ASST',port:109},{id:'LITECART',name:'LITECART',model:'5032',location:'ASST',port:110},{id:'ACR2 A1',name:'ACR2 A1',model:'5032',location:'ASST',port:130},{id:'NYP1 TAG',name:'NYP1 TAG',model:'4016',location:'ASST',port:131},{id:'FL6 RACK',name:'FL6 RACK',model:'5032',location:'ASST',port:144},{id:'ATL KP3',name:'ATL KP3',model:'5032',location:'ASST',port:227},{id:'ATL KP1',name:'ATL KP1',model:'5032',location:'ASST',port:228},{id:'ATL KP2',name:'ATL KP2',model:'5032',location:'ASST',port:229},{id:'STUAFT01',name:'STUAFT01',model:'5032',location:'ASST',port:285},{id:'STUAFT02',name:'STUAFT02',model:'5032',location:'ASST',port:286},{id:'STUAFT03',name:'STUAFT03',model:'5032',location:'ASST',port:287},{id:'STUAFT04',name:'STUAFT04',model:'5032',location:'ASST',port:288},{id:'STUABK01',name:'STUABK01',model:'5032',location:'ASST',port:301},{id:'STUABK02',name:'STUABK02',model:'5032',location:'ASST',port:302},{id:'STUABK03',name:'STUABK03',model:'5032',location:'ASST',port:303},{id:'STUABK04',name:'STUABK04',model:'5032',location:'ASST',port:304}];
 
 let PRODUCTIONS = {
   'NWS001':{ id:'NWS001', controlRoom:'PCR1', dates:'APR 17–20, 2026', startDate:'2026-04-17', endDate:'2026-04-20', status:'active', beltpacks:ALL_BP.slice(0,12),
-    keypanels:[{id:'NYP1 GX',name:'NYP1 GX',model:'5032',location:'PCR1',port:84},{id:'NYP1 AP',name:'NYP1 AP',model:'5032',location:'PCR1',port:85},{id:'NYP1 PRO',name:'NYP1 PRO',model:'5032',location:'PCR1',port:86},{id:'NYP1 DIR',name:'NYP1 DIR',model:'5032',location:'PCR1',port:87},{id:'NYP1 TD',name:'NYP1 TD',model:'5032',location:'PCR1',port:88},{id:'NYP1 TM1',name:'NYP1 TM1',model:'5032',location:'PCR1',port:89},{id:'NYP1 EX1',name:'NYP1 EX1',model:'5032',location:'PCR1',port:90},{id:'NYP1 TM2',name:'NYP1 TM2',model:'5032',location:'PCR1',port:91},{id:'NYP1PMPT',name:'NYP1PMPT',model:'5032',location:'PCR1',port:92},{id:'NYP1ENG1',name:'NYP1ENG1',model:'5032',location:'PCR1',port:93},{id:'NYP1ENG2',name:'NYP1ENG2',model:'5032',location:'PCR1',port:94},{id:'ACR1COMS',name:'ACR1COMS',model:'5032',location:'ACR1',port:95},{id:'ACR1 A1',name:'ACR1 A1',model:'5032',location:'ACR1',port:96},{id:'MOPSRBO1',name:'MOPSRBO1',model:'5032',location:'MOPS',port:97},{id:'MOPSRBO2',name:'MOPSRBO2',model:'5032',location:'MOPS',port:98},{id:'MOPS GFX',name:'MOPS GFX',model:'5032',location:'MOPS',port:99},{id:'MOPSFLX1',name:'MOPSFLX1',model:'5032',location:'MOPS',port:100},{id:'MOPSFLX2',name:'MOPSFLX2',model:'5032',location:'MOPS',port:101},{id:'MOPS V1',name:'MOPS V1',model:'5032',location:'MOPS',port:102},{id:'MOPSLITE',name:'MOPSLITE',model:'5032',location:'MOPS',port:103},{id:'MOPS AD',name:'MOPS AD',model:'5032',location:'MOPS',port:104},{id:'MOPSRPY1',name:'MOPSRPY1',model:'5032',location:'MOPS',port:105},{id:'MOPSRPY2',name:'MOPSRPY2',model:'5032',location:'MOPS',port:106},{id:'NYP2 FT1',name:'NYP2 FT1',model:'5032',location:'PCR2',port:122},{id:'NYP2 FT2',name:'NYP2 FT2',model:'5032',location:'PCR2',port:123},{id:'NYP2 FT3',name:'NYP2 FT3',model:'5032',location:'PCR2',port:124},{id:'NYP2 FT4',name:'NYP2 FT4',model:'5032',location:'PCR2',port:125},{id:'NYP2 BK1',name:'NYP2 BK1',model:'5032',location:'PCR2',port:126},{id:'NYP2 BK2',name:'NYP2 BK2',model:'5032',location:'PCR2',port:127},{id:'NYP2 BK3',name:'NYP2 BK3',model:'5032',location:'PCR2',port:128},{id:'NYP2 BK4',name:'NYP2 BK4',model:'5032',location:'PCR2',port:129},{id:'MFR1 TD',name:'MFR1 TD',model:'5032',location:'MFR1',port:111},{id:'MFR1 DIR',name:'MFR1 DIR',model:'4016',location:'MFR1',port:112},{id:'MFR1 PRO',name:'MFR1 PRO',model:'4016',location:'MFR1',port:113},{id:'MFR1 A1',name:'MFR1 A1',model:'4016',location:'MFR1',port:114},{id:'MFR1 TM',name:'MFR1 TM',model:'4016',location:'MFR1',port:115},{id:'MFR2 TD',name:'MFR2 TD',model:'5032',location:'MFR2',port:116},{id:'MFR2 DIR',name:'MFR2 DIR',model:'4016',location:'MFR2',port:117},{id:'MFR2 PRO',name:'MFR2 PRO',model:'4016',location:'MFR2',port:118},{id:'MFR2 A1',name:'MFR2 A1',model:'4016',location:'MFR2',port:119},{id:'MFR2 TM',name:'MFR2 TM',model:'4016',location:'MFR2',port:120},{id:'INGEST',name:'INGEST',model:'4016',location:'INGEST',port:121},{id:'KIT1',name:'KIT1',model:'5032',location:'ASST',port:81},{id:'STU',name:'STU',model:'5032',location:'ASST',port:82},{id:'2TR',name:'2TR',model:'5032',location:'ASST',port:83},{id:'ENG',name:'ENG',model:'5032',location:'ASST',port:107},{id:'CER1',name:'CER1',model:'5032',location:'ASST',port:108},{id:'CER2',name:'CER2',model:'5032',location:'ASST',port:109},{id:'LITECART',name:'LITECART',model:'5032',location:'ASST',port:110},{id:'ACR2 A1',name:'ACR2 A1',model:'5032',location:'ASST',port:130},{id:'NYP1 TAG',name:'NYP1 TAG',model:'4016',location:'ASST',port:131},{id:'FL6 RACK',name:'FL6 RACK',model:'5032',location:'ASST',port:144},{id:'ATL KP3',name:'ATL KP3',model:'5032',location:'ASST',port:227},{id:'ATL KP1',name:'ATL KP1',model:'5032',location:'ASST',port:228},{id:'ATL KP2',name:'ATL KP2',model:'5032',location:'ASST',port:229},{id:'STUAFT01',name:'STUAFT01',model:'5032',location:'ASST',port:285},{id:'STUAFT02',name:'STUAFT02',model:'5032',location:'ASST',port:286},{id:'STUAFT03',name:'STUAFT03',model:'5032',location:'ASST',port:287},{id:'STUAFT04',name:'STUAFT04',model:'5032',location:'ASST',port:288},{id:'STUABK01',name:'STUABK01',model:'5032',location:'ASST',port:301},{id:'STUABK02',name:'STUABK02',model:'5032',location:'ASST',port:302},{id:'STUABK03',name:'STUABK03',model:'5032',location:'ASST',port:303},{id:'STUABK04',name:'STUABK04',model:'5032',location:'ASST',port:304}]
+    keypanels:[{id:'NYP1 GX',name:'NYP1 GX',model:'5032',location:'PCR1',port:84},{id:'NYP1 AP',name:'NYP1 AP',model:'5032',location:'PCR1',port:85},{id:'NYP1 PRO',name:'NYP1 PRO',model:'5032',location:'PCR1',port:86},{id:'NYP1 DIR',name:'NYP1 DIR',model:'5032',location:'PCR1',port:87},{id:'NYP1 TD',name:'NYP1 TD',model:'5032',location:'PCR1',port:88},{id:'NYP1 TM1',name:'NYP1 TM1',model:'5032',location:'PCR1',port:89},{id:'NYP1 EX1',name:'NYP1 EX1',model:'5032',location:'PCR1',port:90},{id:'NYP1 TM2',name:'NYP1 TM2',model:'5032',location:'PCR1',port:91},{id:'NYP1PMPT',name:'NYP1PMPT',model:'5032',location:'PCR1',port:92},{id:'NYP1ENG1',name:'NYP1ENG1',model:'5032',location:'PCR1',port:93},{id:'NYP1ENG2',name:'NYP1ENG2',model:'5032',location:'PCR1',port:94},{id:'ACR1COMS',name:'ACR1COMS',model:'5032',location:'ACR1',port:95},{id:'ACR1 A1',name:'ACR1 A1',model:'5032',location:'ACR1',port:96},{id:'MOPSRBO1',name:'MOPSRBO1',model:'5032',location:'MOPS',port:97},{id:'MOPSRBO2',name:'MOPSRBO2',model:'5032',location:'MOPS',port:98},{id:'MOPS GFX',name:'MOPS GFX',model:'5032',location:'MOPS',port:99},{id:'MOPSFLX1',name:'MOPSFLX1',model:'5032',location:'MOPS',port:100},{id:'MOPSFLX2',name:'MOPSFLX2',model:'5032',location:'MOPS',port:101},{id:'MOPS V1',name:'MOPS V1',model:'5032',location:'MOPS',port:102},{id:'MOPSLITE',name:'MOPSLITE',model:'5032',location:'MOPS',port:103},{id:'MOPS AD',name:'MOPS AD',model:'5032',location:'MOPS',port:104},{id:'MOPSRPY1',name:'MOPSRPY1',model:'5032',location:'MOPS',port:105},{id:'MOPSRPY2',name:'MOPSRPY2',model:'5032',location:'MOPS',port:106},{id:'NYP2 FT1',name:'NYP2 FT1',model:'5032',location:'PCR2',port:122},{id:'NYP2 FT2',name:'NYP2 FT2',model:'5032',location:'PCR2',port:123},{id:'NYP2 FT3',name:'NYP2 FT3',model:'5032',location:'PCR2',port:124},{id:'NYP2 FT4',name:'NYP2 FT4',model:'5032',location:'PCR2',port:125},{id:'NYP2 BK1',name:'NYP2 BK1',model:'5032',location:'PCR2',port:126},{id:'NYP2 BK2',name:'NYP2 BK2',model:'5032',location:'PCR2',port:127},{id:'NYP2 BK3',name:'NYP2 BK3',model:'5032',location:'PCR2',port:128},{id:'NYP2 BK4',name:'NYP2 BK4',model:'5032',location:'PCR2',port:129},{id:'MFR1 TD',name:'MFR1 TD',model:'5032',location:'MFR1',port:111},{id:'MFR1 DIR',name:'MFR1 DIR',model:'4016',location:'MFR1',port:112},{id:'MFR1 PRO',name:'MFR1 PRO',model:'4016',location:'MFR1',port:113},{id:'MFR1 A1',name:'MFR1 A1',model:'4016',location:'MFR1',port:114},{id:'MFR1 TM',name:'MFR1 TM',model:'4016',location:'MFR1',port:115},{id:'MFR2 TD',name:'MFR2 TD',model:'5032',location:'MFR2',port:116},{id:'MFR2 DIR',name:'MFR2 DIR',model:'4016',location:'MFR2',port:117},{id:'MFR2 PRO',name:'MFR2 PRO',model:'4016',location:'MFR2',port:118},{id:'MFR2 A1',name:'MFR2 A1',model:'4016',location:'MFR2',port:119},{id:'MFR2 TM',name:'MFR2 TM',model:'4016',location:'MFR2',port:120},{id:'INGEST',name:'INGEST',model:'5032',location:'INGEST',port:121},{id:'KIT1',name:'KIT1',model:'5032',location:'ASST',port:81},{id:'STU',name:'STU',model:'5032',location:'ASST',port:82},{id:'2TR',name:'2TR',model:'5032',location:'ASST',port:83},{id:'ENG',name:'ENG',model:'5032',location:'ASST',port:107},{id:'CER1',name:'CER1',model:'5032',location:'ASST',port:108},{id:'CER2',name:'CER2',model:'5032',location:'ASST',port:109},{id:'LITECART',name:'LITECART',model:'5032',location:'ASST',port:110},{id:'ACR2 A1',name:'ACR2 A1',model:'5032',location:'ASST',port:130},{id:'NYP1 TAG',name:'NYP1 TAG',model:'4016',location:'ASST',port:131},{id:'FL6 RACK',name:'FL6 RACK',model:'5032',location:'ASST',port:144},{id:'ATL KP3',name:'ATL KP3',model:'5032',location:'ASST',port:227},{id:'ATL KP1',name:'ATL KP1',model:'5032',location:'ASST',port:228},{id:'ATL KP2',name:'ATL KP2',model:'5032',location:'ASST',port:229},{id:'STUAFT01',name:'STUAFT01',model:'5032',location:'ASST',port:285},{id:'STUAFT02',name:'STUAFT02',model:'5032',location:'ASST',port:286},{id:'STUAFT03',name:'STUAFT03',model:'5032',location:'ASST',port:287},{id:'STUAFT04',name:'STUAFT04',model:'5032',location:'ASST',port:288},{id:'STUABK01',name:'STUABK01',model:'5032',location:'ASST',port:301},{id:'STUABK02',name:'STUABK02',model:'5032',location:'ASST',port:302},{id:'STUABK03',name:'STUABK03',model:'5032',location:'ASST',port:303},{id:'STUABK04',name:'STUABK04',model:'5032',location:'ASST',port:304}]
   },
   'SPL001':{ id:'SPL001', controlRoom:'PCR2', dates:'APR 25–26, 2026', startDate:'2026-04-25', endDate:'2026-04-26', status:'active', beltpacks:ALL_BP.slice(12,24), keypanels:[] }
 };
@@ -1560,20 +1560,16 @@ let _poolCat = 'PLs';
 
 function openKpPoolModal(panelId, prodId, keyIndex){
   const c = loadClaimedKP(prodId);
+  const panelInfo = KP_PANELS.find(p=>p.id===panelId)||{name:panelId,model:'5032'};
   if(!c[panelId]){
-    const prod = PRODUCTIONS[prodId];
-    const panel = (prod.keypanels||[]).find(p=>p.id===panelId);
-    if(!panel) return;
-    const kt = panel.model==='5032'?32:14;
+    const kt = panelInfo.model==='5032'?32:14;
     c[panelId]={userName:'',tok:'admin_'+Date.now(),keys:Array(kt).fill(null),status:'pending',activeRoom:'',submittedAt:new Date().toISOString(),submittedBy:'Admin',swaps:[]};
     saveClaimedKP(prodId,c);
-    refreshKpCard(panelId,prodId);
+    if(prodId!=='__draft__') refreshKpCard(panelId,prodId); else renderKeypanels();
   }
   _poolModalState = {panelId:panelId, prodId:prodId, keyIndex:keyIndex}; _poolCat='PLs';
 
-  const prod = PRODUCTIONS[prodId];
-  const panel = (prod.keypanels||[]).find(p=>p.id===panelId);
-  $('kp-pool-modal-title').textContent = (panel?panel.name:'') + '  ·  Key '+(keyIndex+1);
+  $('kp-pool-modal-title').textContent = panelInfo.name + '  ·  Key '+(keyIndex+1);
   $('kp-pool-modal-search').value = '';
 
   const pillsEl = $('kp-pool-modal-pills');
@@ -1627,9 +1623,10 @@ function kpKeyAssign(panelId, prodId, keyIndex, cat, label){
   const c = loadClaimedKP(prodId);
   if(!c[panelId]) return;
   c[panelId].keys[keyIndex] = {c:cat, l:label};
-  // status stays pending (draft removed)
+  // If was confirmed, revert to pending (needs re-confirmation)
+  if(c[panelId].status==='confirmed') c[panelId].status='pending';
   saveClaimedKP(prodId, c);
-  refreshKpCard(panelId, prodId);
+  if(prodId==='__draft__') renderKeypanels(); else refreshKpCard(panelId, prodId);
 }
 
 function kpPoolModalAssign(cat, label){
@@ -2049,6 +2046,11 @@ function buildKpCard(panel, prod, entry){
   const isOpen  = _kpCardOpen.has(cardKey);
   const status  = !entry?'available': entry.status==='confirmed'?'confirmed':'pending';
 
+  // For unassigned panels, check for draft keys
+  if(!prod && !entry){
+    const draftC=loadClaimedKP('__draft__');
+    if(draftC[panel.id]) entry=draftC[panel.id];
+  }
   const card = document.createElement('div');
   card.className = 'kp-card '+status+'-card';
   card.id = 'kp-card-'+panel.id.replace(/\s/g,'_');
@@ -2159,7 +2161,7 @@ function buildKpCard(panel, prod, entry){
         const clrBtn=document.createElement('button');
         clrBtn.style.cssText='position:absolute;top:1px;right:2px;font-size:10px;font-weight:900;color:var(--red);background:none;border:none;cursor:pointer;opacity:0;padding:0;line-height:1;';
         clrBtn.textContent='×';
-        clrBtn.addEventListener('click',function(e){e.stopPropagation(); if(!prod) return; kpKeyClear(panel.id,prod.id,i);});
+        clrBtn.addEventListener('click',function(e){e.stopPropagation(); kpKeyClear(panel.id, prod?prod.id:'__draft__', i);});
         cell.onmouseenter=function(){
         if(clrBtn)clrBtn.style.opacity='0.8';
         if(cell._origBg){
@@ -2181,8 +2183,7 @@ function buildKpCard(panel, prod, entry){
 
       cell.addEventListener('click',function(e){
         if(e.target.textContent==='×'&&e.target.tagName==='BUTTON') return;
-        if(!prod){ toast('Assign panel to a production first','pending'); return; }
-        kpKeyClick(panel.id,prod.id,i);
+        kpKeyClick(panel.id, prod?prod.id:'__draft__', i);
       });
       rowEl.appendChild(cell);
     }
@@ -2202,10 +2203,6 @@ function buildKpCard(panel, prod, entry){
       confBtn.addEventListener('click',()=>confirmKP(panel.id,prod.id));
       actBar.appendChild(confBtn);
     }
-    const reBtn=document.createElement('button');
-    reBtn.className='act-out';
-    reBtn.textContent='Re-assign';
-    reBtn.addEventListener('click',()=>openKpReassignModal(panel.id,prod.id));
     actBar.appendChild(reBtn);
 
     const clrBtn=document.createElement('button');
@@ -2471,7 +2468,12 @@ function setKpRoom(panelId, code, room){
   }
   const keyCount = panel.model==='5032'?32:14;
   if(!c[panelId]){
-    c[panelId] = {userName:'',tok:'admin_'+Date.now(),keys:Array(keyCount).fill(null),status:'pending',activeRoom:room,submittedAt:new Date().toISOString(),submittedBy:'Admin',swaps:[]};
+    // Check for draft keys from pre-assignment programming
+    const draftC=loadClaimedKP('__draft__');
+    const draftKeys=draftC[panelId]?draftC[panelId].keys:Array(keyCount).fill(null);
+    c[panelId] = {userName:'',tok:'admin_'+Date.now(),keys:draftKeys,status:'pending',activeRoom:room,submittedAt:new Date().toISOString(),submittedBy:'Admin',swaps:[]};
+    // Clear draft
+    if(draftC[panelId]){ delete draftC[panelId]; saveClaimedKP('__draft__',draftC); }
   } else {
     c[panelId].activeRoom = room;
   }
@@ -3455,6 +3457,7 @@ function toggleProdCard(id){
   const isOpen=body.classList.contains('open');
   body.classList.toggle('open',!isOpen);
   icon.classList.toggle('open',!isOpen);
+  icon.textContent = !isOpen ? '▲' : '▼';
   if(!isOpen){
     const qrEl=$(`qr-${id}`); qrEl.innerHTML='';
     new QRCode(qrEl,{text:`showcomm:${id}`,width:160,height:160,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H});
