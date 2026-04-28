@@ -202,6 +202,7 @@ body { background:var(--bg); color:var(--black); }
 
 /* Uniform action bar — SAME HEIGHT regardless of buttons shown */
 .kp-acts { display:flex; gap:8px; align-items:center; padding:0 clamp(14px,1.8vw,22px); height:clamp(40px,5vh,48px); background:var(--surface); border-top:1px solid var(--border); }
+.act-dng { margin-left:auto!important; }
 .kp-acts button { height:28px!important; display:inline-flex!important; align-items:center!important; padding:0 12px!important; font-family:var(--f-ui)!important; font-size:clamp(.58rem,.72vw,.68rem)!important; font-weight:700!important; letter-spacing:.1em!important; text-transform:uppercase!important; cursor:pointer!important; border-radius:0!important; white-space:nowrap!important; flex-shrink:0!important; }
 .act-co { background:transparent; color:var(--black); border:1px solid var(--black); }
 .act-co:hover { background:var(--green); color:#fff; border-color:var(--green); }
@@ -2226,7 +2227,6 @@ function buildKpCard(panel, prod, entry){
         });
       } else { adminClearKP(panel.id,prod.id); }
     });
-    actBar.appendChild(clrBtn);
     // Always show Select Production when no prod assigned (even with draft keys)
     if(!prod){
       const setBtn=document.createElement('button');
@@ -2235,12 +2235,14 @@ function buildKpCard(panel, prod, entry){
       setBtn.addEventListener('click',()=>openKpRoomModal(panel.id,''));
       actBar.appendChild(setBtn);
     }
+    actBar.appendChild(clrBtn); // always last (margin-left:auto pins it right)
   } else {
     const setBtn=document.createElement('button');
     setBtn.className='act-out';
     setBtn.textContent='Select Production';
     setBtn.addEventListener('click',()=>openKpRoomModal(panel.id,''));
     actBar.appendChild(setBtn);
+    actBar.appendChild(clrBtn);
   }
   body.appendChild(actBar);
   _kpIn.appendChild(body);
