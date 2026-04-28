@@ -1066,9 +1066,29 @@ function fmtTime(iso){ if(!iso) return '—'; const d=new Date(iso); return d.to
 function genCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
 
 function loadClaimed(code){ const r=localStorage.getItem(`sc_bp_${code}`); if(r) return JSON.parse(r); if(code==='NWS001') return JSON.parse(JSON.stringify(SEED)); if(code==='SPL001') return JSON.parse(JSON.stringify(SEED_SPL)); return {}; }
-function saveClaimed(code,data){ localStorage.setItem(`sc_bp_${code}`,JSON.stringify(data)); }
+function saveClaimed(code,data){
+  localStorage.setItem('sc_bp_'+code,JSON.stringify(data));
+  if(SUPA) SUPA.from('beltpack_assignments').upsert({production_id:code,data:data,updated_at:new Date().toISOString()})
+    .then(function(r){ if(r.error) console.warn('saveClaimed:',r.error); });
+}
+async function loadClaimedFromDB(code){
+  if(!SUPA) return;
+  var r=await SUPA.from('beltpack_assignments').select('data').eq('production_id',code).single();
+  if(r.error||!r.data) return;
+  localStorage.setItem('sc_bp_'+code,JSON.stringify(r.data.data));
+}
 function loadClaimedKP(code){ const r=localStorage.getItem(`sc_kp_${code}`); return r?JSON.parse(r):{}; }
-function saveClaimedKP(code,data){ localStorage.setItem(`sc_kp_${code}`,JSON.stringify(data)); }
+function saveClaimedKP(code,data){
+  localStorage.setItem('sc_kp_'+code,JSON.stringify(data));
+  if(SUPA&&code!=='__draft__') SUPA.from('keypanel_assignments').upsert({production_id:code,data:data,updated_at:new Date().toISOString()})
+    .then(function(r){ if(r.error) console.warn('saveClaimedKP:',r.error); });
+}
+async function loadClaimedKPFromDB(code){
+  if(!SUPA||code==='__draft__') return;
+  var r=await SUPA.from('keypanel_assignments').select('data').eq('production_id',code).single();
+  if(r.error||!r.data) return;
+  localStorage.setItem('sc_kp_'+code,JSON.stringify(r.data.data));
+}
 function prodToRow(p){
   return { id:p.id, name:p.name||p.controlRoom||p.id, control_room:p.controlRoom||'', dates:p.dates||'',
     start_date:p.startDate||null, end_date:p.endDate||null, status:p.status||'active',
@@ -1145,18 +1165,26 @@ function keyColors(k){
 }
 
 function loadGlobalOptions(){
-  const r=localStorage.getItem('sc_global_opts');
-  if(r){
-    const saved=JSON.parse(r);
-    // Migrate: old string-array format → discard
-    if(saved.PLs&&typeof saved.PLs[0]==='string'){ localStorage.removeItem('sc_global_opts'); saveGlobalOptions(); return; }
-    // Stale label check
-    if(saved.PLs&&optLabel(saved.PLs[0])===optLabel(GLOBAL_OPTIONS.PLs[0])){ GLOBAL_OPTIONS=saved; return; }
-    localStorage.removeItem('sc_global_opts');
+  var local=localStorage.getItem('sc_global_opts');
+  if(local){
+    var saved=JSON.parse(local);
+    if(saved.PLs&&typeof saved.PLs[0]==='string'){ localStorage.removeItem('sc_global_opts'); saveGlobalOptions(); }
+    else if(saved.PLs&&optLabel(saved.PLs[0])===optLabel(GLOBAL_OPTIONS.PLs[0])){ GLOBAL_OPTIONS=saved; }
+    else { localStorage.removeItem('sc_global_opts'); saveGlobalOptions(); }
+  } else { saveGlobalOptions(); }
+  if(SUPA){
+    SUPA.from('global_options').select('data').eq('key','main').single().then(function(res){
+      if(res.error||!res.data) return;
+      var s=res.data.data;
+      if(s&&s.PLs){ GLOBAL_OPTIONS=s; localStorage.setItem('sc_global_opts',JSON.stringify(GLOBAL_OPTIONS)); }
+    });
   }
-  saveGlobalOptions();
 }
-function saveGlobalOptions(){ localStorage.setItem('sc_global_opts',JSON.stringify(GLOBAL_OPTIONS)); }
+function saveGlobalOptions(){
+  localStorage.setItem('sc_global_opts',JSON.stringify(GLOBAL_OPTIONS));
+  if(SUPA) SUPA.from('global_options').upsert({key:'main',data:GLOBAL_OPTIONS})
+    .then(function(r){ if(r.error) console.warn('saveGlobalOptions:',r.error); });
+}
 
 // ─── SUPABASE ──────────────────────────────────────────────────
 let SUPA = null;
@@ -1173,13 +1201,27 @@ function initAdminApp(){
   loadGlobalOptions(); initBpSelectors(); buildUnifiedFilters(); setView('keypanels');
   loadProds();
   if(SUPA){
+    // Sync KP+BP assignments for all productions
+    Object.keys(PRODUCTIONS).forEach(function(code){
+      loadClaimedFromDB(code);
+      loadClaimedKPFromDB(code);
+    });
     loadRequests();
     // ── Real-time subscriptions ──────────────────────────────
     SUPA.channel('showcomm-requests')
-      .on('postgres_changes',{event:'*',schema:'public',table:'device_claims'},  ()=>onRequestChange())
-      .on('postgres_changes',{event:'*',schema:'public',table:'change_requests'},()=>onRequestChange())
-      .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'},   ()=>onRequestChange())
-      .on('postgres_changes',{event:'*',schema:'public',table:'productions'},    ()=>{ if(!_blockProdReload) loadProds(); })
+      .on('postgres_changes',{event:'*',schema:'public',table:'device_claims'},      ()=>onRequestChange())
+      .on('postgres_changes',{event:'*',schema:'public',table:'change_requests'},    ()=>onRequestChange())
+      .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'},       ()=>onRequestChange())
+      .on('postgres_changes',{event:'*',schema:'public',table:'productions'},        ()=>{ if(!_blockProdReload) loadProds(); })
+      .on('postgres_changes',{event:'*',schema:'public',table:'beltpack_assignments'},function(p){
+        if(p.new&&p.new.production_id) localStorage.setItem('sc_bp_'+p.new.production_id,JSON.stringify(p.new.data));
+        if(state.view==='allbeltpacks') renderAllBeltpacks();
+      })
+      .on('postgres_changes',{event:'*',schema:'public',table:'keypanel_assignments'},function(p){
+        if(p.new&&p.new.production_id) localStorage.setItem('sc_kp_'+p.new.production_id,JSON.stringify(p.new.data));
+        if(state.view==='keypanels') renderKeypanels();
+      })
+      .on('postgres_changes',{event:'*',schema:'public',table:'global_options'},()=>loadGlobalOptions())
       .subscribe();
   }
   const clearBtn=document.getElementById('btn-clear-filters');
