@@ -3354,7 +3354,7 @@ function renderProductions(){
     const pending=Object.values(claimed).filter(e=>e.status==='pending').length;
     const isArchived=prod.status==='archived';
 
-    const card=document.createElement('div'); card.className='prod-card';
+    const card=document.createElement('div'); card.className='prod-card'; card.id='prod-card-'+prod.id;
 
     card.innerHTML=`
       <div class="prod-card-header">
@@ -3421,38 +3421,52 @@ function renderProductions(){
           </div>
         </div>
       </div>`;
-    // Drag handle — only the grip icon initiates drag
+    // Per-card dragstart on the grip handle only
     const handle=card.querySelector('.prod-drag-handle');
     if(handle){
       handle.draggable=true;
       handle.addEventListener('dragstart',e=>{
-        e.dataTransfer.setData('prodId',prod.id);
+        e.dataTransfer.setData('text/plain',prod.id);
         e.dataTransfer.effectAllowed='move';
         setTimeout(()=>card.classList.add('dragging'),0);
       });
-      handle.addEventListener('dragend',()=>card.classList.remove('dragging'));
+      handle.addEventListener('dragend',()=>{
+        card.classList.remove('dragging');
+        document.querySelectorAll('.prod-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
+      });
     }
-    card.addEventListener('dragover',e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move';
-      document.querySelectorAll('.prod-card').forEach(c=>c.classList.remove('drag-over'));
-      card.classList.add('drag-over');
-    });
-    card.addEventListener('dragleave',e=>{
-      if(!card.contains(e.relatedTarget)) card.classList.remove('drag-over');
-    });
-    card.addEventListener('drop',e=>{
-      e.preventDefault(); card.classList.remove('drag-over');
-      const dragId=e.dataTransfer.getData('prodId');
-      if(!dragId||dragId===prod.id) return;
-      const prods=Object.values(PRODUCTIONS).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
-      const fromIdx=prods.findIndex(p=>p.id===dragId);
-      const toIdx=prods.findIndex(p=>p.id===prod.id);
-      if(fromIdx<0||toIdx<0) return;
-      const moved=prods.splice(fromIdx,1)[0];
-      prods.splice(toIdx,0,moved);
-      prods.forEach((p,i)=>{ PRODUCTIONS[p.id].sortOrder=i; });
-      saveProds(); renderProductions();
-    });
     list.appendChild(card);
+  });
+
+  // Container-level delegation — far more reliable than per-card drop listeners
+  list.addEventListener('dragover',e=>{
+    e.preventDefault();
+    e.dataTransfer.dropEffect='move';
+    const target=e.target.closest('.prod-card');
+    document.querySelectorAll('.prod-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
+    if(target&&!target.classList.contains('dragging')) target.classList.add('drag-over');
+  });
+  list.addEventListener('dragleave',e=>{
+    if(!list.contains(e.relatedTarget)){
+      document.querySelectorAll('.prod-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
+    }
+  });
+  list.addEventListener('drop',e=>{
+    e.preventDefault();
+    document.querySelectorAll('.prod-card.drag-over').forEach(c=>c.classList.remove('drag-over'));
+    const dragId=e.dataTransfer.getData('text/plain');
+    const targetCard=e.target.closest('.prod-card');
+    if(!dragId||!targetCard) return;
+    const targetId=targetCard.id.replace('prod-card-','');
+    if(dragId===targetId) return;
+    const prods=Object.values(PRODUCTIONS).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+    const fromIdx=prods.findIndex(p=>p.id===dragId);
+    const toIdx=prods.findIndex(p=>p.id===targetId);
+    if(fromIdx<0||toIdx<0) return;
+    const moved=prods.splice(fromIdx,1)[0];
+    prods.splice(toIdx,0,moved);
+    prods.forEach((p,i)=>{ PRODUCTIONS[p.id].sortOrder=i; });
+    saveProds(); renderProductions();
   });
 }
 
