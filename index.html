@@ -698,7 +698,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
         <div class="kp-filter-pills" id="unified-room-pills"></div>
       </div>
       <div class="uf-section" id="unified-loc-section" style="display:none;">
-        <span class="uf-label">Locations</span>
+        <span class="uf-label">Productions</span>
         <div class="kp-filter-pills" id="unified-loc-pills"></div>
       </div>
       <div class="uf-clear-wrap">
@@ -1217,7 +1217,6 @@ function updateClearBtn(){
 
 function buildUnifiedFilters(){
   const CR_ROOMS=['PCR1','PCR2','MFR1','MFR2','OTHER'];
-  const KP_LOCS_ALL=['PCR1','ACR1','MOPS','PCR2','MFR1','MFR2','INGEST','ASST'];
   const locColors={PCR1:crFg('PCR1'),PCR2:crFg('PCR2'),MFR1:crFg('MFR1'),MFR2:crFg('MFR2'),
     MOPS:'#00CC88',ACR1:'#00CCBB',INGEST:'#FFB800',ASST:'#888888',OTHER:crFg('OTHER')};
 
@@ -1261,19 +1260,7 @@ function buildUnifiedFilters(){
     rpEl.appendChild(p);
   });
 
-  const locEl=$('unified-loc-pills'); if(!locEl) return;
-  KP_LOCS_ALL.forEach(loc=>{
-    const clr=locColors[loc]||'#888888';
-    const p=document.createElement('button'); p.type='button'; p.textContent=loc; p.className='kp-filter-pill';
-    p.style.color=clr;
-    p.addEventListener('click',function(){
-      if(_kpFilter.locs.has(loc)){_kpFilter.locs.delete(loc);p.classList.remove('active');p.style.background='';p.style.color=clr;}
-      else{_kpFilter.locs.add(loc);p.classList.add('active');p.style.background=clr;p.style.color='#fff';}
-      updateClearBtn();
-      renderKeypanels();
-    });
-    locEl.appendChild(p);
-  });
+  buildProdPills();
 }
 
 function doLogout(){
@@ -1563,7 +1550,13 @@ function kpPanelMatchesFilter(panel, entry){
   if(statuses && statuses.size > 0){
     if(statuses.has('available') && entry) return false;
   }
-  if(locs.size > 0 && !locs.has(panel.location)) return false;
+  if(locs.size > 0){
+    // locs now stores production IDs — check if panel is in any selected production
+    const inProd = Object.values(PRODUCTIONS).some(p=>
+      locs.has(p.id) && p.keypanels && p.keypanels.some(kp=>kp.id===panel.id)
+    );
+    if(!inProd) return false;
+  }
   if(rooms.size > 0){
     const activeRoom = entry?.activeRoom || '';
     const effectiveRoom = activeRoom || 'Unassigned';
@@ -1917,7 +1910,45 @@ let _kpLocOpen   = new Set();  // collapsed by default — nothing in set = all 
 let _kpCardOpen  = new Set();  // individual cards open
 let _kpReassignTarget = null;  // {panelId, prodId}
 
+function getPanelProdLabel(panelId){
+  const prod = Object.values(PRODUCTIONS).find(p=>
+    p.keypanels && p.keypanels.some(kp=>kp.id===panelId)
+  );
+  return prod ? prodLabel(prod) : null;
+}
+
+function getPanelProdId(panelId){
+  const prod = Object.values(PRODUCTIONS).find(p=>
+    p.keypanels && p.keypanels.some(kp=>kp.id===panelId)
+  );
+  return prod ? prod.id : null;
+}
+
+function buildProdPills(){
+  const locEl=$('unified-loc-pills'); if(!locEl) return;
+  locEl.innerHTML='';
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+    const clr=crFg(prod.controlRoom)||'#888888';
+    const label=prodLabel(prod);
+    const p=document.createElement('button'); p.type='button'; p.className='kp-filter-pill';
+    p.textContent=label; p.style.color=clr; p.dataset.prodId=prod.id;
+    p.addEventListener('click',function(){
+      if(_kpFilter.locs.has(prod.id)){
+        _kpFilter.locs.delete(prod.id);
+        p.style.background='transparent'; p.style.color=clr;
+      } else {
+        _kpFilter.locs.add(prod.id);
+        p.style.background=clr; p.style.color='#fff';
+      }
+      updateClearBtn();
+      renderKeypanels();
+    });
+    locEl.appendChild(p);
+  });
+}
+
 function renderKeypanels(){
+  buildProdPills();
   const main = $('kp-main-content');
   if(!main) return;
   main.innerHTML = '';
@@ -2011,7 +2042,8 @@ function buildKpCard(panel, prod, entry){
   const hdr = document.createElement('div');
   hdr.className = 'kp-card-header';
   const _stCls=status==='confirmed'?'co':status==='pending'?'pe':'av';
-  var _roomDisplay=entry&&entry.activeRoom?(' · '+entry.activeRoom):'';
+  const _panelProd=getPanelProdLabel(panel.id);
+  var _roomDisplay=_panelProd?(' · '+_panelProd):(entry&&entry.activeRoom?' · '+entry.activeRoom:'');
   hdr.innerHTML='<span class="kp-dot '+_stCls+'"></span>'
     +'<div class="kp-info"><div class="kp-name">'+panel.name+'</div><div class="kp-meta">PORT '+panel.port+' · '+panel.model+_roomDisplay+'</div></div>'
     +'<span class="kp-status-txt '+_stCls+'">'+statusLabel+'</span>'
