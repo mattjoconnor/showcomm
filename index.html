@@ -694,7 +694,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
         <div class="kp-filter-pills"><button id="unified-avail-btn" class="kp-filter-pill">AVAIL</button></div>
       </div>
       <div class="uf-section">
-        <span class="uf-label">Rooms</span>
+        <span class="uf-label">Productions</span>
         <div class="kp-filter-pills" id="unified-room-pills"></div>
       </div>
       <div class="uf-section" id="unified-loc-section" style="display:none;">
@@ -1245,15 +1245,16 @@ function buildUnifiedFilters(){
   });
 
   const rpEl=$('unified-room-pills'); if(!rpEl) return;
-  CR_ROOMS.forEach(room=>{
-    const clr=locColors[room]||'#888888';
-    const p=document.createElement('button'); p.type='button'; p.textContent=room; p.className='kp-filter-pill';
+  // Production pills — shared for KP and BP views, filter by production membership
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+    const clr=crFg(prod.controlRoom)||'#888888';
+    const p=document.createElement('button'); p.type='button'; p.textContent=prodLabel(prod); p.className='kp-filter-pill';
     p.style.color=clr;
     p.addEventListener('click',()=>{
       const isKp=state.view==='keypanels';
       const set=isKp?_kpFilter.rooms:_bpFilter.rooms;
-      if(set.has(room)){set.delete(room);p.style.background='transparent';p.style.color=clr;}
-      else{set.add(room);p.style.background=clr;p.style.color='#111';}
+      if(set.has(prod.id)){set.delete(prod.id);p.style.background='transparent';p.style.color=clr;}
+      else{set.add(prod.id);p.style.background=clr;p.style.color='#111';}
       updateClearBtn();
       if(isKp) renderKeypanels(); else renderAllBeltpacks();
     });
@@ -1558,13 +1559,11 @@ function kpPanelMatchesFilter(panel, entry){
     if(!inProd) return false;
   }
   if(rooms.size > 0){
-    const activeRoom = entry?.activeRoom || '';
-    const effectiveRoom = activeRoom || 'Unassigned';
-    // "OTHER" matches any room not in the main 4
-    if(rooms.has('OTHER')){
-      const mainRooms = ['PCR1','PCR2','MFR1','MFR2','Unassigned'];
-      if(!rooms.has(effectiveRoom) && mainRooms.includes(effectiveRoom)) return false;
-    } else if(!rooms.has(effectiveRoom)) return false;
+    // rooms now stores production IDs
+    const inProd=Object.values(PRODUCTIONS).some(p=>
+      rooms.has(p.id) && p.keypanels && p.keypanels.some(kp=>kp.id===panel.id)
+    );
+    if(!inProd) return false;
   }
   return true;
 }
@@ -1931,7 +1930,9 @@ function buildProdPills(){
     const clr=crFg(prod.controlRoom)||'#888888';
     const label=prodLabel(prod);
     const p=document.createElement('button'); p.type='button'; p.className='kp-filter-pill';
-    p.textContent=label; p.style.color=clr; p.dataset.prodId=prod.id;
+    const isActive=_kpFilter.locs.has(prod.id);
+    p.style.color=isActive?'#111':clr;
+    if(isActive) p.style.background=clr;
     p.addEventListener('click',function(){
       if(_kpFilter.locs.has(prod.id)){
         _kpFilter.locs.delete(prod.id);
@@ -2030,8 +2031,9 @@ function buildKpCard(panel, prod, entry){
   // Room strip
   const _rs=document.createElement('div'); _rs.className='room-strip';
   // Strip always shows LOCATION color (not active room) for visual consistency within section
-  const _locColor=crFg(panel.location)||'rgba(0,0,0,.08)';
-  const _roomLabel=entry&&entry.activeRoom?entry.activeRoom:panel.location||'—';
+  const _panelProdObj=Object.values(PRODUCTIONS).find(p=>p.keypanels&&p.keypanels.some(kp=>kp.id===panel.id));
+  const _locColor=_panelProdObj?crFg(_panelProdObj.controlRoom):crFg(panel.location)||'rgba(0,0,0,.08)';
+  const _roomLabel=_panelProdObj?prodLabel(_panelProdObj):(entry&&entry.activeRoom?entry.activeRoom:panel.location||'—');
   _rs.style.background=_locColor;
   _rs.setAttribute('data-room',_roomLabel);
   card.appendChild(_rs);
@@ -2187,7 +2189,7 @@ function buildKpCard(panel, prod, entry){
   } else {
     const setBtn=document.createElement('button');
     setBtn.className='act-out';
-    setBtn.textContent='Set Room';
+    setBtn.textContent='Select Production';
     setBtn.addEventListener('click',()=>openKpRoomModal(panel.id,prod.id));
     actBar.appendChild(setBtn);
   }
@@ -2515,8 +2517,9 @@ function renderBpCards(bpToProd){
     // Apply new pill filters
     if(_bpFilter.statuses.size>0&&!_bpFilter.statuses.has(statusKey)) return;
     if(_bpFilter.rooms.size>0){
-      const room=entry&&entry.controlRoom?entry.controlRoom:'';
-      if(!_bpFilter.rooms.has(room)) return;
+      // rooms stores production IDs for BPs
+      const bpProd=bpToProd[bp];
+      if(!bpProd||!_bpFilter.rooms.has(bpProd.id)) return;
     }
     const searchQ=_bpFilter.search||q||'';
     if(searchQ&&!bp.includes(searchQ)&&!(entry&&entry.userName.toUpperCase().includes(searchQ))) return;
@@ -2528,7 +2531,7 @@ function renderBpCards(bpToProd){
     const _bpStrip=document.createElement('div');
     _bpStrip.className='bp-room-strip';
     const _bpRoom=entry&&entry.controlRoom?entry.controlRoom:'';
-    _bpStrip.style.background=_bpRoom?crFg(_bpRoom):'rgba(0,0,0,.06)';
+    _bpStrip.style.background=prod?crFg(prod.controlRoom):'rgba(0,0,0,.06)';
     if(_bpRoom) _bpStrip.setAttribute('data-room',_bpRoom);
     card.appendChild(_bpStrip);
 
@@ -2571,9 +2574,9 @@ function renderBpCards(bpToProd){
     const _pid=prod?prod.id:'';
     const clearBtn=entry&&prod?'<button class="act-dng" data-action="clear" data-bp="'+bp+'" data-code="'+_pid+'">Clear</button>':'';
     const renBtn=entry&&prod?'<button class="act-out" data-action="rename" data-bp="'+bp+'" data-code="'+_pid+'">Rename</button>':'';
-    const curRoom=entry&&entry.controlRoom?entry.controlRoom:'';
-    const roomClr=curRoom?(crFg(curRoom)||'rgba(0,0,0,.35)'):'rgba(0,0,0,.35)';
-    const roomBtn=entry&&prod?'<button class="act-out" style="color:'+roomClr+';border-color:'+roomClr+'55;" data-action="room" data-bp="'+bp+'" data-code="'+_pid+'">'+(curRoom||'Set Room')+'</button>':'';
+    const _bpProdLabel=prod?prodLabel(prod):'';
+    const _bpProdClr=prod?(crFg(prod.controlRoom)||'rgba(0,0,0,.35)'):'rgba(0,0,0,.35)';
+    const roomBtn=entry&&prod?'<button class="act-out" style="color:'+_bpProdClr+';border-color:'+_bpProdClr+'55;" data-action="room" data-bp="'+bp+'" data-code="'+_pid+'">'+(entry&&_bpProdLabel?_bpProdLabel:'Select Production')+'</button>':'';
     const r4='<div class="bp-footer">'
       +'<div class="bp-badge-row">'+badge+'</div>'
       +'<div class="bp-action-row">'+action+renBtn+roomBtn+clearBtn+'</div>'
