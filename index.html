@@ -1565,8 +1565,7 @@ function openKpPoolModal(panelId, prodId, keyIndex){
     const kt = panelInfo.model==='5032'?32:14;
     c[panelId]={userName:'',tok:'admin_'+Date.now(),keys:Array(kt).fill(null),status:'pending',activeRoom:'',submittedAt:new Date().toISOString(),submittedBy:'Admin',swaps:[]};
     saveClaimedKP(prodId,c);
-    if(prodId!=='__draft__') refreshKpCard(panelId,prodId);
-    // Draft entries don't need re-render here; kpKeyAssign handles it after key is picked
+    refreshKpCard(panelId,prodId);
   }
   _poolModalState = {panelId:panelId, prodId:prodId, keyIndex:keyIndex}; _poolCat='PLs';
 
@@ -1627,7 +1626,7 @@ function kpKeyAssign(panelId, prodId, keyIndex, cat, label){
   // If was confirmed, revert to pending (needs re-confirmation)
   if(c[panelId].status==='confirmed') c[panelId].status='pending';
   saveClaimedKP(prodId, c);
-  if(prodId==='__draft__') renderKeypanels(); else refreshKpCard(panelId, prodId);
+  refreshKpCard(panelId, prodId);
 }
 
 function kpPoolModalAssign(cat, label){
@@ -2045,11 +2044,6 @@ function renderKeypanels(){
 function buildKpCard(panel, prod, entry){
   const cardKey = prod?(prod.id+'_'+panel.id):('avail_'+panel.id.replace(/\s/g,'_'));
   const isOpen  = _kpCardOpen.has(cardKey);
-  // Load draft keys before computing status
-  if(!prod && !entry){
-    const draftC=loadClaimedKP('__draft__');
-    if(draftC[panel.id]) entry=draftC[panel.id];
-  }
   const status  = !entry?'available': entry.status==='confirmed'?'confirmed':'pending';
   const card = document.createElement('div');
   card.className = 'kp-card '+status+'-card';
@@ -2161,7 +2155,7 @@ function buildKpCard(panel, prod, entry){
         const clrBtn=document.createElement('button');
         clrBtn.style.cssText='position:absolute;top:1px;right:2px;font-size:10px;font-weight:900;color:var(--red);background:none;border:none;cursor:pointer;opacity:0;padding:0;line-height:1;';
         clrBtn.textContent='×';
-        clrBtn.addEventListener('click',function(e){e.stopPropagation(); kpKeyClear(panel.id, prod?prod.id:'__draft__', i);});
+        clrBtn.addEventListener('click',function(e){e.stopPropagation(); if(!prod) return; kpKeyClear(panel.id, prod.id, i);});
         cell.onmouseenter=function(){
         if(clrBtn)clrBtn.style.opacity='0.8';
         if(cell._origBg){
@@ -2183,7 +2177,8 @@ function buildKpCard(panel, prod, entry){
 
       cell.addEventListener('click',function(e){
         if(e.target.textContent==='×'&&e.target.tagName==='BUTTON') return;
-        kpKeyClick(panel.id, prod?prod.id:'__draft__', i);
+        if(!prod){ toast('Select a production first','pending'); return; }
+        kpKeyClick(panel.id, prod.id, i);
       });
       rowEl.appendChild(cell);
     }
@@ -2208,7 +2203,7 @@ function buildKpCard(panel, prod, entry){
     const clrBtn=document.createElement('button');
     clrBtn.className='act-dng';
     clrBtn.textContent='Clear';
-    clrBtn.addEventListener('click',()=>{ if(!prod){ const dc=loadClaimedKP('__draft__'); delete dc[panel.id]; saveClaimedKP('__draft__',dc); renderKeypanels(); return; } adminClearKP(panel.id,prod.id); });
+    clrBtn.addEventListener('click',()=>adminClearKP(panel.id,prod.id));
     actBar.appendChild(clrBtn);
   } else {
     const setBtn=document.createElement('button');
@@ -2468,12 +2463,7 @@ function setKpRoom(panelId, code, room){
   }
   const keyCount = panel.model==='5032'?32:14;
   if(!c[panelId]){
-    // Check for draft keys from pre-assignment programming
-    const draftC=loadClaimedKP('__draft__');
-    const draftKeys=draftC[panelId]?draftC[panelId].keys:Array(keyCount).fill(null);
-    c[panelId] = {userName:'',tok:'admin_'+Date.now(),keys:draftKeys,status:'pending',activeRoom:room,submittedAt:new Date().toISOString(),submittedBy:'Admin',swaps:[]};
-    // Clear draft
-    if(draftC[panelId]){ delete draftC[panelId]; saveClaimedKP('__draft__',draftC); }
+    c[panelId] = {userName:'',tok:'admin_'+Date.now(),keys:Array(keyCount).fill(null),status:'pending',activeRoom:room,submittedAt:new Date().toISOString(),submittedBy:'Admin',swaps:[]};
   } else {
     c[panelId].activeRoom = room;
   }
