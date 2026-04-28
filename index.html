@@ -105,7 +105,7 @@ body { background:var(--bg); color:var(--black); }
 .btn-full:disabled { background:rgba(0,0,0,.25); cursor:not-allowed; }
 .login-hint { margin-top:14px; font-family:var(--f-mono); font-size:11px; color:rgba(0,0,0,.48); text-align:center; }
 .login-error { margin-top:12px; font-family:var(--f-mono); font-size:10px; color:var(--red); letter-spacing:.06em; display:none; }
-#screen-tm, #screen-crew { display:none; height:100vh; flex-direction:column; align-items:center; justify-content:center; background:var(--bg); }
+#screen-crew { display:none; height:100vh; flex-direction:column; align-items:center; justify-content:center; background:var(--bg); }
 .placeholder-screen { text-align:center; }
 .placeholder-role-badge { display:inline-block; font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.22em; text-transform:uppercase; padding:4px 10px; margin-bottom:32px; }
 .placeholder-role-badge.tm { background:#7C3AED; color:#fff; }
@@ -588,7 +588,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 .prod-reorder-btn:hover { color:var(--black); }
 
 /* ─── TM VIEW ─── */
-#screen-tm { display:none; height:100vh; flex-direction:column; background:var(--bg); overflow:hidden; }
+#screen-tm { display:none; height:100vh; flex-direction:column; align-items:stretch; justify-content:flex-start; background:var(--bg); overflow:hidden; }
 
 /* Topbar — identical to admin */
 .tm-topbar { display:flex; align-items:center; gap:0; height:52px; background:var(--black); flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.08); }
