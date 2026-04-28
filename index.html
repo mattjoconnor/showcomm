@@ -573,6 +573,11 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 .deny-modal-title { font-family:var(--f-ui); font-size:15px; font-weight:800; margin-bottom:16px; }
 .deny-note { display:block; width:100%; border:none; border-bottom:1px solid var(--border-md); font-family:var(--f-mono); font-size:13px; padding:8px 0; outline:none; resize:none; background:transparent; margin-bottom:16px; }
 .deny-actions { display:flex; gap:8px; justify-content:flex-end; }
+
+.req-archive-hdr { padding:10px clamp(16px,2.2vw,28px); display:flex; align-items:center; background:rgba(0,0,0,.02); border-bottom:1px solid var(--border-md); cursor:pointer; }
+.req-archive-hdr:hover { background:rgba(0,0,0,.04); }
+.req-archive-label { font-family:var(--f-mono); font-size:clamp(.55rem,.65vw,.62rem); font-weight:700; color:rgba(0,0,0,.42); letter-spacing:.1em; text-transform:uppercase; }
+.req-archive-body .req-resolved { opacity:.55; }
 </style>
 </head>
 <body>
@@ -3221,6 +3226,7 @@ function getSelectedBps(prefix){
 function renderProductions(){
   const list=$('prod-list'); list.innerHTML='';
   const act=$('main-actions'); act.innerHTML='';
+  act.innerHTML='<button class="btn-sm primary" onclick="$(\'modal-overlay-prod\').classList.add(\'active\')" style="font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:7px 16px;background:var(--black);color:#fff;border:none;cursor:pointer;">+ New Production</button>';
 
   Object.values(PRODUCTIONS).forEach(prod=>{
     const claimed=loadClaimed(prod.id);
@@ -3426,7 +3432,7 @@ async function loadRequests(){
   if(!SUPA) return;
   const el = document.getElementById('requests-content');
   if(!el) return;
-  el.innerHTML = '<div class="req-empty">Loading…</div>';
+  if(!el.innerHTML) el.innerHTML = '<div class="req-empty">Loading…</div>';
 
   const [claimsRes, changeRes, keyRes] = await Promise.all([
     SUPA.from('device_claims').select('*').order('claimed_at', {ascending:false}),
@@ -3457,6 +3463,7 @@ function renderReqSection(title, type, items, isPending, renderFn){
   const pending = items.filter(isPending);
   const resolved = items.filter(r=>!isPending(r));
   const count = pending.length;
+  const archiveId = 'req-archive-'+type;
   let html = `<div class="req-section">
     <div class="req-section-hdr">
       <div class="req-section-title">${title}</div>
@@ -3465,11 +3472,34 @@ function renderReqSection(title, type, items, isPending, renderFn){
   if(!items.length){
     html += '<div class="req-empty">No requests yet</div>';
   } else {
-    pending.forEach(r=>{ html += renderFn(r); });
-    resolved.forEach(r=>{ html += '<div class="req-resolved">'+renderFn(r)+'</div>'; });
+    if(!pending.length){
+      html += '<div class="req-empty" style="color:rgba(0,0,0,.35);">All caught up — no pending requests</div>';
+    } else {
+      pending.forEach(r=>{ html += renderFn(r); });
+    }
+    if(resolved.length){
+      html += `<div class="req-archive-hdr" onclick="reqToggleArchive('${archiveId}')">
+        <span class="req-archive-label">▶ ${resolved.length} resolved</span>
+      </div>
+      <div id="${archiveId}" class="req-archive-body" style="display:none;">`;
+      resolved.forEach(r=>{ html += '<div class="req-resolved">'+renderFn(r)+'</div>'; });
+      html += '</div>';
+    }
   }
   html += '</div>';
   return html;
+}
+
+function reqToggleArchive(id){
+  const el=document.getElementById(id);
+  const hdr=el?el.previousElementSibling:null;
+  if(!el) return;
+  const open = el.style.display!=='none';
+  el.style.display = open?'none':'block';
+  if(hdr){
+    const lbl=hdr.querySelector('.req-archive-label');
+    if(lbl) lbl.textContent=(open?'▶':'▼')+lbl.textContent.slice(1);
+  }
 }
 
 function renderClaimCard(r){
@@ -3494,8 +3524,13 @@ function renderClaimCard(r){
 function renderChangeCard(r){
   const isPending = r.status==='pending';
   const accentClr = '#7C3AED';
-  const cur = r.current_state ? JSON.stringify(r.current_state) : '—';
-  const req = r.requested_state ? JSON.stringify(r.requested_state) : '—';
+  const fmtState = s => {
+    if(!s) return '—';
+    if(s.label) return s.label;
+    return Object.entries(s).map(([k,v])=>k+': '+v).join(' · ');
+  };
+  const cur = fmtState(r.current_state);
+  const req = fmtState(r.requested_state);
   const actions = isPending
     ? `<button class="req-btn-approve" onclick="resolveRequest('change_requests','${r.id}','approved')">Approve</button>
        <button class="req-btn-modify" onclick="openModify('${r.id}')">Modify</button>
@@ -3508,7 +3543,7 @@ function renderChangeCard(r){
       <div class="req-device">${r.device_id} ${r.key_index!=null?'· Key '+(r.key_index+1):''}</div>
       <div class="req-state-row">
         <div class="req-state-block"><div class="req-state-label">Current</div><div class="req-state-val">${cur}</div></div>
-        <div class="req-state-block"><div class="req-state-label">Requested</div><div class="req-state-val">${req}</div></div>
+        ${req !== '—' ? '<div class="req-state-block"><div class="req-state-label">Requested</div><div class="req-state-val">'+req+'</div></div>' : ''}
       </div>
       ${r.note?`<div class="req-note">"${r.note}"</div>`:''}
       <div class="req-meta">${r.requester_role||''} · ${relTime(r.created_at)}</div>
