@@ -1083,6 +1083,9 @@ async function loadProds(){
     data.forEach(r=>{ PRODUCTIONS[r.id]=rowToProd(r); });
     localStorage.setItem('sc_admin_prods',JSON.stringify(PRODUCTIONS));
     if(state && state.view==='options' && _optActiveTab==='BBs') renderProductions();
+    // Rebuild filter pills with fresh production names
+    rebuildRoomProdPills();
+    if(state && state.view==='keypanels') buildProdPills();
   } else {
     const rows=Object.values(PRODUCTIONS).map(prodToRow);
     if(rows.length){
@@ -1237,22 +1240,7 @@ function buildUnifiedFilters(){
     else if(state.view==='keypanels') renderKeypanels();
   });
 
-  const rpEl=$('unified-room-pills'); if(!rpEl) return;
-  // Production pills — shared for KP and BP views, filter by production membership
-  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
-    const clr=crFg(prod.controlRoom)||'#888888';
-    const p=document.createElement('button'); p.type='button'; p.textContent=prodLabel(prod); p.className='kp-filter-pill';
-    p.style.color=clr;
-    p.addEventListener('click',()=>{
-      const isKp=state.view==='keypanels';
-      const set=isKp?_kpFilter.rooms:_bpFilter.rooms;
-      if(set.has(prod.id)){set.delete(prod.id);p.style.background='transparent';p.style.color=clr;}
-      else{set.add(prod.id);p.style.background=clr;p.style.color='#111';}
-      updateClearBtn();
-      if(isKp) renderKeypanels(); else renderAllBeltpacks();
-    });
-    rpEl.appendChild(p);
-  });
+  rebuildRoomProdPills();
 
   buildProdPills();
 }
@@ -1911,6 +1899,32 @@ function getPanelProdId(panelId){
   return prod ? prod.id : null;
 }
 
+function rebuildRoomProdPills(){
+  const rpEl=$('unified-room-pills'); if(!rpEl) return;
+  // Store currently active prod IDs so we can restore active state
+  const activeKpProds=new Set(_kpFilter.rooms);
+  const activeBpProds=new Set(_bpFilter.rooms);
+  rpEl.innerHTML='';
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+    const clr=crFg(prod.controlRoom)||'#888888';
+    const isKpActive=activeKpProds.has(prod.id);
+    const isBpActive=activeBpProds.has(prod.id);
+    const isActive=isKpActive||isBpActive;
+    const p=document.createElement('button'); p.type='button'; p.textContent=prodLabel(prod); p.className='kp-filter-pill';
+    p.style.color=isActive?'#111':clr;
+    if(isActive) p.style.background=clr;
+    p.addEventListener('click',()=>{
+      const isKp=state.view==='keypanels';
+      const set=isKp?_kpFilter.rooms:_bpFilter.rooms;
+      if(set.has(prod.id)){set.delete(prod.id);p.style.background='transparent';p.style.color=clr;}
+      else{set.add(prod.id);p.style.background=clr;p.style.color='#111';}
+      updateClearBtn();
+      if(isKp) renderKeypanels(); else renderAllBeltpacks();
+    });
+    rpEl.appendChild(p);
+  });
+}
+
 function buildProdPills(){
   const locEl=$('unified-loc-pills'); if(!locEl) return;
   locEl.innerHTML='';
@@ -2443,9 +2457,7 @@ function activateKP(panelId, code){
 function adminAssignKP(panelId, code){ setKpRoom(panelId, code, 'PCR1'); }
 
 function renderAllBeltpacks(){
-  // Populate prod filter
-  // prod filter is hidden — no UI needed
-
+  rebuildRoomProdPills(); // keep production pills in sync with PRODUCTIONS data
   const bpToProd={};
   Object.values(PRODUCTIONS).forEach(prod=>(prod.beltpacks||[]).forEach(bp=>{ const id=typeof bp==='string'?bp:bp.id; bpToProd[id]=prod; }));
 
