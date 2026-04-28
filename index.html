@@ -2075,7 +2075,7 @@ function buildKpCard(panel, prod, entry){
   hdr.innerHTML='<span class="kp-dot '+_stCls+'"></span>'
     +'<div class="kp-info"><div class="kp-name">'+panel.name+'</div><div class="kp-meta">PORT '+panel.port+' · '+panel.model+_roomDisplay+'</div></div>'
     +'<span class="kp-status-txt '+_stCls+'">'+statusLabel+'</span>'
-    +'<span class="kp-card-chevron'+(isOpen?' open':'')+'">›</span>';
+    +''; // chevron added via appendChild below
   // dummy to satisfy old concat:
   var _dummy = '';  _dummy +=
       +'<span style="width:5px;height:5px;border-radius:50%;background:'+statusColor+';display:inline-block;flex-shrink:0;"></span>'
@@ -2352,7 +2352,7 @@ function buildKpInlinePool(container, panelId, prodId, keyIndex){
 function refreshKpCard(panelId, prodId){
   const existing=document.getElementById('kp-card-'+panelId.replace(/\s/g,'_'));if(!existing)return;
   const prod=PRODUCTIONS[prodId]; if(!prod) return;
-  const panel=(prod.keypanels||[]).find(p=>p.id===panelId); if(!panel) return;
+  const panel=KP_PANELS.find(p=>p.id===panelId)||{model:'5032',name:panelId,location:'',port:''};
   const claimedKP=loadClaimedKP(prodId);
   const newCard=buildKpCard(panel,prod,claimedKP[panelId]);
   existing.replaceWith(newCard);
