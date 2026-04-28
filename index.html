@@ -2471,13 +2471,9 @@ function adminRenameKP(panelId, code){
 function openBpKeyModal(bp, code, keyIndex){
   const c=loadClaimed(code);
   if(!c[bp]){
-    if(code==='__bpdraft__'){
-      // Create draft entry
-      c[bp]={userName:'',keys:[null,null,null,null],status:'pending',controlRoom:''};
-      saveClaimed('__bpdraft__',c);
-    } else {
-      toast('Assign beltpack first','danger'); return;
-    }
+    // Allow pre-programming keys before crew assignment — store as draft
+    c[bp]={userName:'',keys:[null,null,null,null],status:'pending',controlRoom:''};
+    saveClaimed(code, c);
   }
   // Reuse KP pool modal with bp context
   _poolModalState={panelId:'__bp__'+bp, prodId:code, keyIndex, activeCats:new Set(['PLs','IFBs','KPs','BPs']),
