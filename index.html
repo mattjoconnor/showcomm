@@ -248,8 +248,8 @@ body { background:var(--bg); color:var(--black); }
   flex-direction:column;
   padding:clamp(10px,1.5vh,12px) clamp(10px,1.4vw,14px) 0;
 }
-.bp-num { font-family:var(--f-mono); font-size:clamp(.58rem,.6vw,.68rem); font-weight:400; letter-spacing:.2em; text-transform:uppercase; color:rgba(0,0,0,.38); padding-bottom:2px; }
-.bp-name { font-family:var(--f-ui); font-size:clamp(.85rem,1.3vw,1.05rem); font-weight:800; color:var(--black); letter-spacing:-.01em; line-height:1.1; padding-bottom:6px; }
+.bp-num { display:flex; align-items:baseline; justify-content:space-between; gap:6px; font-family:var(--f-mono); font-size:clamp(.58rem,.6vw,.68rem); font-weight:400; letter-spacing:.2em; text-transform:uppercase; color:rgba(0,0,0,.38); padding-bottom:2px; }
+.bp-name { font-family:var(--f-ui); font-size:clamp(.68rem,.85vw,.78rem); font-weight:800; color:var(--black); letter-spacing:-.01em; line-height:1; text-align:right; flex-shrink:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .bp-keys { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:2px; padding-bottom:8px; }
 .bk { height:clamp(40px,5.8vh,56px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; transition:background .08s, color .08s; }
 .bk .kl { font-family:var(--f-mono); font-size:clamp(.58rem,.72vw,.68rem); font-weight:700; letter-spacing:.04em; text-transform:uppercase; line-height:1.15; text-align:center; display:block; overflow:hidden; }
@@ -2671,8 +2671,9 @@ function renderBpCards(bpToProd){
     else badge='<span class="badge pending"><span class="badge-dot"></span>Pending</span>';
 
     const prodText=prod?prodLabel(prod):'—';
-    const r1='<div class="bp-num">'+bp+' <span style="font-weight:400;color:rgba(0,0,0,.32);font-size:.65rem;">'+prodText+'</span></div>';
-    const r2=entry?'<div class="bp-name">'+entry.userName+'</div>':'<div class="bp-name" style="color:rgba(0,0,0,.3);font-weight:400;font-size:.85rem;">'+(prod?'Available':'No production')+'</div>';
+    const _nameHtml=entry&&entry.userName?'<span class="bp-name">'+entry.userName+'</span>':'';
+    const r1='<div class="bp-num"><span>'+bp+' <span style="font-weight:400;color:rgba(0,0,0,.32);font-size:.65rem;">'+prodText+'</span></span>'+_nameHtml+'</div>';
+    const r2=''; // name moved into r1
 
     // Row 3 — key slots always rendered; hidden placeholder for available cards
     // Always show key grid — click to assign if no entry yet
