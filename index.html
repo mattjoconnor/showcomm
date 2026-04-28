@@ -433,7 +433,7 @@ body { background:var(--bg); color:var(--black); }
 
 /* ─── PRODUCTIONS ─── */
 .prod-card { background:var(--surface); border:1px solid var(--border-md); overflow:hidden; }
-.prod-card-header { padding:clamp(14px,2vh,18px) clamp(16px,2.2vw,28px); display:flex; align-items:center; gap:18px; cursor:pointer; transition:background .08s; }
+.prod-card-header { padding:clamp(14px,2vh,18px) clamp(16px,2.2vw,28px); display:flex; align-items:center; gap:18px; cursor:default; transition:background .08s; }
 .prod-card-header:hover { background:var(--bg); }
 .prod-card-name { font-family:var(--f-ui); font-size:clamp(1rem,1.8vw,1.5rem); font-weight:900; letter-spacing:-.02em; color:var(--black); }
 .prod-card-meta { font-family:var(--f-mono); font-size:clamp(.55rem,.58vw,.62rem); font-weight:400; color:rgba(0,0,0,.38); letter-spacing:.12em; text-transform:uppercase; margin-top:2px; }
@@ -3359,13 +3359,11 @@ function renderProductions(){
     card.innerHTML=`
       <div class="prod-card-header">
         <div class="prod-drag-handle" title="Drag to reorder">&#8942;&#8942;</div>
-        <div style="flex:1;min-width:0;" onclick="toggleProdCard('${prod.id}')">
+        <div style="flex:1;min-width:0;cursor:pointer;" onclick="toggleProdCard('${prod.id}')">
           <div class="prod-card-name">${prod.name||prod.id}</div>
           <div class="prod-card-meta"><span style="color:${crFg(prod.controlRoom)};font-weight:800;">${prod.controlRoom||''}</span>${prod.dates?' · '+prod.dates:''}${prod.beltpacks.length?' · '+prod.beltpacks[0]+'–'+prod.beltpacks[prod.beltpacks.length-1]:''}</div>
         </div>
-
-        </div>
-        <div class="prod-card-stats" onclick="toggleProdCard('${prod.id}')">
+        <div class="prod-card-stats" style="cursor:pointer;" onclick="toggleProdCard('${prod.id}')">
           <div class="prod-stat"><div class="prod-stat-val">${total}</div><div class="prod-stat-lbl">Total</div></div>
           <div class="prod-stat"><div class="prod-stat-val">${assigned}</div><div class="prod-stat-lbl">Assigned</div></div>
           <div class="prod-stat"><div class="prod-stat-val" style="color:${pending>0?'var(--pending)':'inherit'}">${pending}</div><div class="prod-stat-lbl">Pending</div></div>
