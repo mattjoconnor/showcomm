@@ -1734,7 +1734,8 @@ function kpRoomBtnClick(btn, room, prodId){
 let _kpRoomProdId=null;
 (document.getElementById('btn-kp-room-confirm')||document.createElement('button')).addEventListener('click',()=>{
   if(!_kpRoomSelected){toast('Select a production','danger');return;}
-  const prodId=$('kp-room-prod-id').value;
+  // Use the production selected in the modal, falling back to pre-set prodId
+  const prodId=_kpRoomProdId||$('kp-room-prod-id').value;
   const panelId=$('kp-room-panel-id').value;
   let room=_kpRoomSelected; // controlRoom of selected production
   $('modal-kp-room').classList.remove('active');
@@ -2358,16 +2359,26 @@ function refreshKpCard(panelId, prodId){
 
 // KP Room Assignment Modal
 function openKpRoomModal(panelId, prodId){
-  const prod=PRODUCTIONS[prodId]; if(!prod) return;
-  const panel=(prod.keypanels||[]).find(p=>p.id===panelId); if(!panel) return;
-  // Build modal content
+  // Look up panel from KP_PANELS (global inventory, not prod.keypanels)
+  const panel=KP_PANELS.find(p=>p.id===panelId)||{name:panelId,model:'5032',port:'—',location:'—'};
   $('kp-room-panel-name').textContent = panel.name;
   $('kp-room-panel-meta').textContent = `${panel.model} · Port ${panel.port} · ${panel.location}`;
-  $('kp-room-prod-id').value = prodId;
+  $('kp-room-prod-id').value = prodId||'';
   $('kp-room-panel-id').value = panelId;
-  $('kp-room-other-inp').style.display='none';
-  $('kp-room-other-inp').value='';
-  document.querySelectorAll('.kp-room-btn').forEach(b=>b.classList.remove('active'));
+  $('kp-room-other-inp').style.display='none'; $('kp-room-other-inp').value='';
+  _kpRoomSelected=null; _kpRoomProdId=null;
+  // Build production buttons dynamically
+  const wrap=document.getElementById('kp-room-btns-wrap'); wrap.innerHTML='';
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+    const clr=crFg(prod.controlRoom)||'#888888';
+    const btn=document.createElement('button');
+    btn.className='room-btn kp-room-btn';
+    btn.dataset.room=prod.controlRoom; btn.dataset.prodId=prod.id;
+    btn.innerHTML='<span class="room-btn-color" style="background:'+clr+';"></span><span class="room-btn-name">'+prodLabel(prod)+'</span>';
+    btn.addEventListener('click',()=>kpRoomBtnClick(btn, prod.controlRoom, prod.id));
+    wrap.appendChild(btn);
+  });
+  _kpRoomReassign=false;
   $('modal-kp-room').classList.add('active');
 }
 
@@ -2447,8 +2458,9 @@ function warnAssign(bp, code, conflictCode){
 
 function setKpRoom(panelId, code, room){
   const prod = PRODUCTIONS[code];
-  const panel = (prod.keypanels||[]).find(p=>p.id===panelId);
-  if(!panel) return;
+  if(!prod){ toast('Production not found', 'danger'); return; }
+  // Look up panel from global KP_PANELS inventory
+  const panel = KP_PANELS.find(p=>p.id===panelId)||{model:'5032'};
   const c = loadClaimedKP(code);
   if(!room){
     // Clearing room — if entry exists and unactivated, remove it
@@ -2654,22 +2666,17 @@ function openAssignModal(bp,code){
     wrap.innerHTML='';
     const grid=document.createElement('div');
     grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;';
-    ['PCR1','PCR2','MFR1','MFR2'].forEach(room=>{
-      const clr=crFg(room);
+    // Show active productions instead of hardcoded rooms
+    Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+      const clr=crFg(prod.controlRoom)||'#888';
       const btn=document.createElement('button');
-      btn.className='assign-room-btn'; btn.dataset.room=room;
-      btn.style.cssText='padding:14px;font-family:var(--font);font-size:13px;font-weight:800;border:2px solid '+clr+'55;background:transparent;color:'+clr+';cursor:pointer;';
-      btn.textContent=room;
-      btn.addEventListener('click',()=>assignRoomClick(btn,room));
+      btn.className='assign-room-btn'; btn.dataset.room=prod.controlRoom; btn.dataset.prodId=prod.id;
+      btn.style.cssText='padding:14px;font-family:var(--f-ui);font-size:13px;font-weight:800;border:2px solid '+clr+'55;background:transparent;color:'+clr+';cursor:pointer;text-align:left;';
+      btn.textContent=prodLabel(prod);
+      btn.addEventListener('click',()=>assignRoomClick(btn,prod.controlRoom));
       grid.appendChild(btn);
     });
     wrap.appendChild(grid);
-    const other=document.createElement('button');
-    other.className='assign-room-btn'; other.dataset.room='OTHER';
-    other.style.cssText='width:100%;padding:12px;font-family:var(--font);font-size:13px;font-weight:800;border:1px solid var(--border-hi);background:transparent;color:var(--text-muted);cursor:pointer;';
-    other.textContent='OTHER';
-    other.addEventListener('click',()=>assignRoomClick(other,'OTHER'));
-    wrap.appendChild(other);
     // Add hidden other-name input
     let oi=$('assign-room-other');
     if(!oi){
@@ -3348,7 +3355,7 @@ function renderProductions(){
   const act=$('main-actions'); act.innerHTML='';
   act.innerHTML='<button class="btn-sm primary" onclick="openNewProd()" style="font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:7px 16px;background:var(--black);color:#fff;border:none;cursor:pointer;">+ New Production</button>';
 
-  Object.values(PRODUCTIONS).forEach(prod=>{
+  Object.values(PRODUCTIONS).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)).forEach(prod=>{
     const claimed=loadClaimed(prod.id);
     const assigned=Object.keys(claimed).length, total=prod.beltpacks.length;
     const pending=Object.values(claimed).filter(e=>e.status==='pending').length;
