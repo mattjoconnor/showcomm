@@ -4125,11 +4125,6 @@ async function initTMApp(){
   // Default to first production, keypanels view
   if(_tmProductions.length) _tmActiveProd=_tmProductions[0].id;
   // Highlight first prod pill
-  const firstPill=prodBar.querySelector('.kp-filter-pill');
-  if(firstPill&&_tmProductions[0]){
-    const clr=crFg(_tmProductions[0].controlRoom)||'#888';
-    firstPill.style.background=clr; firstPill.style.color='#111';
-  }
   setTMView('keypanels');
 }
 
