@@ -2601,8 +2601,9 @@ function refreshKpCard(panelId, prodId){
 
 // KP Room Assignment Modal
 function tmCheckDirtyBeforeOpen(newPanelId, newProdId){
-  if(!_tmDirty||_tmDirty.panelId===newPanelId) return;
+  if(!_tmDirty||(newPanelId!=='__nav__'&&_tmDirty.panelId===newPanelId)) return;
   const {panelId,prodId,type}=_tmDirty;
+  const _isNav=newPanelId==='__nav__';
   // Single combined modal - no two-step flow
   const existing=document.getElementById('tm-dirty-overlay');
   if(existing) existing.remove();
@@ -2638,7 +2639,7 @@ function tmCheckDirtyBeforeOpen(newPanelId, newProdId){
       if(error){ toast('Error: '+error.message,'danger'); return; }
     }
     _tmDirty=null; toast('Changes submitted','success');
-    if(type==='kp') renderKeypanels(); else renderAllBeltpacks();
+    if(!_isNav){ if(type==='kp') renderKeypanels(); else renderAllBeltpacks(); }
   };
   const ok=document.createElement('button'); ok.textContent='Submit Changes';
   ok.style.cssText='font-family:var(--f-mono);font-size:clamp(.65rem,.92vw,.78rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;flex:1;padding:clamp(9px,1.4vh,12px);background:var(--green);color:#fff;border:none;cursor:pointer;';
@@ -4308,6 +4309,11 @@ async function initTMApp(){
 }
 
 function setTMView(view){
+  // If navigating away with unsaved changes, prompt first
+  if(_tmDirty && view!==_tmActiveView){
+    tmCheckDirtyBeforeOpen('__nav__', null);
+    return;
+  }
   _tmActiveView=view;
   const ribbon=document.getElementById('tm-ribbon');
   if(ribbon) ribbon.querySelectorAll('.tm-ribbon-tab').forEach(b=>{
