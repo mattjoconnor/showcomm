@@ -4097,7 +4097,7 @@ async function initTMApp(){
     +'<div class="tm-user">'+(_currentProfile?.display_name||'')+'</div>'
     +'<button class="tm-signout" id="btn-tm-logout">Sign Out</button>';
   tmScreen.appendChild(topbar);
-  document.getElementById('btn-tm-logout').addEventListener('click',logoutUser);
+  document.getElementById('btn-tm-logout').addEventListener('click',doLogout);
 
   // Ribbon — Keypanels / Beltpacks / Requests
   const ribbon=document.createElement('div');
