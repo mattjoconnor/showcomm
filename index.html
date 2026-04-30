@@ -2624,7 +2624,7 @@ function tmCheckDirtyBeforeOpen(newPanelId, newProdId){
   noteTA.placeholder='Anything admin should know…';
   noteTA.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); doSubmit(); } });
   body.appendChild(noteLbl); body.appendChild(noteTA);
-  const btns=document.createElement('div'); btns.className='confirm-btns';
+  const btns=document.createElement('div'); btns.style.cssText='display:flex;gap:10px;';
   const doSubmit=async()=>{
     overlay.remove();
     const keys=type==='kp'?loadClaimedKP(prodId)[panelId]?.keys:loadClaimed(prodId)[panelId]?.keys;
@@ -2640,13 +2640,14 @@ function tmCheckDirtyBeforeOpen(newPanelId, newProdId){
     _tmDirty=null; toast('Changes submitted','success');
     if(type==='kp') renderKeypanels(); else renderAllBeltpacks();
   };
-  const ok=document.createElement('button'); ok.className='confirm-yes'; ok.textContent='Submit Changes';
+  const ok=document.createElement('button'); ok.textContent='Submit Changes';
+  ok.style.cssText='font-family:var(--f-mono);font-size:clamp(.65rem,.92vw,.78rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;flex:1;padding:clamp(9px,1.4vh,12px);background:var(--green);color:#fff;border:none;cursor:pointer;';
   ok.addEventListener('click',doSubmit);
   const discard=document.createElement('button'); discard.className='confirm-no'; discard.textContent='Discard';
-  discard.style.cssText='font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:10px 24px;background:transparent;border:1px solid var(--border-md);cursor:pointer;color:var(--red);';
+  discard.style.cssText='font-family:var(--f-mono);font-size:clamp(.65rem,.92vw,.78rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;flex:1;padding:clamp(9px,1.4vh,12px);background:transparent;color:var(--red);border:1px solid rgba(200,0,0,.3);cursor:pointer;';
   discard.addEventListener('click',()=>{ overlay.remove(); tmDiscardChanges(panelId,prodId,type); });
   const cancel=document.createElement('button'); cancel.textContent='Cancel';
-  cancel.style.cssText='font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:10px 24px;background:transparent;border:1px solid var(--border-md);cursor:pointer;color:rgba(0,0,0,.45);';
+  cancel.style.cssText='font-family:var(--f-mono);font-size:clamp(.65rem,.92vw,.78rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;flex:1;padding:clamp(9px,1.4vh,12px);background:transparent;color:rgba(0,0,0,.5);border:1px solid rgba(0,0,0,.2);cursor:pointer;';
   cancel.addEventListener('click',()=>overlay.remove());
   btns.appendChild(ok); btns.appendChild(discard); btns.appendChild(cancel);
   body.appendChild(btns);
