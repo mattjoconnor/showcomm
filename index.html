@@ -2819,7 +2819,8 @@ document.addEventListener('click',function(e){
   else if(act==='warnassign') warnAssign(bp2,code2,btn.dataset.conflict);
   else if(act==='confirm') quickConfirm(bp2,code2);
   else if(act==='tmreq'){
-    openTMReqModal(bp2, code2);
+    if(_tmMode) openTMBpRequestModal(bp2);
+    else openTMReqModal(bp2, code2);
     return;
   }
   else if(act==='tmsubmit'){
@@ -4347,30 +4348,134 @@ function renderTMBeltpacks(){
   renderBpCards(Object.fromEntries(filtered.map(bp=>[bp,bpToProd[bp]])));
 }
 
+function openTMBpRequestModal(bp){
+  // Build production picker modal
+  const existing=document.getElementById('tm-bp-req-overlay');
+  if(existing) existing.remove();
+  const overlay=document.createElement('div');
+  overlay.id='tm-bp-req-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:center;justify-content:center;';
+  const panel=document.createElement('div');
+  panel.className='confirm-panel';
+
+  const head=document.createElement('div'); head.className='confirm-head';
+  const eye=document.createElement('div'); eye.className='confirm-type'; eye.textContent='Request Assignment';
+  const ttl=document.createElement('div'); ttl.className='confirm-title-txt'; ttl.textContent='Assign '+bp+' to production';
+  head.appendChild(eye); head.appendChild(ttl);
+
+  const body=document.createElement('div'); body.className='confirm-body-wrap';
+  const msg=document.createElement('div'); msg.className='confirm-msg'; msg.textContent='Select which production to request this beltpack for:';
+  body.appendChild(msg);
+
+  // Production buttons
+  const prodBtns=document.createElement('div'); prodBtns.style.cssText='display:flex;flex-direction:column;gap:6px;margin:12px 0;';
+  let _selectedProdId=null;
+  _tmProductions.forEach(prod=>{
+    const clr=crFg(prod.controlRoom)||'#888';
+    const btn=document.createElement('button');
+    btn.style.cssText='padding:12px 16px;border:2px solid '+clr+'44;background:transparent;font-family:var(--f-ui);font-size:14px;font-weight:800;color:'+clr+';cursor:pointer;text-align:left;';
+    btn.textContent=prodLabel(prod)+' · '+prod.controlRoom;
+    btn.addEventListener('click',()=>{
+      prodBtns.querySelectorAll('button').forEach(b=>{ b.style.borderColor=crFg(PRODUCTIONS[b.dataset.pid]||{controlRoom:''})+'44'; b.style.background='transparent'; });
+      btn.style.borderColor=clr; btn.style.background=clr+'22';
+      _selectedProdId=prod.id;
+    });
+    btn.dataset.pid=prod.id;
+    prodBtns.appendChild(btn);
+  });
+  body.appendChild(prodBtns);
+
+  // Note
+  const noteLbl=document.createElement('label');
+  noteLbl.style.cssText='display:block;font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(0,0,0,.45);margin-bottom:6px;';
+  noteLbl.textContent='Note (optional)';
+  const noteTA=document.createElement('textarea');
+  noteTA.id='tm-bp-req-note'; noteTA.rows=2;
+  noteTA.style.cssText='width:100%;border:none;border-bottom:1px solid var(--border-md);font-family:var(--f-mono);font-size:13px;padding:8px 0;outline:none;background:transparent;resize:none;margin-bottom:12px;';
+  noteTA.placeholder='Anything admin should know…';
+  body.appendChild(noteLbl); body.appendChild(noteTA);
+
+  const btns=document.createElement('div'); btns.className='confirm-btns';
+  const ok=document.createElement('button'); ok.className='confirm-yes'; ok.textContent='Submit Request';
+  ok.addEventListener('click',async()=>{
+    if(!_selectedProdId){ toast('Select a production','danger'); return; }
+    if(!SUPA) return;
+    const prod=PRODUCTIONS[_selectedProdId];
+    const {error}=await SUPA.from('change_requests').insert({
+      device_id:bp, device_type:'beltpack',
+      note:noteTA.value.trim()||'TM requests assignment to '+prodLabel(prod),
+      requested_state:{production_id:_selectedProdId, production_name:prodLabel(prod)},
+      requester_role:'tm', status:'pending',
+      production_id:_selectedProdId
+    });
+    overlay.remove();
+    if(error){ toast('Error: '+error.message,'danger'); return; }
+    toast(bp+' requested for '+prodLabel(prod),'success');
+  });
+  const cancel=document.createElement('button'); cancel.className='confirm-no'; cancel.textContent='Cancel';
+  cancel.addEventListener('click',()=>overlay.remove());
+  btns.appendChild(ok); btns.appendChild(cancel);
+  body.appendChild(btns);
+  panel.appendChild(head); panel.appendChild(body);
+  overlay.appendChild(panel);
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
 async function renderTMRequests(){
   const body=document.getElementById('tm-body'); if(!body) return;
   body.innerHTML='<div class="req-empty">Loading…</div>';
-  if(!SUPA||!_currentUser){ body.innerHTML='<div class="req-empty">Not connected</div>'; return; }
+  if(!SUPA){ body.innerHTML='<div class="req-empty">Not connected</div>'; return; }
+
+  const prodIds=_tmProductions.map(p=>p.id);
+
+  // Pending KP + BP summary
+  let pendingKP=0, pendingBP=0;
+  _tmProductions.forEach(prod=>{
+    const kps=loadClaimedKP(prod.id);
+    const bps=loadClaimed(prod.id);
+    pendingKP+=Object.values(kps).filter(e=>e.status==='pending').length;
+    pendingBP+=Object.values(bps).filter(e=>e.status==='pending').length;
+  });
+
+  // Fetch requests for all TM productions
   const [cr,kr]=await Promise.all([
-    SUPA.from('change_requests').select('*').eq('requester_role','tm').order('created_at',{ascending:false}),
-    SUPA.from('key_requests').select('*').eq('requester_role','tm').order('created_at',{ascending:false})
+    SUPA.from('change_requests').select('*').in('production_id',prodIds.length?prodIds:['__none__']).order('created_at',{ascending:false}),
+    SUPA.from('key_requests').select('*').in('production_id',prodIds.length?prodIds:['__none__']).order('created_at',{ascending:false})
   ]);
   const changes=cr.data||[], keys=kr.data||[];
-  if(!changes.length&&!keys.length){ body.innerHTML='<div class="req-empty">No requests submitted yet</div>'; return; }
-  let html='<div style="max-width:900px;margin:0 auto;padding:clamp(16px,2vw,28px);">';
+
+  let html='<div style="padding:clamp(16px,2vw,28px);">';
+
+  // Pending summary banner
+  if(pendingKP||pendingBP){
+    html+='<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);padding:12px 16px;margin-bottom:16px;display:flex;gap:24px;">';
+    if(pendingKP) html+='<span style="font-family:var(--f-mono);font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--amber);">● '+pendingKP+' KP'+(pendingKP>1?'s':'')+' PENDING CONFIRMATION</span>';
+    if(pendingBP) html+='<span style="font-family:var(--f-mono);font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--amber);">● '+pendingBP+' BP'+(pendingBP>1?'s':'')+' PENDING CONFIRMATION</span>';
+    html+='</div>';
+  }
+
+  if(!changes.length&&!keys.length){
+    html+='<div class="req-empty">No requests for your productions yet</div></div>';
+    body.innerHTML=html; return;
+  }
+
   const allReqs=[...changes.map(r=>({...r,_type:'change'})),...keys.map(r=>({...r,_type:'key'}))]
     .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   allReqs.forEach(r=>{
     const isChange=r._type==='change';
     const statusColor=r.status==='approved'||r.status==='fulfilled'?'var(--green)':r.status==='denied'?'var(--red)':'var(--amber)';
+    const prod=PRODUCTIONS[r.production_id];
+    const prodClr=prod?crFg(prod.controlRoom):'#888';
     html+='<div style="border:1px solid var(--border-md);margin-bottom:8px;display:flex;gap:0;">'
       +'<div style="width:4px;background:'+(isChange?'#7C3AED':'#0891B2')+'"></div>'
       +'<div style="flex:1;padding:12px 16px;">'
-      +'<div style="font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.16em;color:'+(isChange?'#5b21b6':'#0e6a82')+';">'
-      +(isChange?'CHANGE REQUEST':'NEW KEY REQUEST')+'</div>'
-      +'<div style="font-family:var(--f-ui);font-size:14px;font-weight:800;margin:4px 0;">'
-      +(r.device_id||r.description||'—')+'</div>'
-      +(r.note?'<div style="font-family:var(--f-mono);font-size:11px;color:rgba(0,0,0,.45);font-style:italic;">"'+r.note+'"</div>':'' )
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+      +'<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.16em;color:'+(isChange?'#5b21b6':'#0e6a82')+'">'+(isChange?'CHANGE REQUEST':'NEW KEY REQUEST')+'</span>'
+      +(prod?'<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.1em;color:'+prodClr+';">'+prodLabel(prod)+'</span>':'')
+      +'</div>'
+      +'<div style="font-family:var(--f-ui);font-size:14px;font-weight:800;margin-bottom:2px;">'+(r.device_id||r.description||'—')+'</div>'
+      +(r.note?'<div style="font-family:var(--f-mono);font-size:11px;color:rgba(0,0,0,.45);font-style:italic;">"'+r.note+'"</div>':'')
       +'<div style="font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.35);margin-top:4px;">'+relTime(r.created_at)+'</div>'
       +'</div>'
       +'<div style="display:flex;align-items:center;padding:12px 16px;border-left:1px solid var(--border-md);">'
