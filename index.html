@@ -4134,17 +4134,19 @@ function setTMView(view){
   if(ribbon) ribbon.querySelectorAll('.tm-ribbon-tab').forEach(b=>{
     b.classList.toggle('active', b.textContent.toLowerCase()===view);
   });
+  const body=document.getElementById('tm-body'); if(!body) return;
+  // Restore any previously moved views back to main-body first
+  const mb=document.querySelector('.main-body');
+  ['view-keypanels','view-allbeltpacks'].forEach(id=>{
+    const el=$(id); if(el&&mb&&!mb.contains(el)){ mb.appendChild(el); el.style.display=''; }
+  });
+  body.innerHTML='';
   if(view==='keypanels'){
-    // Show admin KP view inside tm-body
-    const body=document.getElementById('tm-body'); if(!body) return;
-    body.innerHTML='';
     const kpView=$('view-keypanels');
-    if(kpView){ body.appendChild(kpView); renderKeypanels(); }
+    if(kpView){ kpView.style.display='block'; body.appendChild(kpView); renderKeypanels(); }
   } else if(view==='beltpacks'){
-    const body=document.getElementById('tm-body'); if(!body) return;
-    body.innerHTML='';
     const bpView=$('view-allbeltpacks');
-    if(bpView){ body.appendChild(bpView); renderAllBeltpacks(); }
+    if(bpView){ bpView.style.display='block'; body.appendChild(bpView); renderAllBeltpacks(); }
   } else if(view==='requests'){
     renderTMRequests();
   }
