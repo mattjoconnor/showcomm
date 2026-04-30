@@ -1401,6 +1401,14 @@ function buildUnifiedFilters(){
 }
 
 function doLogout(){
+  // Restore KP/BP views to main app if TM moved them
+  if(_tmMode){
+    const mb=document.querySelector('.main-body');
+    const kv=$('view-keypanels'), bv=$('view-allbeltpacks');
+    if(mb&&kv&&!mb.contains(kv)) mb.insertBefore(kv, mb.firstChild);
+    if(mb&&bv&&!mb.contains(bv)) mb.appendChild(bv);
+    _tmMode=false;
+  }
   if((_currentRole==='admin'||_currentRole==='tm') && SUPA) SUPA.auth.signOut();
   _currentUser=null; _currentProfile=null; _currentRole=null; _selectedRole=null; _tmMode=false;
   document.querySelectorAll('.login-role-btn').forEach(b=>b.classList.remove('active'));
@@ -2356,26 +2364,6 @@ function buildKpCard(panel, prod, entry){
   const actBar=document.createElement('div');
   actBar.className='kp-acts';
 
-  // TM mode — replace action buttons with request-only UI
-  if(_tmMode){
-    const tmActBar=document.createElement('div'); tmActBar.className='kp-acts';
-    if(entry){
-      const status=entry.status;
-      const badge=document.createElement('span');
-      badge.className='badge '+(status==='confirmed'?'confirmed':'pending');
-      badge.textContent=status==='confirmed'?'Confirmed':'Pending';
-      tmActBar.appendChild(badge);
-    }
-    const reqBtn=document.createElement('button');
-    reqBtn.className='act-out'; reqBtn.textContent=prod?'Request Change':'Request Assignment';
-    reqBtn.addEventListener('click',()=>openTMReqModal(panel.id,prod?prod.id:null));
-    tmActBar.appendChild(reqBtn);
-    body.appendChild(tmActBar);
-    _kpIn.appendChild(body);
-    card.appendChild(_kpIn);
-    return card;
-  }
-
   // Clear button — always defined, always last
   const clrBtn=document.createElement('button');
   clrBtn.className='act-dng';
@@ -2410,7 +2398,22 @@ function buildKpCard(panel, prod, entry){
     setBtn.addEventListener('click',()=>openKpRoomModal(panel.id,''));
     actBar.appendChild(setBtn);
   }
-  actBar.appendChild(clrBtn); // always last — margin-left:auto pins it right
+  if(_tmMode){
+    // Replace all admin buttons with TM request button
+    actBar.innerHTML='';
+    if(entry){
+      const sb=document.createElement('span');
+      sb.className='badge '+(entry.status==='confirmed'?'confirmed':'pending');
+      sb.textContent=entry.status==='confirmed'?'Confirmed':'Pending';
+      actBar.appendChild(sb);
+    }
+    const rb=document.createElement('button');
+    rb.className='act-out'; rb.textContent=prod?'Request Change':'Request Assignment';
+    rb.addEventListener('click',()=>openTMReqModal(panel.id,prod?prod.id:null));
+    actBar.appendChild(rb);
+  } else {
+    actBar.appendChild(clrBtn); // always last — margin-left:auto pins it right
+  }
   body.appendChild(actBar);
   _kpIn.appendChild(body);
   card.appendChild(_kpIn);
@@ -4110,25 +4113,9 @@ async function initTMApp(){
   });
   tmScreen.appendChild(ribbon);
 
-  // Production filter bar
-  const prodBar=document.createElement('div');
-  prodBar.className='tm-prod-bar'; prodBar.id='tm-prod-bar';
-  _tmProductions.forEach(prod=>{
-    const clr=crFg(prod.controlRoom)||'#888';
-    const btn=document.createElement('button');
-    btn.className='kp-filter-pill'; btn.textContent=prodLabel(prod);
-    btn.style.color=clr; btn.dataset.prodId=prod.id;
-    btn.addEventListener('click',()=>{
-      if(_tmActiveProd===prod.id){ _tmActiveProd=null; btn.style.background=''; btn.style.color=clr; }
-      else {
-        prodBar.querySelectorAll('.kp-filter-pill').forEach(b=>{ b.style.background=''; b.style.color=crFg(PRODUCTIONS[b.dataset.prodId])||'#888'; });
-        _tmActiveProd=prod.id; btn.style.background=clr; btn.style.color='#111';
-      }
-      tmRefreshView();
-    });
-    prodBar.appendChild(btn);
-  });
-  tmScreen.appendChild(prodBar);
+  // Reuse admin unified-filters bar
+  const ufBar=$('unified-filters');
+  if(ufBar){ ufBar.style.display='flex'; tmScreen.appendChild(ufBar); }
 
   // Body
   const body=document.createElement('div');
@@ -4152,16 +4139,24 @@ function setTMView(view){
   if(ribbon) ribbon.querySelectorAll('.tm-ribbon-tab').forEach(b=>{
     b.classList.toggle('active', b.textContent.toLowerCase()===view);
   });
-  const body=document.getElementById('tm-body');
-  if(!body) return;
-  if(view==='keypanels') renderTMKeypanels();
-  else if(view==='beltpacks') renderTMBeltpacks();
-  else if(view==='requests') renderTMRequests();
+  if(view==='keypanels'){
+    // Show admin KP view inside tm-body
+    const body=document.getElementById('tm-body'); if(!body) return;
+    body.innerHTML='';
+    const kpView=$('view-keypanels');
+    if(kpView){ body.appendChild(kpView); renderKeypanels(); }
+  } else if(view==='beltpacks'){
+    const body=document.getElementById('tm-body'); if(!body) return;
+    body.innerHTML='';
+    const bpView=$('view-allbeltpacks');
+    if(bpView){ body.appendChild(bpView); renderAllBeltpacks(); }
+  } else if(view==='requests'){
+    renderTMRequests();
+  }
 }
 
 function tmRefreshView(){
-  if(_tmActiveView==='keypanels') renderTMKeypanels();
-  else if(_tmActiveView==='beltpacks') renderTMBeltpacks();
+  setTMView(_tmActiveView||'keypanels');
 }
 
 let _tmActiveView='keypanels';
