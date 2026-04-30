@@ -2130,16 +2130,16 @@ function buildProdPills(){
     const clr=crFg(prod.controlRoom)||'#888888';
     const label=prodLabel(prod);
     const p=document.createElement('button'); p.type='button'; p.className='kp-filter-pill';
-    const isActive=_kpFilter.locs.has(prod.id);
+    const isActive=_kpFilter.rooms.has(prod.id);
     p.style.color=isActive?'#111':clr;
     if(isActive) p.style.background=clr;
     p.addEventListener('click',function(){
-      if(_kpFilter.locs.has(prod.id)){
-        _kpFilter.locs.delete(prod.id);
+      if(_kpFilter.rooms.has(prod.id)){
+        _kpFilter.rooms.delete(prod.id);
         p.style.background='transparent'; p.style.color=clr;
       } else {
-        _kpFilter.locs.add(prod.id);
-        p.style.background=clr; p.style.color='#fff';
+        _kpFilter.rooms.add(prod.id);
+        p.style.background=clr; p.style.color='#111';
       }
       updateClearBtn();
       renderKeypanels();
@@ -2599,14 +2599,59 @@ function refreshKpCard(panelId, prodId){
 // KP Room Assignment Modal
 function tmCheckDirtyBeforeOpen(newPanelId, newProdId){
   if(!_tmDirty||_tmDirty.panelId===newPanelId) return;
-  const dirtyName=_tmDirty.panelId;
-  adminConfirm(
-    'Unsaved Changes',
-    'You have unsaved changes on '+dirtyName,
-    'You can submit or discard your changes.',
-    'Submit Changes',
-    ()=>openTMSubmitModal(_tmDirty.panelId, _tmDirty.prodId, _tmDirty.type)
-  );
+  const {panelId,prodId,type}=_tmDirty;
+  // Single combined modal - no two-step flow
+  const existing=document.getElementById('tm-dirty-overlay');
+  if(existing) existing.remove();
+  const overlay=document.createElement('div');
+  overlay.id='tm-dirty-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:center;justify-content:center;';
+  const panel=document.createElement('div'); panel.className='confirm-panel';
+  const head=document.createElement('div'); head.className='confirm-head';
+  const eye=document.createElement('div'); eye.className='confirm-type'; eye.textContent='Unsaved Changes';
+  const ttl=document.createElement('div'); ttl.className='confirm-title-txt';
+  ttl.textContent='Submit changes on '+panelId+'?';
+  head.appendChild(eye); head.appendChild(ttl);
+  const body=document.createElement('div'); body.className='confirm-body-wrap';
+  const noteLbl=document.createElement('label');
+  noteLbl.style.cssText='display:block;font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(0,0,0,.45);margin-bottom:6px;';
+  noteLbl.textContent='Note for admin (optional)';
+  const noteTA=document.createElement('textarea');
+  noteTA.rows=2; noteTA.style.cssText='width:100%;border:none;border-bottom:1px solid var(--border-md);font-family:var(--f-mono);font-size:13px;padding:8px 0;outline:none;background:transparent;resize:none;margin-bottom:12px;';
+  noteTA.placeholder='Anything admin should know…';
+  noteTA.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); doSubmit(); } });
+  body.appendChild(noteLbl); body.appendChild(noteTA);
+  const btns=document.createElement('div'); btns.className='confirm-btns';
+  const doSubmit=async()=>{
+    overlay.remove();
+    const keys=type==='kp'?loadClaimedKP(prodId)[panelId]?.keys:loadClaimed(prodId)[panelId]?.keys;
+    if(SUPA){
+      const {error}=await SUPA.from('change_requests').insert({
+        device_id:panelId,device_type:type==='kp'?'keypanel':'beltpack',
+        note:noteTA.value.trim()||'Key update submitted by TM',
+        requested_state:{keys:keys||[]},requester_role:'tm',status:'pending',
+        production_id:prodId||_tmActiveProd
+      });
+      if(error){ toast('Error: '+error.message,'danger'); return; }
+    }
+    _tmDirty=null; toast('Changes submitted','success');
+    if(type==='kp') renderKeypanels(); else renderAllBeltpacks();
+  };
+  const ok=document.createElement('button'); ok.className='confirm-yes'; ok.textContent='Submit Changes';
+  ok.addEventListener('click',doSubmit);
+  const discard=document.createElement('button'); discard.className='confirm-no'; discard.textContent='Discard';
+  discard.style.cssText='font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:10px 24px;background:transparent;border:1px solid var(--border-md);cursor:pointer;color:var(--red);';
+  discard.addEventListener('click',()=>{ overlay.remove(); tmDiscardChanges(panelId,prodId,type); });
+  const cancel=document.createElement('button'); cancel.textContent='Cancel';
+  cancel.style.cssText='font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:10px 24px;background:transparent;border:1px solid var(--border-md);cursor:pointer;color:rgba(0,0,0,.45);';
+  cancel.addEventListener('click',()=>overlay.remove());
+  btns.appendChild(ok); btns.appendChild(discard); btns.appendChild(cancel);
+  body.appendChild(btns);
+  panel.appendChild(head); panel.appendChild(body);
+  overlay.appendChild(panel);
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  setTimeout(()=>noteTA.focus(),80);
 }
 
 function openTMSubmitModal(panelId, prodId, type){
@@ -4262,6 +4307,9 @@ function setTMView(view){
     b.classList.toggle('active', b.textContent.toLowerCase()===view);
   });
   const body=document.getElementById('tm-body'); if(!body) return;
+  // Show/hide filter bar based on view
+  const ufBar=$('unified-filters');
+  if(ufBar) ufBar.style.display=view==='requests'?'none':'flex';
   // Restore any previously moved views back to main-body first
   const mb=document.querySelector('.main-body');
   ['view-keypanels','view-allbeltpacks'].forEach(id=>{
