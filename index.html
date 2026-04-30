@@ -2094,7 +2094,7 @@ function rebuildRoomProdPills(){
     p.style.color=isActive?'#111':clr;
     if(isActive) p.style.background=clr;
     p.addEventListener('click',()=>{
-      const isKp=state.view==='keypanels';
+      const isKp=_tmMode?(_tmActiveView==='keypanels'):state.view==='keypanels';
       const set=isKp?_kpFilter.rooms:_bpFilter.rooms;
       if(set.has(prod.id)){set.delete(prod.id);p.style.background='transparent';p.style.color=clr;}
       else{set.add(prod.id);p.style.background=clr;p.style.color='#111';}
