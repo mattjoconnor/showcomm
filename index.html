@@ -1296,6 +1296,7 @@ try {
 let _currentUser=null, _currentProfile=null, _currentRole=null, _selectedRole=null;
 let _blockProdReload=false;
 let _tmMode=false; // When true, KP/BP cards show TM request buttons
+let _tmDirty=null; // {panelId, prodId, type:'kp'|'bp', originalKeys}
 
 function initAdminApp(){
   loadGlobalOptions(); initBpSelectors(); buildUnifiedFilters(); setView('keypanels');
@@ -1780,8 +1781,11 @@ function renderPoolModalChips(){
 function kpKeyAssign(panelId, prodId, keyIndex, cat, label){
   const c = loadClaimedKP(prodId);
   if(!c[panelId]) return;
+  // Track dirty for TM mode
+  if(_tmMode && !_tmDirty){
+    _tmDirty={panelId, prodId, type:'kp', originalKeys:[...(c[panelId].keys||[])]};
+  }
   c[panelId].keys[keyIndex] = {c:cat, l:label};
-  // If was confirmed, revert to pending (needs re-confirmation)
   if(c[panelId].status==='confirmed') c[panelId].status='pending';
   saveClaimedKP(prodId, c);
   if(prodId==='__draft__') renderKeypanels(); else refreshKpCard(panelId, prodId);
@@ -1792,6 +1796,9 @@ function kpPoolModalAssign(cat, label){
   const {panelId,prodId,keyIndex,_isBp,_bp}=_poolModalState;
   if(_isBp){
     const c=loadClaimed(prodId); if(!c[_bp]) return;
+    if(_tmMode && !_tmDirty){
+      _tmDirty={panelId:_bp, prodId, type:'bp', originalKeys:[...(c[_bp].keys||[])]};
+    }
     c[_bp].keys[keyIndex]={c:cat,l:label};
     if(c[_bp].status==='confirmed') c[_bp].status='pending';
     saveClaimed(prodId,c);
@@ -2399,7 +2406,6 @@ function buildKpCard(panel, prod, entry){
     actBar.appendChild(setBtn);
   }
   if(_tmMode){
-    // Replace all admin buttons with TM request button
     actBar.innerHTML='';
     if(entry){
       const sb=document.createElement('span');
@@ -2407,10 +2413,26 @@ function buildKpCard(panel, prod, entry){
       sb.textContent=entry.status==='confirmed'?'Confirmed':'Pending';
       actBar.appendChild(sb);
     }
-    const rb=document.createElement('button');
-    rb.className='act-out'; rb.textContent=prod?'Request Change':'Request Assignment';
-    rb.addEventListener('click',()=>openTMReqModal(panel.id,prod?prod.id:null));
-    actBar.appendChild(rb);
+    const isDirtyThis=_tmDirty&&_tmDirty.panelId===panel.id;
+    if(isDirtyThis){
+      const submitBtn=document.createElement('button');
+      submitBtn.className='act-co'; submitBtn.textContent='Submit Changes';
+      submitBtn.addEventListener('click',()=>openTMSubmitModal(panel.id, prod?prod.id:null, 'kp'));
+      actBar.appendChild(submitBtn);
+      const discardBtn=document.createElement('button');
+      discardBtn.className='act-dng'; discardBtn.textContent='Discard';
+      discardBtn.addEventListener('click',()=>tmDiscardChanges(panel.id, prod?prod.id:null, 'kp'));
+      actBar.appendChild(discardBtn);
+    } else {
+      const rb=document.createElement('button');
+      rb.className='act-out';
+      rb.textContent=prod?'Request Change':'Request Assignment';
+      rb.addEventListener('click',()=>{
+        if(_tmDirty) tmCheckDirtyBeforeOpen(panel.id, prod?prod.id:null);
+        else openTMReqModal(panel.id, prod?prod.id:null);
+      });
+      actBar.appendChild(rb);
+    }
   } else {
     actBar.appendChild(clrBtn); // always last — margin-left:auto pins it right
   }
@@ -2553,6 +2575,42 @@ function refreshKpCard(panelId, prodId){
 }
 
 // KP Room Assignment Modal
+function tmCheckDirtyBeforeOpen(newPanelId, newProdId){
+  if(!_tmDirty||_tmDirty.panelId===newPanelId) return;
+  const dirtyName=_tmDirty.panelId;
+  adminConfirm(
+    'Unsaved Changes',
+    'You have unsaved changes on '+dirtyName,
+    'You can submit or discard your changes.',
+    'Submit Changes',
+    ()=>openTMSubmitModal(_tmDirty.panelId, _tmDirty.prodId, _tmDirty.type)
+  );
+}
+
+function openTMSubmitModal(panelId, prodId, type){
+  document.getElementById('tm-req-device').value=panelId||'';
+  document.getElementById('tm-req-note').value='';
+  document.getElementById('tm-req-type').value='change';
+  document.getElementById('tm-req-modal-title').textContent='Submit Changes — '+panelId;
+  _tmPendingSubmit={panelId, prodId, type};
+  document.getElementById('tm-req-modal').classList.add('active');
+}
+let _tmPendingSubmit=null;
+
+function tmDiscardChanges(panelId, prodId, type){
+  if(!_tmDirty) return;
+  if(type==='kp'){
+    const c=loadClaimedKP(prodId);
+    if(c[panelId]){ c[panelId].keys=_tmDirty.originalKeys; saveClaimedKP(prodId,c); }
+    _tmDirty=null; renderKeypanels();
+  } else {
+    const c=loadClaimed(prodId);
+    if(c[panelId]){ c[panelId].keys=_tmDirty.originalKeys; saveClaimed(prodId,c); }
+    _tmDirty=null; renderAllBeltpacks();
+  }
+  toast('Changes discarded','info');
+}
+
 function openKpRoomModal(panelId, prodId){
   // Look up panel from KP_PANELS (global inventory, not prod.keypanels)
   const panel=KP_PANELS.find(p=>p.id===panelId)||{name:panelId,model:'5032',port:'—',location:'—'};
@@ -4373,12 +4431,32 @@ function openTMReqModal(deviceId, prodId){
 }
 
 async function tmSubmitRequest(){
-  if(!SUPA||!_tmActiveProd) return;
+  if(!SUPA) return;
   const type=document.getElementById('tm-req-type').value;
   const device=document.getElementById('tm-req-device').value.trim();
   const note=document.getElementById('tm-req-note').value.trim();
-  if(!note){ toast('Add a description','danger'); return; }
 
+  // If this is a pending key-change submission, snapshot the keys
+  if(_tmPendingSubmit){
+    const {panelId,prodId,type:pType}=_tmPendingSubmit;
+    const keys=pType==='kp'?loadClaimedKP(prodId)[panelId]?.keys:loadClaimed(prodId)[panelId]?.keys;
+    const {error}=await SUPA.from('change_requests').insert({
+      device_id:panelId, device_type:pType==='kp'?'keypanel':'beltpack',
+      note:note||'Key update submitted by TM',
+      requested_state:{keys:keys||[]},
+      requester_role:'tm', status:'pending',
+      production_id:prodId||_tmActiveProd
+    });
+    document.getElementById('tm-req-modal').classList.remove('active');
+    if(error){ toast('Error: '+error.message,'danger'); return; }
+    _tmDirty=null; _tmPendingSubmit=null;
+    toast('Changes submitted for review','success');
+    if(pType==='kp') renderKeypanels(); else renderAllBeltpacks();
+    return;
+  }
+
+  // Generic request
+  if(!note){ toast('Add a description','danger'); return; }
   let error;
   if(type==='change'){
     if(!device){ toast('Enter a device ID','danger'); return; }
@@ -4394,7 +4472,6 @@ async function tmSubmitRequest(){
       production_id:_tmActiveProd
     }));
   }
-
   document.getElementById('tm-req-modal').classList.remove('active');
   if(error){ toast('Error: '+error.message,'danger'); return; }
   toast('Request submitted','success');
