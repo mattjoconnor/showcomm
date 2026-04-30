@@ -2634,7 +2634,7 @@ function tmCheckDirtyBeforeOpen(newPanelId, newProdId){
         device_id:panelId,device_type:type==='kp'?'keypanel':'beltpack',
         note:noteTA.value.trim()||'Key update submitted by TM',
         requested_by:_currentUser?.id, requested_state:{keys:keys||[]},requester_role:'tm',status:'pending',
-        production_id:prodId||_tmActiveProd
+        production_id:(prodId&&prodId!=='__draft__'?prodId:null)||_tmActiveProd||(_tmProductions[0]?.id)
       });
       if(error){ toast('Error: '+error.message,'danger'); return; }
     }
@@ -2691,7 +2691,7 @@ async function tmSubmitChanges(){
     requested_state:{keys:keys||[]},
     requester_role:'tm',
     status:'pending',
-    production_id:prodId||_tmActiveProd
+    production_id:(prodId&&prodId!=='__draft__'?prodId:null)||_tmActiveProd||(_tmProductions[0]?.id)
   });
   document.getElementById('modal-overlay-tm-submit').classList.remove('active');
   if(error){ toast('Error: '+error.message,'danger'); return; }
@@ -4746,13 +4746,13 @@ async function tmSubmitRequest(){
     ({error}=await SUPA.from('change_requests').insert({
       device_id:device, device_type:'beltpack', note,
       requester_role:'tm', status:'pending', requested_by:_currentUser?.id,
-      production_id:_tmActiveProd
+      production_id:_tmActiveProd||(_tmProductions[0]?.id)
     }));
   } else {
     ({error}=await SUPA.from('key_requests').insert({
       description:device||note, key_type:'PL', note,
       requester_role:'tm', status:'open',
-      production_id:_tmActiveProd
+      production_id:_tmActiveProd||(_tmProductions[0]?.id)
     }));
   }
   document.getElementById('tm-req-modal').classList.remove('active');
