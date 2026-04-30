@@ -1788,7 +1788,7 @@ function kpKeyAssign(panelId, prodId, keyIndex, cat, label){
   c[panelId].keys[keyIndex] = {c:cat, l:label};
   if(c[panelId].status==='confirmed') c[panelId].status='pending';
   saveClaimedKP(prodId, c);
-  if(prodId==='__draft__') renderKeypanels(); else refreshKpCard(panelId, prodId);
+  refreshKpCard(panelId, prodId);
 }
 
 function kpPoolModalAssign(cat, label){
@@ -1796,8 +1796,8 @@ function kpPoolModalAssign(cat, label){
   const {panelId,prodId,keyIndex,_isBp,_bp}=_poolModalState;
   if(_isBp){
     const c=loadClaimed(prodId); if(!c[_bp]) return;
-    if(_tmMode && !_tmDirty){
-      _tmDirty={panelId:_bp, prodId, type:'bp', originalKeys:[...(c[_bp].keys||[])]};
+    if(_tmMode){
+      if(!_tmDirty) _tmDirty={panelId:_bp, prodId, type:'bp', originalKeys:[...(c[_bp].keys||[])]};
     }
     c[_bp].keys[keyIndex]={c:cat,l:label};
     if(c[_bp].status==='confirmed') c[_bp].status='pending';
@@ -2255,6 +2255,9 @@ function buildKpCard(panel, prod, entry){
   chev.textContent='›';
   hdr.appendChild(chev);
   hdr.addEventListener('click',function(){
+    if(_tmMode&&_tmDirty&&_tmDirty.panelId!==panel.id){
+      tmCheckDirtyBeforeOpen(panel.id, prod?prod.id:null); return;
+    }
     if(_kpCardOpen.has(cardKey)) _kpCardOpen.delete(cardKey); else _kpCardOpen.add(cardKey);
     if(prod){
       refreshKpCard(panel.id, prod.id);
@@ -2413,7 +2416,7 @@ function buildKpCard(panel, prod, entry){
       sb.textContent=entry.status==='confirmed'?'Confirmed':'Pending';
       actBar.appendChild(sb);
     }
-    const isDirtyThis=_tmDirty&&_tmDirty.panelId===panel.id;
+    const isDirtyThis=_tmMode&&_tmDirty&&_tmDirty.panelId===panel.id;
     if(isDirtyThis){
       const submitBtn=document.createElement('button');
       submitBtn.className='act-co'; submitBtn.textContent='Submit Changes';
@@ -2567,7 +2570,8 @@ function buildKpInlinePool(container, panelId, prodId, keyIndex){
 
 function refreshKpCard(panelId, prodId){
   const existing=document.getElementById('kp-card-'+panelId.replace(/\s/g,'_'));if(!existing)return;
-  const prod=PRODUCTIONS[prodId]; if(!prod) return;
+  const prod=PRODUCTIONS[prodId]||null;
+  if(!prod&&!_tmMode) return;
   const panel=KP_PANELS.find(p=>p.id===panelId)||{model:'5032',name:panelId,location:'',port:''};
   const claimedKP=loadClaimedKP(prodId);
   const newCard=buildKpCard(panel,prod,claimedKP[panelId]);
@@ -2653,6 +2657,10 @@ function adminRenameKP(panelId, code){
 
 // BP key assignment using same pool modal as KP
 function openBpKeyModal(bp, code, keyIndex){
+  // TM dirty check — warn if switching to a different BP
+  if(_tmMode&&_tmDirty&&_tmDirty.type==='bp'&&_tmDirty.panelId!==bp){
+    tmCheckDirtyBeforeOpen(bp, code); return;
+  }
   const c=loadClaimed(code);
   if(!c[bp]){
     // Allow pre-programming keys before crew assignment — store as draft
@@ -2772,6 +2780,14 @@ document.addEventListener('click',function(e){
   else if(act==='confirm') quickConfirm(bp2,code2);
   else if(act==='tmreq'){
     openTMReqModal(bp2, code2);
+    return;
+  }
+  else if(act==='tmsubmit'){
+    openTMSubmitModal(bp2, code2, 'bp');
+    return;
+  }
+  else if(act==='tmdiscard'){
+    tmDiscardChanges(bp2, code2, 'bp');
     return;
   }
   else if(act==='clear'){
@@ -2902,8 +2918,11 @@ function renderBpCards(bpToProd){
     const r4='<div class="bp-footer">'
       +'<div class="bp-badge-row">'+badge+'</div>'
       +'<div class="bp-action-row">'+(_tmMode
-        ?'<button class="act-out" data-action="tmreq" data-bp="'+bp+'" data-code="'+_pid+'">'+
-          (entry?'Request Change':'Request Assignment')+'</button>'
+        ?(_tmDirty&&_tmDirty.panelId===bp
+          ?'<button class="act-co" data-action="tmsubmit" data-bp="'+bp+'" data-code="'+_pid+'">Submit Changes</button>'
+           +'<button class="act-dng" data-action="tmdiscard" data-bp="'+bp+'" data-code="'+_pid+'">Discard</button>'
+          :'<button class="act-out" data-action="tmreq" data-bp="'+bp+'" data-code="'+_pid+'">'+
+           (entry?'Request Change':'Request Assignment')+'</button>')
         :action+renBtn+roomBtn+clearBtn)+'</div>'
       +'</div>';
     const _bpIn=document.createElement('div');
