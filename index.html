@@ -1036,7 +1036,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 <div class="modal-overlay" id="modal-overlay-tm-submit" onclick="if(event.target===this)this.classList.remove('active')">
   <div class="confirm-panel">
     <div class="confirm-head">
-      <div class="confirm-type">TM Submission</div>
+      <div class="confirm-type" id="tm-submit-eyebrow">Submit Changes</div>
       <div class="confirm-title-txt" id="tm-submit-title">Submit Changes</div>
     </div>
     <div class="confirm-body-wrap">
@@ -2388,6 +2388,9 @@ function buildKpCard(panel, prod, entry){
 
       cell.addEventListener('click',function(e){
         if(e.target.textContent==='×'&&e.target.tagName==='BUTTON') return;
+        if(_tmMode&&_tmDirty&&_tmDirty.panelId!==panel.id){
+          tmCheckDirtyBeforeOpen(panel.id, prod?prod.id:null); return;
+        }
         kpKeyClick(panel.id, prod?prod.id:'__draft__', i);
       });
       rowEl.appendChild(cell);
@@ -2656,7 +2659,9 @@ function tmCheckDirtyBeforeOpen(newPanelId, newProdId){
 
 function openTMSubmitModal(panelId, prodId, type){
   _tmPendingSubmit={panelId, prodId, type};
-  document.getElementById('tm-submit-title').textContent='Submit Changes — '+(panelId||'');
+  const ey=document.getElementById('tm-submit-eyebrow');
+  if(ey) ey.textContent=(type==='bp'?'Beltpack':'Keypanel')+' — '+(panelId||'');
+  document.getElementById('tm-submit-title').textContent='Submit Changes';
   document.getElementById('tm-submit-note').value='';
   document.getElementById('modal-overlay-tm-submit').classList.add('active');
   setTimeout(()=>document.getElementById('tm-submit-note').focus(),80);
@@ -2748,8 +2753,8 @@ function adminRenameKP(panelId, code){
 
 // BP key assignment using same pool modal as KP
 function openBpKeyModal(bp, code, keyIndex){
-  // TM dirty check — warn if switching to a different BP
-  if(_tmMode&&_tmDirty&&_tmDirty.type==='bp'&&_tmDirty.panelId!==bp){
+  // TM dirty check — warn if switching to ANY different device
+  if(_tmMode&&_tmDirty&&_tmDirty.panelId!==bp){
     tmCheckDirtyBeforeOpen(bp, code); return;
   }
   const c=loadClaimed(code);
