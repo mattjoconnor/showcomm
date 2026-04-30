@@ -2632,7 +2632,7 @@ function tmCheckDirtyBeforeOpen(newPanelId, newProdId){
       const {error}=await SUPA.from('change_requests').insert({
         device_id:panelId,device_type:type==='kp'?'keypanel':'beltpack',
         note:noteTA.value.trim()||'Key update submitted by TM',
-        requested_state:{keys:keys||[]},requester_role:'tm',status:'pending',
+        requested_by:_currentUser?.id, requested_state:{keys:keys||[]},requester_role:'tm',status:'pending',
         production_id:prodId||_tmActiveProd
       });
       if(error){ toast('Error: '+error.message,'danger'); return; }
@@ -2686,6 +2686,7 @@ async function tmSubmitChanges(){
     device_id:panelId,
     device_type:type==='kp'?'keypanel':'beltpack',
     note:note||'Key update submitted by TM',
+    requested_by:_currentUser?.id,
     requested_state:{keys:keys||[]},
     requester_role:'tm',
     status:'pending',
@@ -4462,6 +4463,7 @@ function openTMKpRequestModal(panelId, currentProd){
     const prod=PRODUCTIONS[_selProdId];
     const {error}=await SUPA.from('change_requests').insert({
       device_id:panelId, device_type:'keypanel',
+      requested_by:_currentUser?.id,
       note:noteTA.value.trim()||(currentProd?'TM requests reassignment from '+prodLabel(currentProd)+' to '+prodLabel(prod):'TM requests assignment to '+prodLabel(prod)),
       requested_state:{production_id:_selProdId, production_name:prodLabel(prod)},
       requester_role:'tm', status:'pending', production_id:_selProdId
@@ -4535,6 +4537,7 @@ function openTMBpRequestModal(bp){
     const prod=PRODUCTIONS[_selectedProdId];
     const {error}=await SUPA.from('change_requests').insert({
       device_id:bp, device_type:'beltpack',
+      requested_by:_currentUser?.id,
       note:noteTA.value.trim()||'TM requests assignment to '+prodLabel(prod),
       requested_state:{production_id:_selectedProdId, production_name:prodLabel(prod)},
       requester_role:'tm', status:'pending',
@@ -4735,8 +4738,8 @@ async function tmSubmitRequest(){
   if(type==='change'){
     if(!device){ toast('Enter a device ID','danger'); return; }
     ({error}=await SUPA.from('change_requests').insert({
-      device_id:device, device_type:'unknown', note,
-      requester_role:'tm', status:'pending',
+      device_id:device, device_type:'beltpack', note,
+      requester_role:'tm', status:'pending', requested_by:_currentUser?.id,
       production_id:_tmActiveProd
     }));
   } else {
