@@ -2446,7 +2446,14 @@ function buildKpCard(panel, prod, entry){
       discardBtn.className='act-dng'; discardBtn.textContent='Discard';
       discardBtn.addEventListener('click',()=>tmDiscardChanges(panel.id, prod?prod.id:null, 'kp'));
       actBar.appendChild(discardBtn);
-    } // no Request Change button — TM submits via Submit Changes after editing
+    } else {
+      // TM can request to assign/reassign this panel to one of their productions
+      const kpReqBtn=document.createElement('button');
+      kpReqBtn.className='act-out';
+      kpReqBtn.textContent=prod?'Request Reassignment':'Request Assignment';
+      kpReqBtn.addEventListener('click',()=>openTMKpRequestModal(panel.id, prod));
+      actBar.appendChild(kpReqBtn);
+    }
   } else {
     actBar.appendChild(clrBtn); // always last — margin-left:auto pins it right
   }
@@ -4348,6 +4355,74 @@ function renderTMBeltpacks(){
   renderBpCards(Object.fromEntries(filtered.map(bp=>[bp,bpToProd[bp]])));
 }
 
+function openTMKpRequestModal(panelId, currentProd){
+  const existing=document.getElementById('tm-kp-req-overlay');
+  if(existing) existing.remove();
+  const overlay=document.createElement('div');
+  overlay.id='tm-kp-req-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:center;justify-content:center;';
+  const panel=document.createElement('div'); panel.className='confirm-panel';
+  const head=document.createElement('div'); head.className='confirm-head';
+  const eye=document.createElement('div'); eye.className='confirm-type';
+  eye.textContent=currentProd?'Request Reassignment':'Request Assignment';
+  const ttl=document.createElement('div'); ttl.className='confirm-title-txt';
+  ttl.textContent=(currentProd?'Move ':'Assign ')+panelId+(currentProd?' to a different production':'');
+  head.appendChild(eye); head.appendChild(ttl);
+  const body=document.createElement('div'); body.className='confirm-body-wrap';
+  if(currentProd){
+    const cur=document.createElement('div');
+    cur.style.cssText='font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.45);margin-bottom:10px;';
+    cur.textContent='Currently assigned to: '+prodLabel(currentProd);
+    body.appendChild(cur);
+  }
+  const prodBtns=document.createElement('div'); prodBtns.style.cssText='display:flex;flex-direction:column;gap:6px;margin-bottom:12px;';
+  let _selProdId=null;
+  _tmProductions.filter(p=>!currentProd||p.id!==currentProd.id).forEach(prod=>{
+    const clr=crFg(prod.controlRoom)||'#888';
+    const btn=document.createElement('button');
+    btn.style.cssText='padding:10px 14px;border:2px solid '+clr+'44;background:transparent;font-family:var(--f-ui);font-size:13px;font-weight:800;color:'+clr+';cursor:pointer;text-align:left;';
+    btn.textContent=prodLabel(prod)+' · '+prod.controlRoom;
+    btn.addEventListener('click',()=>{
+      prodBtns.querySelectorAll('button').forEach(b=>{ b.style.borderColor=b.dataset.clr+'44'; b.style.background='transparent'; });
+      btn.style.borderColor=clr; btn.style.background=clr+'22'; _selProdId=prod.id;
+    });
+    btn.dataset.clr=clr; btn.dataset.pid=prod.id;
+    prodBtns.appendChild(btn);
+  });
+  body.appendChild(prodBtns);
+  const noteLbl=document.createElement('label');
+  noteLbl.style.cssText='display:block;font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(0,0,0,.45);margin-bottom:6px;';
+  noteLbl.textContent='Note (optional)';
+  const noteTA=document.createElement('textarea');
+  noteTA.rows=2; noteTA.style.cssText='width:100%;border:none;border-bottom:1px solid var(--border-md);font-family:var(--f-mono);font-size:13px;padding:8px 0;outline:none;background:transparent;resize:none;margin-bottom:12px;';
+  noteTA.placeholder='Anything admin should know…';
+  body.appendChild(noteLbl); body.appendChild(noteTA);
+  const btns=document.createElement('div'); btns.className='confirm-btns';
+  const ok=document.createElement('button'); ok.className='confirm-yes'; ok.textContent='Submit Request';
+  ok.addEventListener('click',async()=>{
+    if(!_selProdId){ toast('Select a production','danger'); return; }
+    if(!SUPA) return;
+    const prod=PRODUCTIONS[_selProdId];
+    const {error}=await SUPA.from('change_requests').insert({
+      device_id:panelId, device_type:'keypanel',
+      note:noteTA.value.trim()||(currentProd?'TM requests reassignment from '+prodLabel(currentProd)+' to '+prodLabel(prod):'TM requests assignment to '+prodLabel(prod)),
+      requested_state:{production_id:_selProdId, production_name:prodLabel(prod)},
+      requester_role:'tm', status:'pending', production_id:_selProdId
+    });
+    overlay.remove();
+    if(error){ toast('Error: '+error.message,'danger'); return; }
+    toast(panelId+' request submitted','success');
+  });
+  const cancel=document.createElement('button'); cancel.className='confirm-no'; cancel.textContent='Cancel';
+  cancel.addEventListener('click',()=>overlay.remove());
+  btns.appendChild(ok); btns.appendChild(cancel);
+  body.appendChild(btns);
+  panel.appendChild(head); panel.appendChild(body);
+  overlay.appendChild(panel);
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
 function openTMBpRequestModal(bp){
   // Build production picker modal
   const existing=document.getElementById('tm-bp-req-overlay');
@@ -4467,19 +4542,17 @@ async function renderTMRequests(){
     const statusColor=r.status==='approved'||r.status==='fulfilled'?'var(--green)':r.status==='denied'?'var(--red)':'var(--amber)';
     const prod=PRODUCTIONS[r.production_id];
     const prodClr=prod?crFg(prod.controlRoom):'#888';
-    html+='<div style="border:1px solid var(--border-md);margin-bottom:8px;display:flex;gap:0;">'
-      +'<div style="width:4px;background:'+(isChange?'#7C3AED':'#0891B2')+'"></div>'
-      +'<div style="flex:1;padding:12px 16px;">'
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
-      +'<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.16em;color:'+(isChange?'#5b21b6':'#0e6a82')+'">'+(isChange?'CHANGE REQUEST':'NEW KEY REQUEST')+'</span>'
-      +(prod?'<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.1em;color:'+prodClr+';">'+prodLabel(prod)+'</span>':'')
+    html+='<div style="border:1px solid var(--border-md);margin-bottom:4px;display:flex;gap:0;min-height:36px;">'
+      +'<div style="width:3px;flex-shrink:0;background:'+(isChange?'#7C3AED':'#0891B2')+'"></div>'
+      +'<div style="flex:1;padding:7px 12px;display:flex;align-items:center;gap:10px;min-width:0;">'
+      +(prod?'<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;color:'+prodClr+';white-space:nowrap;">'+prodLabel(prod)+'</span>':'')
+      +'<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;color:'+(isChange?'rgba(124,58,237,.6)':'rgba(8,145,178,.6)')+';white-space:nowrap;">'+(isChange?'CHG':'KEY')+'</span>'
+      +'<span style="font-family:var(--f-ui);font-size:13px;font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(r.device_id||r.description||'—')+'</span>'
+      +(r.note?'<span style="font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.38);font-style:italic;flex-shrink:0;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">"'+r.note+'"</span>':'')
       +'</div>'
-      +'<div style="font-family:var(--f-ui);font-size:14px;font-weight:800;margin-bottom:2px;">'+(r.device_id||r.description||'—')+'</div>'
-      +(r.note?'<div style="font-family:var(--f-mono);font-size:11px;color:rgba(0,0,0,.45);font-style:italic;">"'+r.note+'"</div>':'')
-      +'<div style="font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.35);margin-top:4px;">'+relTime(r.created_at)+'</div>'
-      +'</div>'
-      +'<div style="display:flex;align-items:center;padding:12px 16px;border-left:1px solid var(--border-md);">'
-      +'<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:'+statusColor+';">'+r.status.toUpperCase()+'</span>'
+      +'<div style="display:flex;align-items:center;gap:10px;padding:4px 12px;border-left:1px solid var(--border-md);flex-shrink:0;">'
+      +'<span style="font-family:var(--f-mono);font-size:9px;color:rgba(0,0,0,.28);">'+relTime(r.created_at)+'</span>'
+      +'<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:'+statusColor+';">'+r.status+'</span>'
       +'</div>'
       +'</div>';
   });
