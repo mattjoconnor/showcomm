@@ -1469,8 +1469,8 @@ document.getElementById('btn-crew-login').addEventListener('click',()=>{
 $('crew-position').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('btn-crew-login').click(); });
 
 $('btn-logout').addEventListener('click',doLogout);
-document.getElementById('btn-tm-logout').addEventListener('click',doLogout);
-document.getElementById('btn-crew-logout').addEventListener('click',doLogout);
+// btn-tm-logout is built dynamically in initTMApp — skip static registration
+(document.getElementById('btn-crew-logout')||document.createElement('button')).addEventListener('click',doLogout);
 
 if(SUPA) SUPA.auth.getSession().then(async({data:{session}})=>{
   if(!session) return;
