@@ -650,6 +650,8 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 .tm-kp-name { font-family:var(--f-mono); font-size:clamp(.65rem,.78vw,.72rem); font-weight:800; letter-spacing:.06em; flex:1; }
 .tm-kp-meta { font-family:var(--f-mono); font-size:9px; color:rgba(0,0,0,.32); letter-spacing:.08em; }
 
+.tm-prod-bar { display:flex; gap:0; align-items:center; padding:0 clamp(16px,2.2vw,28px); height:40px; border-bottom:1px solid var(--border-md); background:var(--surface); overflow-x:auto; flex-shrink:0; }
+.tm-prod-bar .kp-filter-pill { margin-right:4px; }
 .tm-empty { padding:clamp(20px,3vh,32px) clamp(16px,2.2vw,28px); font-family:var(--f-mono); font-size:clamp(.58rem,.68vw,.65rem); color:rgba(0,0,0,.28); letter-spacing:.14em; text-transform:uppercase; }
 
 /* TM Request Modal */
@@ -711,16 +713,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
   </div>
 </div>
 <!-- TM PLACEHOLDER -->
-<div id="screen-tm">
-  <div class="tm-topbar">
-    <div class="tm-wordmark">ShowComm<span>·</span></div>
-    <div class="tm-role-badge">TM</div>
-    <div class="tm-user" id="tm-user-label"></div>
-    <button class="tm-signout" id="btn-tm-logout">Sign Out</button>
-  </div>
-  <div class="tm-ribbon" id="tm-prod-tabs"></div>
-  <div class="tm-body" id="tm-body"></div>
-</div>
+<div id="screen-tm"><!-- TM uses main app shell — see initTMApp --></div>
 
 <!-- TM REQUEST MODAL -->
 <div class="tm-modal-overlay" id="tm-req-modal">
@@ -1302,6 +1295,7 @@ try {
 } catch(e) { console.warn('Supabase init failed:', e); }
 let _currentUser=null, _currentProfile=null, _currentRole=null, _selectedRole=null;
 let _blockProdReload=false;
+let _tmMode=false; // When true, KP/BP cards show TM request buttons
 
 function initAdminApp(){
   loadGlobalOptions(); initBpSelectors(); buildUnifiedFilters(); setView('keypanels');
@@ -1355,7 +1349,7 @@ function showScreen(role){
   $('app').classList.remove('active');
   if(role==='admin'){ $('app').classList.add('active'); initAdminApp(); }
   else if(role==='tm'){
-    document.getElementById('screen-tm').style.display='flex';
+    document.getElementById('screen-tm').style.display='block';
     loadProds().then(()=>initTMApp()).catch(()=>initTMApp());
   }
   else if(role==='crew'){
@@ -1408,7 +1402,7 @@ function buildUnifiedFilters(){
 
 function doLogout(){
   if((_currentRole==='admin'||_currentRole==='tm') && SUPA) SUPA.auth.signOut();
-  _currentUser=null; _currentProfile=null; _currentRole=null; _selectedRole=null;
+  _currentUser=null; _currentProfile=null; _currentRole=null; _selectedRole=null; _tmMode=false;
   document.querySelectorAll('.login-role-btn').forEach(b=>b.classList.remove('active'));
   ['login-username','login-pw','crew-name','crew-position'].forEach(id=>{ const el=$(id); if(el) el.value=''; });
   $('login-creds-wrap').style.display='none';
@@ -2362,6 +2356,26 @@ function buildKpCard(panel, prod, entry){
   const actBar=document.createElement('div');
   actBar.className='kp-acts';
 
+  // TM mode — replace action buttons with request-only UI
+  if(_tmMode){
+    const tmActBar=document.createElement('div'); tmActBar.className='kp-acts';
+    if(entry){
+      const status=entry.status;
+      const badge=document.createElement('span');
+      badge.className='badge '+(status==='confirmed'?'confirmed':'pending');
+      badge.textContent=status==='confirmed'?'Confirmed':'Pending';
+      tmActBar.appendChild(badge);
+    }
+    const reqBtn=document.createElement('button');
+    reqBtn.className='act-out'; reqBtn.textContent=prod?'Request Change':'Request Assignment';
+    reqBtn.addEventListener('click',()=>openTMReqModal(panel.id,prod?prod.id:null));
+    tmActBar.appendChild(reqBtn);
+    body.appendChild(tmActBar);
+    _kpIn.appendChild(body);
+    card.appendChild(_kpIn);
+    return card;
+  }
+
   // Clear button — always defined, always last
   const clrBtn=document.createElement('button');
   clrBtn.className='act-dng';
@@ -2695,6 +2709,10 @@ document.addEventListener('click',function(e){
   if(act==='assign') openAssignModal(bp2,code2);
   else if(act==='warnassign') warnAssign(bp2,code2,btn.dataset.conflict);
   else if(act==='confirm') quickConfirm(bp2,code2);
+  else if(act==='tmreq'){
+    openTMReqModal(bp2, code2);
+    return;
+  }
   else if(act==='clear'){
     if(code2==='__bpdraft__'){
       adminConfirm('Clear Draft Keys', bp2, 'All programmed keys will be removed.', 'Clear', function(){
@@ -2822,7 +2840,10 @@ function renderBpCards(bpToProd){
     const roomBtn=entry&&prod?'<button class="act-out" style="color:'+_bpProdClr+';border-color:'+_bpProdClr+'55;" data-action="room" data-bp="'+bp+'" data-code="'+_pid+'">'+(entry&&_bpProdLabel?_bpProdLabel:'Select Production')+'</button>':'';
     const r4='<div class="bp-footer">'
       +'<div class="bp-badge-row">'+badge+'</div>'
-      +'<div class="bp-action-row">'+action+renBtn+roomBtn+clearBtn+'</div>'
+      +'<div class="bp-action-row">'+(_tmMode
+        ?'<button class="act-out" data-action="tmreq" data-bp="'+bp+'" data-code="'+_pid+'">'+
+          (entry?'Request Change':'Request Assignment')+'</button>'
+        :action+renBtn+roomBtn+clearBtn)+'</div>'
       +'</div>';
     const _bpIn=document.createElement('div');
     _bpIn.className='bp-inner';
@@ -4054,21 +4075,203 @@ let _tmProductions = []; // productions assigned to this TM
 let _tmActiveProd = null;
 
 async function initTMApp(){
+  _tmMode=true;
   if(!SUPA||!_currentUser) return;
-  document.getElementById('tm-user-label').textContent = _currentProfile?.display_name||'';
 
   // Fetch assigned productions
-  const {data,error} = await SUPA
-    .from('tm_productions')
-    .select('production_id')
-    .eq('tm_id', _currentUser.id);
-  if(error){ console.warn('TM prods:', error); return; }
+  const {data,error}=await SUPA.from('tm_productions').select('production_id').eq('tm_id',_currentUser.id);
+  if(error){ console.warn('TM prods:',error); return; }
+  const prodIds=(data||[]).map(r=>r.production_id);
+  _tmProductions=prodIds.map(id=>PRODUCTIONS[id]).filter(Boolean);
 
-  const prodIds = (data||[]).map(r=>r.production_id);
-  _tmProductions = prodIds.map(id=>PRODUCTIONS[id]).filter(Boolean);
+  // Mount TM into the main app shell
+  const tmScreen=$('screen-tm');
+  tmScreen.innerHTML='';
+  tmScreen.style.cssText='display:flex;flex-direction:column;height:100vh;overflow:hidden;background:var(--bg);';
 
-  renderTMTabs();
-  if(_tmProductions.length) setTMProd(_tmProductions[0].id);
+  // Topbar
+  const topbar=document.createElement('div');
+  topbar.className='tm-topbar';
+  topbar.innerHTML='<div class="tm-wordmark">ShowComm<span>·</span></div>'
+    +'<div class="tm-role-badge">TM</div>'
+    +'<div class="tm-user">'+(_currentProfile?.display_name||'')+'</div>'
+    +'<button class="tm-signout" id="btn-tm-logout">Sign Out</button>';
+  tmScreen.appendChild(topbar);
+  document.getElementById('btn-tm-logout').addEventListener('click',logoutUser);
+
+  // Ribbon — Keypanels / Beltpacks / Requests
+  const ribbon=document.createElement('div');
+  ribbon.className='tm-ribbon'; ribbon.id='tm-ribbon';
+  ['Keypanels','Beltpacks','Requests'].forEach(label=>{
+    const btn=document.createElement('button');
+    btn.className='tm-ribbon-tab'; btn.textContent=label;
+    btn.addEventListener('click',()=>setTMView(label.toLowerCase()));
+    ribbon.appendChild(btn);
+  });
+  tmScreen.appendChild(ribbon);
+
+  // Production filter bar
+  const prodBar=document.createElement('div');
+  prodBar.className='tm-prod-bar'; prodBar.id='tm-prod-bar';
+  _tmProductions.forEach(prod=>{
+    const clr=crFg(prod.controlRoom)||'#888';
+    const btn=document.createElement('button');
+    btn.className='kp-filter-pill'; btn.textContent=prodLabel(prod);
+    btn.style.color=clr; btn.dataset.prodId=prod.id;
+    btn.addEventListener('click',()=>{
+      if(_tmActiveProd===prod.id){ _tmActiveProd=null; btn.style.background=''; btn.style.color=clr; }
+      else {
+        prodBar.querySelectorAll('.kp-filter-pill').forEach(b=>{ b.style.background=''; b.style.color=crFg(PRODUCTIONS[b.dataset.prodId])||'#888'; });
+        _tmActiveProd=prod.id; btn.style.background=clr; btn.style.color='#111';
+      }
+      tmRefreshView();
+    });
+    prodBar.appendChild(btn);
+  });
+  tmScreen.appendChild(prodBar);
+
+  // Body
+  const body=document.createElement('div');
+  body.id='tm-body'; body.style.cssText='flex:1;overflow-y:auto;';
+  tmScreen.appendChild(body);
+
+  // Default to first production, keypanels view
+  if(_tmProductions.length) _tmActiveProd=_tmProductions[0].id;
+  // Highlight first prod pill
+  const firstPill=prodBar.querySelector('.kp-filter-pill');
+  if(firstPill&&_tmProductions[0]){
+    const clr=crFg(_tmProductions[0].controlRoom)||'#888';
+    firstPill.style.background=clr; firstPill.style.color='#111';
+  }
+  setTMView('keypanels');
+}
+
+function setTMView(view){
+  _tmActiveView=view;
+  const ribbon=document.getElementById('tm-ribbon');
+  if(ribbon) ribbon.querySelectorAll('.tm-ribbon-tab').forEach(b=>{
+    b.classList.toggle('active', b.textContent.toLowerCase()===view);
+  });
+  const body=document.getElementById('tm-body');
+  if(!body) return;
+  if(view==='keypanels') renderTMKeypanels();
+  else if(view==='beltpacks') renderTMBeltpacks();
+  else if(view==='requests') renderTMRequests();
+}
+
+function tmRefreshView(){
+  if(_tmActiveView==='keypanels') renderTMKeypanels();
+  else if(_tmActiveView==='beltpacks') renderTMBeltpacks();
+}
+
+let _tmActiveView='keypanels';
+
+function renderTMKeypanels(){
+  const body=document.getElementById('tm-body'); if(!body) return;
+  // Build panelEntryMap scoped to TM's productions
+  const panelEntryMap={}, panelProdMap={};
+  const tmProdIds=new Set(_tmProductions.map(p=>p.id));
+  Object.values(PRODUCTIONS).filter(p=>tmProdIds.has(p.id)&&p.status!=='archived').forEach(prod=>{
+    const claimed=loadClaimedKP(prod.id);
+    Object.entries(claimed).forEach(([panelId,entry])=>{
+      if(!panelEntryMap[panelId]){ panelEntryMap[panelId]=entry; panelProdMap[panelId]=prod; }
+    });
+  });
+
+  const LOCS=['PCR1','ACR1','MOPS','PCR2','MFR1','MFR2','INGEST','ASST'];
+  const locColors={PCR1:crFg('PCR1'),PCR2:crFg('PCR2'),MFR1:crFg('MFR1'),MFR2:crFg('MFR2'),
+    MOPS:'#00CC88',ACR1:'#00CCBB',INGEST:'#FFB800',ASST:'#888888'};
+  body.innerHTML='';
+  let totalShown=0;
+
+  LOCS.forEach(loc=>{
+    const panels=KP_PANELS.filter(p=>{
+      if(p.location!==loc) return false;
+      if(_tmActiveProd){
+        // Show panels assigned to TM's selected production, OR unassigned panels
+        const entry=panelEntryMap[p.id];
+        if(entry&&panelProdMap[p.id]&&panelProdMap[p.id].id!==_tmActiveProd) return false;
+      }
+      return true;
+    });
+    if(!panels.length) return;
+    totalShown+=panels.length;
+    const locClr=locColors[loc]||'#888';
+
+    const secEl=document.createElement('div'); secEl.className='kp-section';
+    const hdrEl=document.createElement('div'); hdrEl.className='kp-section-hdr';
+    hdrEl.style.borderLeftColor=locClr;
+    hdrEl.innerHTML='<span class="kp-section-name" style="color:'+locClr+'">'+loc+'</span>'
+      +'<span class="kp-section-count">'+panels.length+' panels</span>';
+
+    const bodyEl=document.createElement('div'); bodyEl.className='kp-section-body open';
+    panels.forEach(panel=>{
+      const entry=panelEntryMap[panel.id]||null;
+      const prod=panelProdMap[panel.id]||null;
+      const card=buildKpCard(panel,prod,entry);
+      if(card) bodyEl.appendChild(card);
+    });
+    secEl.appendChild(hdrEl); secEl.appendChild(bodyEl);
+    body.appendChild(secEl);
+  });
+
+  if(!totalShown) body.innerHTML='<div class="empty-state"><div class="empty-text">No keypanels found</div></div>';
+}
+
+function renderTMBeltpacks(){
+  const body=document.getElementById('tm-body'); if(!body) return;
+  const bpToProd={};
+  _tmProductions.forEach(prod=>(prod.beltpacks||[]).forEach(bp=>{
+    const id=typeof bp==='string'?bp:bp.id; bpToProd[id]=prod;
+  }));
+  body.innerHTML='';
+  // Reuse renderBpCards scoped to TM's BPs
+  const container=document.createElement('div');
+  container.className='bp-card-grid'; container.style.cssText='padding:clamp(16px,2.2vw,28px);';
+  const allBps=Object.keys(bpToProd);
+  if(!allBps.length){ body.innerHTML='<div class="empty-state"><div class="empty-text">No beltpacks assigned to your productions</div></div>'; return; }
+  const claimed={};
+  _tmProductions.forEach(p=>{ Object.assign(claimed, loadClaimed(p.id)||{}); });
+  // Build filtered list
+  const filtered=_tmActiveProd
+    ? allBps.filter(bp=>bpToProd[bp]&&bpToProd[bp].id===_tmActiveProd)
+    : allBps;
+  renderBpCards(Object.fromEntries(filtered.map(bp=>[bp,bpToProd[bp]])));
+}
+
+async function renderTMRequests(){
+  const body=document.getElementById('tm-body'); if(!body) return;
+  body.innerHTML='<div class="req-empty">Loading…</div>';
+  if(!SUPA||!_currentUser){ body.innerHTML='<div class="req-empty">Not connected</div>'; return; }
+  const [cr,kr]=await Promise.all([
+    SUPA.from('change_requests').select('*').eq('requester_role','tm').order('created_at',{ascending:false}),
+    SUPA.from('key_requests').select('*').eq('requester_role','tm').order('created_at',{ascending:false})
+  ]);
+  const changes=cr.data||[], keys=kr.data||[];
+  if(!changes.length&&!keys.length){ body.innerHTML='<div class="req-empty">No requests submitted yet</div>'; return; }
+  let html='<div style="max-width:900px;margin:0 auto;padding:clamp(16px,2vw,28px);">';
+  const allReqs=[...changes.map(r=>({...r,_type:'change'})),...keys.map(r=>({...r,_type:'key'}))]
+    .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  allReqs.forEach(r=>{
+    const isChange=r._type==='change';
+    const statusColor=r.status==='approved'||r.status==='fulfilled'?'var(--green)':r.status==='denied'?'var(--red)':'var(--amber)';
+    html+='<div style="border:1px solid var(--border-md);margin-bottom:8px;display:flex;gap:0;">'
+      +'<div style="width:4px;background:'+(isChange?'#7C3AED':'#0891B2')+'"></div>'
+      +'<div style="flex:1;padding:12px 16px;">'
+      +'<div style="font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.16em;color:'+(isChange?'#5b21b6':'#0e6a82')+';">'
+      +(isChange?'CHANGE REQUEST':'NEW KEY REQUEST')+'</div>'
+      +'<div style="font-family:var(--f-ui);font-size:14px;font-weight:800;margin:4px 0;">'
+      +(r.device_id||r.description||'—')+'</div>'
+      +(r.note?'<div style="font-family:var(--f-mono);font-size:11px;color:rgba(0,0,0,.45);font-style:italic;">"'+r.note+'"</div>':'' )
+      +'<div style="font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.35);margin-top:4px;">'+relTime(r.created_at)+'</div>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;padding:12px 16px;border-left:1px solid var(--border-md);">'
+      +'<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:'+statusColor+';">'+r.status.toUpperCase()+'</span>'
+      +'</div>'
+      +'</div>';
+  });
+  html+='</div>';
+  body.innerHTML=html;
 }
 
 function renderTMTabs(){
@@ -4168,10 +4371,10 @@ function renderTMProdView(prodId){
     +'</div>';
 }
 
-function openTMReqModal(){
+function openTMReqModal(deviceId, prodId){
   const prod=PRODUCTIONS[_tmActiveProd];
   document.getElementById('tm-req-modal-title').textContent='Submit Request — '+(prod?prod.name:'');
-  document.getElementById('tm-req-device').value='';
+  document.getElementById('tm-req-device').value=deviceId||'';
   document.getElementById('tm-req-note').value='';
   document.getElementById('tm-req-type').value='change';
   document.getElementById('tm-req-modal').classList.add('active');
