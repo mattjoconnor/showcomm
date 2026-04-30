@@ -1755,7 +1755,15 @@ function renderPoolModalChips(){
   if(!_poolModalState) return;
   var panelId=_poolModalState.panelId,prodId=_poolModalState.prodId,keyIndex=_poolModalState.keyIndex;
   var c=loadClaimedKP(prodId); var entry=c[panelId];
-  var usedLabels=new Set(entry?entry.keys.filter(function(k,i){return k&&i!==keyIndex;}).map(function(k){var n=normKey(k);return n?n.label:'';}):[]);
+  // For BP mode, load from claimed BP data
+  var usedKeys;
+  if(_poolModalState&&_poolModalState._isBp){
+    var bpC=loadClaimed(prodId); var bpE=bpC[_poolModalState._bp];
+    usedKeys=bpE?bpE.keys:[];
+  } else {
+    usedKeys=entry?entry.keys:[];
+  }
+  var usedLabels=new Set(usedKeys.filter(function(k,i){return k&&i!==keyIndex;}).map(function(k){var n=normKey(k);return n?n.label:'';  }));
   var q=($('kp-pool-modal-search')||{value:''}).value.trim().toUpperCase();
   var res=$('kp-pool-modal-results'); if(!res) return;
   res.innerHTML='';
@@ -2410,12 +2418,6 @@ function buildKpCard(panel, prod, entry){
   }
   if(_tmMode){
     actBar.innerHTML='';
-    if(entry){
-      const sb=document.createElement('span');
-      sb.className='badge '+(entry.status==='confirmed'?'confirmed':'pending');
-      sb.textContent=entry.status==='confirmed'?'Confirmed':'Pending';
-      actBar.appendChild(sb);
-    }
     const isDirtyThis=_tmMode&&_tmDirty&&_tmDirty.panelId===panel.id;
     if(isDirtyThis){
       const submitBtn=document.createElement('button');
@@ -2426,16 +2428,7 @@ function buildKpCard(panel, prod, entry){
       discardBtn.className='act-dng'; discardBtn.textContent='Discard';
       discardBtn.addEventListener('click',()=>tmDiscardChanges(panel.id, prod?prod.id:null, 'kp'));
       actBar.appendChild(discardBtn);
-    } else {
-      const rb=document.createElement('button');
-      rb.className='act-out';
-      rb.textContent=prod?'Request Change':'Request Assignment';
-      rb.addEventListener('click',()=>{
-        if(_tmDirty) tmCheckDirtyBeforeOpen(panel.id, prod?prod.id:null);
-        else openTMReqModal(panel.id, prod?prod.id:null);
-      });
-      actBar.appendChild(rb);
-    }
+    } // no Request Change button — TM submits via Submit Changes after editing
   } else {
     actBar.appendChild(clrBtn); // always last — margin-left:auto pins it right
   }
@@ -2974,8 +2967,7 @@ function renderBpCards(bpToProd){
         ?(_tmDirty&&_tmDirty.panelId===bp
           ?'<button class="act-co" data-action="tmsubmit" data-bp="'+bp+'" data-code="'+_pid+'">Submit Changes</button>'
            +'<button class="act-dng" data-action="tmdiscard" data-bp="'+bp+'" data-code="'+_pid+'">Discard</button>'
-          :'<button class="act-out" data-action="tmreq" data-bp="'+bp+'" data-code="'+_pid+'">'+
-           (entry?'Request Change':'Request Assignment')+'</button>')
+          :'')
         :action+renBtn+roomBtn+clearBtn)+'</div>'
       +'</div>';
     const _bpIn=document.createElement('div');
