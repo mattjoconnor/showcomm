@@ -2592,12 +2592,65 @@ function tmCheckDirtyBeforeOpen(newPanelId, newProdId){
 }
 
 function openTMSubmitModal(panelId, prodId, type){
-  document.getElementById('tm-req-device').value=panelId||'';
-  document.getElementById('tm-req-note').value='';
-  document.getElementById('tm-req-type').value='change';
-  document.getElementById('tm-req-modal-title').textContent='Submit Changes — '+panelId;
   _tmPendingSubmit={panelId, prodId, type};
-  document.getElementById('tm-req-modal').classList.add('active');
+  // Use a dedicated lightweight confirm modal
+  const existing=document.getElementById('tm-submit-overlay');
+  if(existing) existing.remove();
+  const overlay=document.createElement('div');
+  overlay.id='tm-submit-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:center;justify-content:center;';
+  const box=document.createElement('div');
+  box.style.cssText='background:var(--surface);border-top:4px solid #7C3AED;width:400px;padding:28px;';
+  const title=document.createElement('div');
+  title.style.cssText='font-family:var(--f-ui);font-size:15px;font-weight:900;margin-bottom:6px;';
+  title.textContent='Submit Changes — '+panelId;
+  const sub=document.createElement('div');
+  sub.style.cssText='font-family:var(--f-mono);font-size:11px;color:rgba(0,0,0,.4);letter-spacing:.08em;margin-bottom:20px;';
+  sub.textContent='Your key changes will be sent to admin for review.';
+  const lbl=document.createElement('label');
+  lbl.style.cssText='display:block;font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(0,0,0,.45);margin-bottom:6px;';
+  lbl.textContent='Note for admin (optional)';
+  const ta=document.createElement('textarea');
+  ta.id='tm-submit-note'; ta.rows=3;
+  ta.style.cssText='width:100%;border:none;border-bottom:1px solid var(--border-md);font-family:var(--f-mono);font-size:13px;padding:8px 0;outline:none;background:transparent;resize:none;';
+  ta.placeholder='Anything admin should know…';
+  const btns=document.createElement('div');
+  btns.style.cssText='display:flex;gap:8px;justify-content:flex-end;margin-top:20px;';
+  const cancelBtn=document.createElement('button');
+  cancelBtn.style.cssText='font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:8px 18px;background:transparent;border:1px solid var(--border-md);cursor:pointer;';
+  cancelBtn.textContent='Cancel';
+  cancelBtn.addEventListener('click',()=>{ overlay.remove(); _tmPendingSubmit=null; });
+  const submitBtn=document.createElement('button');
+  submitBtn.style.cssText='font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:8px 18px;background:#7C3AED;color:#fff;border:none;cursor:pointer;';
+  submitBtn.textContent='Submit to Admin';
+  submitBtn.addEventListener('click',tmSubmitChanges);
+  btns.appendChild(cancelBtn); btns.appendChild(submitBtn);
+  box.appendChild(title); box.appendChild(sub); box.appendChild(lbl); box.appendChild(ta); box.appendChild(btns);
+  overlay.appendChild(box);
+  overlay.addEventListener('click',e=>{ if(e.target===overlay){ overlay.remove(); _tmPendingSubmit=null; } });
+  document.body.appendChild(overlay);
+  setTimeout(()=>{ const n=document.getElementById('tm-submit-note'); if(n) n.focus(); },50);
+}
+
+async function tmSubmitChanges(){
+  if(!_tmPendingSubmit||!SUPA) return;
+  const {panelId,prodId,type}=_tmPendingSubmit;
+  const note=document.getElementById('tm-submit-note')?.value.trim()||'';
+  const keys=type==='kp'?loadClaimedKP(prodId)[panelId]?.keys:loadClaimed(prodId)[panelId]?.keys;
+  const {error}=await SUPA.from('change_requests').insert({
+    device_id:panelId,
+    device_type:type==='kp'?'keypanel':'beltpack',
+    note:note||'Key update submitted by TM',
+    requested_state:{keys:keys||[]},
+    requester_role:'tm',
+    status:'pending',
+    production_id:prodId||_tmActiveProd
+  });
+  document.getElementById('tm-submit-overlay')?.remove();
+  if(error){ toast('Error: '+error.message,'danger'); return; }
+  _tmDirty=null; _tmPendingSubmit=null;
+  toast('Changes submitted for review','success');
+  if(type==='kp') renderKeypanels(); else renderAllBeltpacks();
 }
 let _tmPendingSubmit=null;
 
