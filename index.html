@@ -357,7 +357,7 @@ body { background:var(--bg); color:var(--black); }
 .pool-cat.on.ifb-cat { border-bottom-color:var(--ifb-fg); }
 .pool-cat.on.kp-cat  { border-bottom-color:var(--kp-fg); }
 .pool-cat.on.bp-cat  { border-bottom-color:var(--bp-fg); }
-.pool-grid { overflow-y:auto; flex:1; padding:clamp(10px,1.6vh,16px) clamp(14px,2vw,24px); display:grid; grid-template-columns:repeat(auto-fill,minmax(clamp(65px,7.5vw,95px),1fr)); gap:2px; background:#E8E8E6; align-content:start; }
+.pool-grid { overflow-y:auto; height:clamp(280px,38vh,420px); padding:clamp(10px,1.6vh,16px) clamp(14px,2vw,24px); display:grid; grid-template-columns:repeat(auto-fill,minmax(clamp(65px,7.5vw,95px),1fr)); gap:2px; background:#E8E8E6; align-content:start; flex-shrink:0; }
 .pool-chip { height:clamp(44px,6vh,56px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; border:none; transition:opacity .08s; }
 .pool-chip:hover { opacity:.76; }
 .pool-chip .kl { font-family:var(--f-mono); font-size:clamp(.58rem,.8vw,.7rem); font-weight:700; letter-spacing:.04em; text-transform:uppercase; line-height:1.15; text-align:center; display:block; }
@@ -4213,9 +4213,9 @@ function renderChangeCard(r){
           const opt=findOpt(nk.category,nk.label);
           const bg=opt?rgbStr(optBgRgb(opt)):'#333';
           const fg=opt?rgbStr(optFgRgb(opt)):'#fff';
-          return '<span style="display:inline-block;background:'+bg+';color:'+fg+';font-family:var(--f-mono);font-size:9px;font-weight:800;padding:2px 5px;margin:1px;letter-spacing:.04em;">'+(nk.label.length>6?nk.label.slice(0,6)+'…':nk.label)+'</span>';
+          return '<span style="display:inline-block;background:'+bg+';color:'+fg+';font-family:var(--f-mono);font-size:9px;font-weight:800;padding:3px 7px;margin:2px;letter-spacing:.04em;min-width:36px;text-align:center;">'+(nk.label.length>7?nk.label.slice(0,4)+'…':nk.label)+'</span>';
         }
-        return '<span style="display:inline-block;background:rgba(0,0,0,.08);color:rgba(0,0,0,.3);font-family:var(--f-mono);font-size:9px;padding:2px 5px;margin:1px;">—</span>';
+        return '<span style="display:inline-block;background:rgba(0,0,0,.06);color:rgba(0,0,0,.25);font-family:var(--f-mono);font-size:9px;padding:3px 7px;margin:2px;min-width:36px;text-align:center;">—</span>';
       }).join('');
       return '<div style="display:flex;flex-wrap:wrap;gap:1px;max-width:400px;">'+tiles+'</div>';
     }
@@ -4326,25 +4326,25 @@ async function initTMApp(){
   tmScreen.innerHTML='';
   tmScreen.style.cssText='display:flex;flex-direction:column;height:100vh;overflow:hidden;background:var(--bg);';
 
-  // Topbar
-  const topbar=document.createElement('div');
-  topbar.className='tm-topbar';
-  topbar.innerHTML='<div class="tm-wordmark">ShowComm<span>·</span></div>'
-    +'<div class="tm-role-badge">TM</div>'
-    +'<div class="tm-user">'+(_currentProfile?.display_name||'')+'</div>'
-    +'<button class="tm-signout" id="btn-tm-logout">Sign Out</button>';
-  tmScreen.appendChild(topbar);
-  document.getElementById('btn-tm-logout').addEventListener('click',doLogout);
-
-  // Ribbon — Keypanels / Beltpacks / Requests
+  // Single ribbon bar — identical to admin
   const ribbon=document.createElement('div');
-  ribbon.className='tm-ribbon'; ribbon.id='tm-ribbon';
+  ribbon.className='ribbon'; ribbon.id='tm-ribbon';
+  ribbon.innerHTML='<div class="r-brand"><span class="wordmark">ShowComm<span class="wm-dot"></span></span></div>';
+  const rnav=document.createElement('nav'); rnav.className='r-nav'; rnav.id='tm-prod-tabs';
   ['Keypanels','Beltpacks','Requests'].forEach(label=>{
     const btn=document.createElement('button');
-    btn.className='tm-ribbon-tab'; btn.textContent=label;
+    btn.className='ribbon-tab'; btn.textContent=label;
     btn.addEventListener('click',()=>setTMView(label.toLowerCase()));
-    ribbon.appendChild(btn);
+    rnav.appendChild(btn);
   });
+  ribbon.appendChild(rnav);
+  const rright=document.createElement('div'); rright.className='r-right';
+  rright.style.cssText='display:flex;align-items:center;gap:12px;';
+  rright.innerHTML='<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;background:#7C3AED;color:#fff;">TM</span>'
+    +'<span id="tm-user-label" style="font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.4);">'+(_currentProfile?.display_name||'')+'</span>';
+  const logoutBtn=document.createElement('button'); logoutBtn.className='r-logout'; logoutBtn.id='btn-tm-logout'; logoutBtn.textContent='Sign Out';
+  logoutBtn.addEventListener('click',doLogout);
+  rright.appendChild(logoutBtn); ribbon.appendChild(rright);
   tmScreen.appendChild(ribbon);
 
   // Reuse admin unified-filters bar
@@ -4370,8 +4370,8 @@ function setTMView(view){
     return;
   }
   _tmActiveView=view;
-  const ribbon=document.getElementById('tm-ribbon');
-  if(ribbon) ribbon.querySelectorAll('.tm-ribbon-tab').forEach(b=>{
+  const ribbon=document.getElementById('tm-prod-tabs');
+  if(ribbon) ribbon.querySelectorAll('.ribbon-tab').forEach(b=>{
     b.classList.toggle('active', b.textContent.toLowerCase()===view);
   });
   const body=document.getElementById('tm-body'); if(!body) return;
