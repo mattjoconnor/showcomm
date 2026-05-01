@@ -4331,13 +4331,15 @@ function setTMView(view){
   ['view-keypanels','view-allbeltpacks'].forEach(id=>{
     const el=$(id); if(el&&mb&&!mb.contains(el)){ mb.appendChild(el); el.style.display=''; }
   });
+  // Detach any view nodes from tm-body BEFORE clearing innerHTML
+  const kpV=$('view-keypanels'), bpV=$('view-allbeltpacks');
+  if(kpV&&body.contains(kpV)) body.removeChild(kpV);
+  if(bpV&&body.contains(bpV)) body.removeChild(bpV);
   body.innerHTML='';
   if(view==='keypanels'){
-    const kpView=$('view-keypanels');
-    if(kpView){ kpView.style.display='block'; body.appendChild(kpView); renderKeypanels(); }
+    if(kpV){ kpV.style.display='block'; body.appendChild(kpV); renderKeypanels(); }
   } else if(view==='beltpacks'){
-    const bpView=$('view-allbeltpacks');
-    if(bpView){ bpView.style.display='block'; body.appendChild(bpView); renderAllBeltpacks(); }
+    if(bpV){ bpV.style.display='block'; body.appendChild(bpV); renderAllBeltpacks(); }
   } else if(view==='requests'){
     renderTMRequests();
   }
