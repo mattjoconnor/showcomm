@@ -10,6 +10,9 @@
 
 <style>
 
+/* Firefox font smoothing */
+* { -moz-osx-font-smoothing: grayscale; }
+
 /* ── FONT ROLES ────────────────────────────────────────────
    Zodiak         → wordmark, section headers (display serif)
    Cabinet Grotesk → all UI: device names, tabs, buttons, body
@@ -123,7 +126,7 @@ body { background:var(--bg); color:var(--black); }
 .ribbon-tab { display:flex; align-items:center; padding:0 clamp(12px,1.6vw,20px); font-family:var(--f-ui); font-size:clamp(.6rem,.78vw,.72rem); font-weight:700; letter-spacing:.12em; text-transform:uppercase; background:none; border:none; border-right:1px solid #1e1e1e; color:rgba(255,255,255,.28); cursor:pointer; position:relative; transition:color .08s; }
 .ribbon-tab:hover { color:rgba(255,255,255,.6); }
 .ribbon-tab.active { color:#fff; }
-.ribbon-tab.active::after { content:''; position:absolute; bottom:0; left:clamp(12px,1.6vw,20px); right:clamp(12px,1.6vw,20px); height:2px; background:var(--green); }
+.ribbon-tab.active::after { content:''; position:absolute; bottom:0; left:clamp(12px,1.6vw,20px); right:clamp(12px,1.6vw,20px); height:2px; background:var(--green); display:block; }
 .ribbon-tab.has-pending { color:#fff !important; }
 .ribbon-tab.has-pending .req-badge { background:#fff; color:var(--red); }
 .r-right { margin-left:auto; display:flex; align-items:center; padding:0 clamp(14px,2vw,24px); border-left:1px solid #1e1e1e; }
@@ -236,7 +239,7 @@ body { background:var(--bg); color:var(--black); }
 
 /* ─── BP CARDS ─── */
 .bp-section { padding:clamp(10px,1.6vh,16px) clamp(16px,2.2vw,28px); }
-.bp-card-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(6px,.9vw,10px); }
+.bp-card-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(6px,.9vw,10px); box-sizing:border-box; }
 .bp-card { background:var(--surface); border:1px solid var(--border); border-bottom:2px solid rgba(0,0,0,.08); display:flex; overflow:hidden; }
 .bp-room-strip { width:5px; flex-shrink:0; }
 /* FIXED HEIGHT card inner — never shifts */
