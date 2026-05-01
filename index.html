@@ -2810,17 +2810,17 @@ function openBpKeyModal(bp, code, keyIndex){
   $('kp-pool-modal-title').textContent=bp+' · Key '+(keyIndex+1);
   $('kp-pool-modal-search').value='';
   const pillsEl=$('kp-pool-modal-pills'); pillsEl.innerHTML='';
-  const catDefs=[{k:'PLs',fg:'var(--pl)'},{k:'IFBs',fg:'var(--ifb)'},{k:'KPs',fg:'var(--kp)'},{k:'BPs',fg:'var(--bp)'}];
-  catDefs.forEach(({k,fg})=>{
-    const pill=document.createElement('button'); pill.type='button'; pill.textContent=k; pill.dataset.cat=k; pill.dataset.active='1';
-    pill.style.cssText='padding:7px 14px;font-family:var(--font);font-size:11px;font-weight:800;letter-spacing:0.1em;cursor:pointer;border:1px solid;background:'+fg+';color:#000;border-color:'+fg+';';
-    pill.onclick=()=>{
-      const on=pill.dataset.active==='1'; pill.dataset.active=on?'0':'1';
-      pill.style.background=on?'transparent':fg; pill.style.color=on?fg:'#000';
-      if(on)_poolModalState.activeCats.delete(k); else _poolModalState.activeCats.add(k);
+  [{k:'PLs',label:'PL',cls:'pl-cat'},{k:'IFBs',label:'IFB',cls:'ifb-cat'},{k:'KPs',label:'KP',cls:'kp-cat'},{k:'BPs',label:'BP',cls:'bp-cat'}].forEach(function(ct){
+    var tab=document.createElement('button'); tab.type='button'; tab.textContent=ct.label; tab.dataset.cat=ct.k;
+    tab.className='pool-cat '+ct.cls+(ct.k==='PLs'?' on':'');
+    tab.onclick=function(){
+      _poolCat=ct.k;
+      pillsEl.querySelectorAll('.pool-cat').forEach(function(b){b.classList.remove('on');});
+      tab.classList.add('on');
+      $('kp-pool-modal-search').value='';
       renderPoolModalChips();
     };
-    pillsEl.appendChild(pill);
+    pillsEl.appendChild(tab);
   });
   renderPoolModalChips();
   $('modal-kp-pool').classList.add('active');
