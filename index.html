@@ -2639,17 +2639,18 @@ function tmCheckDirtyBeforeOpen(newPanelId, newProdId){
       if(error){ toast('Error: '+error.message,'danger'); return; }
     }
     _tmDirty=null; toast('Changes submitted','success');
-    if(!_isNav){ if(type==='kp') renderKeypanels(); else renderAllBeltpacks(); }
+    if(_isNav&&_tmPendingNav){ const v=_tmPendingNav; _tmPendingNav=null; setTMView(v); }
+    else if(!_isNav){ if(type==='kp') renderKeypanels(); else renderAllBeltpacks(); }
   };
   const ok=document.createElement('button'); ok.textContent='Submit Changes';
   ok.style.cssText='font-family:var(--f-mono);font-size:clamp(.65rem,.92vw,.78rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;flex:1;padding:clamp(9px,1.4vh,12px);background:var(--green);color:#fff;border:none;cursor:pointer;';
   ok.addEventListener('click',doSubmit);
   const discard=document.createElement('button'); discard.className='confirm-no'; discard.textContent='Discard';
   discard.style.cssText='font-family:var(--f-mono);font-size:clamp(.65rem,.92vw,.78rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;flex:1;padding:clamp(9px,1.4vh,12px);background:transparent;color:var(--red);border:1px solid rgba(200,0,0,.3);cursor:pointer;';
-  discard.addEventListener('click',()=>{ overlay.remove(); tmDiscardChanges(panelId,prodId,type); });
+  discard.addEventListener('click',()=>{ overlay.remove(); const nav=_isNav&&_tmPendingNav; _tmPendingNav=null; tmDiscardChanges(panelId,prodId,type); if(nav) setTMView(nav); });
   const cancel=document.createElement('button'); cancel.textContent='Cancel';
   cancel.style.cssText='font-family:var(--f-mono);font-size:clamp(.65rem,.92vw,.78rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;flex:1;padding:clamp(9px,1.4vh,12px);background:transparent;color:rgba(0,0,0,.5);border:1px solid rgba(0,0,0,.2);cursor:pointer;';
-  cancel.addEventListener('click',()=>overlay.remove());
+  cancel.addEventListener('click',()=>{ overlay.remove(); _tmPendingNav=null; });
   btns.appendChild(ok); btns.appendChild(discard); btns.appendChild(cancel);
   body.appendChild(btns);
   panel.appendChild(head); panel.appendChild(body);
@@ -2700,6 +2701,7 @@ async function tmSubmitChanges(){
   if(type==='kp') renderKeypanels(); else renderAllBeltpacks();
 }
 let _tmPendingSubmit=null;
+let _tmPendingNav=null;
 
 function tmDiscardChanges(panelId, prodId, type){
   if(!_tmDirty) return;
@@ -4311,6 +4313,7 @@ async function initTMApp(){
 function setTMView(view){
   // If navigating away with unsaved changes, prompt first
   if(_tmDirty && view!==_tmActiveView){
+    _tmPendingNav=view;
     tmCheckDirtyBeforeOpen('__nav__', null);
     return;
   }
@@ -4479,7 +4482,7 @@ function openTMKpRequestModal(panelId, currentProd){
     toast(panelId+' request submitted','success');
   });
   const cancel=document.createElement('button'); cancel.className='confirm-no'; cancel.textContent='Cancel';
-  cancel.addEventListener('click',()=>overlay.remove());
+  cancel.addEventListener('click',()=>{ overlay.remove(); _tmPendingNav=null; });
   btns.appendChild(ok); btns.appendChild(cancel);
   body.appendChild(btns);
   panel.appendChild(head); panel.appendChild(body);
@@ -4554,7 +4557,7 @@ function openTMBpRequestModal(bp){
     toast(bp+' requested for '+prodLabel(prod),'success');
   });
   const cancel=document.createElement('button'); cancel.className='confirm-no'; cancel.textContent='Cancel';
-  cancel.addEventListener('click',()=>overlay.remove());
+  cancel.addEventListener('click',()=>{ overlay.remove(); _tmPendingNav=null; });
   btns.appendChild(ok); btns.appendChild(cancel);
   body.appendChild(btns);
   panel.appendChild(head); panel.appendChild(body);
