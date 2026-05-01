@@ -4566,6 +4566,25 @@ function openTMBpRequestModal(bp){
   document.body.appendChild(overlay);
 }
 
+document.addEventListener('click', function(e){
+  const hdr=e.target.closest('.req-archive-hdr[data-archive-id]');
+  if(!hdr) return;
+  const id=hdr.dataset.archiveId;
+  const el=document.getElementById(id); if(!el) return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  const sp=hdr.querySelector('span');
+  if(sp) sp.textContent=(open?'▶':'▼')+sp.textContent.slice(1);
+});
+
+function tmToggleArchive(hdr, id){
+  const el=document.getElementById(id); if(!el) return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  const sp=hdr.querySelector('span');
+  if(sp) sp.textContent=sp.textContent.replace(open?'▼':'▶', open?'▶':'▼');
+}
+
 async function renderTMRequests(){
   const body=document.getElementById('tm-body'); if(!body) return;
   body.innerHTML='<div class="req-empty">Loading…</div>';
@@ -4576,55 +4595,85 @@ async function renderTMRequests(){
   // Pending KP + BP summary
   let pendingKP=0, pendingBP=0;
   _tmProductions.forEach(prod=>{
-    const kps=loadClaimedKP(prod.id);
-    const bps=loadClaimed(prod.id);
-    pendingKP+=Object.values(kps).filter(e=>e.status==='pending').length;
-    pendingBP+=Object.values(bps).filter(e=>e.status==='pending').length;
+    pendingKP+=Object.values(loadClaimedKP(prod.id)).filter(e=>e.status==='pending').length;
+    pendingBP+=Object.values(loadClaimed(prod.id)).filter(e=>e.status==='pending').length;
   });
 
-  // Fetch requests for all TM productions
   const [cr,kr]=await Promise.all([
     SUPA.from('change_requests').select('*').in('production_id',prodIds.length?prodIds:['__none__']).order('created_at',{ascending:false}),
     SUPA.from('key_requests').select('*').in('production_id',prodIds.length?prodIds:['__none__']).order('created_at',{ascending:false})
   ]);
-  const changes=cr.data||[], keys=kr.data||[];
+  const allReqs=[...(cr.data||[]).map(r=>({...r,_type:'change'})),...(kr.data||[]).map(r=>({...r,_type:'key'}))]
+    .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
 
-  let html='<div style="padding:clamp(16px,2vw,28px);">';
+  const isPending=r=>r.status==='pending'||r.status==='open';
+  const statusPill=r=>{
+    const s=r.status; const clr=s==='approved'||s==='fulfilled'?'var(--green)':s==='denied'?'var(--red)':'var(--amber)';
+    return '<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;background:'+clr+'22;color:'+clr+';">'+s+'</span>';
+  };
+  const reqRow=r=>{
+    const isChange=r._type==='change';
+    const accent=isChange?'#7C3AED':'#0891B2';
+    return '<div style="display:flex;gap:0;min-height:34px;border-bottom:1px solid var(--border-md);">'
+      +'<div style="width:3px;flex-shrink:0;background:'+accent+'"></div>'
+      +'<div style="flex:1;padding:6px 14px;display:flex;align-items:center;gap:10px;min-width:0;">'
+      +'<span style="font-family:var(--f-mono);font-size:8px;font-weight:800;color:'+accent+'22;letter-spacing:.1em;background:'+accent+'18;padding:2px 5px;white-space:nowrap;">'+(isChange?'CHG':'KEY')+'</span>'
+      +'<span style="font-family:var(--f-ui);font-size:13px;font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(r.device_id||r.description||'—')+'</span>'
+      +(r.note?'<span style="font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.35);font-style:italic;flex-shrink:0;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">"'+r.note+'"</span>':'')
+      +'<span style="font-family:var(--f-mono);font-size:9px;color:rgba(0,0,0,.25);flex-shrink:0;">'+relTime(r.created_at)+'</span>'
+      +statusPill(r)
+      +'</div></div>';
+  };
 
-  // Pending summary banner
+  let html='<div style="padding:clamp(12px,1.6vw,20px);">';
+
+  // Pending KP/BP summary banner
   if(pendingKP||pendingBP){
-    html+='<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);padding:12px 16px;margin-bottom:16px;display:flex;gap:24px;">';
-    if(pendingKP) html+='<span style="font-family:var(--f-mono);font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--amber);">● '+pendingKP+' KP'+(pendingKP>1?'s':'')+' PENDING CONFIRMATION</span>';
-    if(pendingBP) html+='<span style="font-family:var(--f-mono);font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--amber);">● '+pendingBP+' BP'+(pendingBP>1?'s':'')+' PENDING CONFIRMATION</span>';
+    html+='<div style="background:rgba(245,158,11,.07);border-left:3px solid var(--amber);padding:10px 14px;margin-bottom:12px;display:flex;gap:20px;">';
+    if(pendingKP) html+='<span style="font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--amber);">● '+pendingKP+' KP'+(pendingKP>1?'s':'')+' PENDING</span>';
+    if(pendingBP) html+='<span style="font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--amber);">● '+pendingBP+' BP'+(pendingBP>1?'s':'')+' PENDING</span>';
     html+='</div>';
   }
 
-  if(!changes.length&&!keys.length){
+  if(!allReqs.length){
     html+='<div class="req-empty">No requests for your productions yet</div></div>';
     body.innerHTML=html; return;
   }
 
-  const allReqs=[...changes.map(r=>({...r,_type:'change'})),...keys.map(r=>({...r,_type:'key'}))]
-    .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-  allReqs.forEach(r=>{
-    const isChange=r._type==='change';
-    const statusColor=r.status==='approved'||r.status==='fulfilled'?'var(--green)':r.status==='denied'?'var(--red)':'var(--amber)';
-    const prod=PRODUCTIONS[r.production_id];
-    const prodClr=prod?crFg(prod.controlRoom):'#888';
-    html+='<div style="border:1px solid var(--border-md);margin-bottom:4px;display:flex;gap:0;min-height:36px;">'
-      +'<div style="width:3px;flex-shrink:0;background:'+(isChange?'#7C3AED':'#0891B2')+'"></div>'
-      +'<div style="flex:1;padding:7px 12px;display:flex;align-items:center;gap:10px;min-width:0;">'
-      +(prod?'<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;color:'+prodClr+';white-space:nowrap;">'+prodLabel(prod)+'</span>':'')
-      +'<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;color:'+(isChange?'rgba(124,58,237,.6)':'rgba(8,145,178,.6)')+';white-space:nowrap;">'+(isChange?'CHG':'KEY')+'</span>'
-      +'<span style="font-family:var(--f-ui);font-size:13px;font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(r.device_id||r.description||'—')+'</span>'
-      +(r.note?'<span style="font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.38);font-style:italic;flex-shrink:0;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">"'+r.note+'"</span>':'')
-      +'</div>'
-      +'<div style="display:flex;align-items:center;gap:10px;padding:4px 12px;border-left:1px solid var(--border-md);flex-shrink:0;">'
-      +'<span style="font-family:var(--f-mono);font-size:9px;color:rgba(0,0,0,.28);">'+relTime(r.created_at)+'</span>'
-      +'<span style="font-family:var(--f-mono);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:'+statusColor+';">'+r.status+'</span>'
-      +'</div>'
+  // Group by production
+  _tmProductions.forEach(prod=>{
+    const prodReqs=allReqs.filter(r=>r.production_id===prod.id);
+    if(!prodReqs.length) return;
+    const clr=crFg(prod.controlRoom)||'#888';
+    const pending=prodReqs.filter(isPending);
+    const resolved=prodReqs.filter(r=>!isPending(r));
+
+    html+='<div style="margin-bottom:16px;border:1px solid var(--border-md);">';
+    // Section header
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border-md);border-left:3px solid '+clr+';">'
+      +'<span style="font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:'+clr+';flex:1;">'+prodLabel(prod)+'</span>'
+      +'<span style="font-family:var(--f-mono);font-size:9px;color:rgba(0,0,0,.35);">'+pending.length+' pending</span>'
       +'</div>';
+
+    if(!pending.length){
+      html+='<div style="padding:10px 14px;font-family:var(--f-mono);font-size:10px;color:rgba(0,0,0,.28);letter-spacing:.08em;">All caught up — no pending requests</div>';
+    } else {
+      pending.forEach(r=>{ html+=reqRow(r); });
+    }
+
+    if(resolved.length){
+      const archId='tmarch_'+prod.id;
+      html+='<div class="req-archive-hdr" data-archive-id="'+archId+'" '
+        +'style="padding:7px 14px;cursor:pointer;background:rgba(0,0,0,.02);border-top:1px solid var(--border-md);display:flex;align-items:center;">'
+        +'<span style="font-family:var(--f-mono);font-size:9px;font-weight:700;color:rgba(0,0,0,.35);letter-spacing:.1em;">▶ '+resolved.length+' resolved</span>'
+        +'</div>'
+        +'<div id="'+archId+'" style="display:none;opacity:.6;">';
+      resolved.forEach(r=>{ html+=reqRow(r); });
+      html+='</div>';
+    }
+    html+='</div>';
   });
+
   html+='</div>';
   body.innerHTML=html;
 }
