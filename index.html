@@ -1871,7 +1871,8 @@ function kpKeyAssign(panelId, prodId, keyIndex, cat, label){
   if(!c[panelId]) return;
   // Track dirty for TM mode
   if(_tmMode && !_tmDirty){
-    _tmDirty={panelId, prodId, type:'kp', originalKeys:[...(c[panelId].keys||[])]};
+    const _realProdId=prodId&&prodId!=='__draft__'?prodId:(_tmActiveProd||(_tmProductions[0]?.id)||null);
+    _tmDirty={panelId, prodId:_realProdId, type:'kp', originalKeys:[...(c[panelId].keys||[])]};
   }
   c[panelId].keys[keyIndex] = {c:cat, l:label};
   if(c[panelId].status==='confirmed') c[panelId].status='pending';
@@ -2743,12 +2744,16 @@ async function tmSubmitChanges(){
     const claimed=loadClaimedKP(prodId);
     keys=claimed[panelId]?.keys;
     if(!keys||!keys.some(k=>k)){
-      // Try draft slot
+      // Try all TM productions
+      for(const p of _tmProductions){
+        const c2=loadClaimedKP(p.id);
+        if(c2[panelId]?.keys?.some(k=>k)){ keys=c2[panelId].keys; break; }
+      }
+    }
+    if(!keys||!keys.some(k=>k)){
       const draft=loadClaimedKP('__draft__');
       if(draft[panelId]?.keys?.some(k=>k)) keys=draft[panelId].keys;
     }
-    // Also try _tmDirty originalKeys as a cross-check
-    if(!keys||!keys.some(k=>k)) keys=_tmDirty?.originalKeys||[];
   } else {
     const claimed=loadClaimed(prodId);
     keys=claimed[panelId]?.keys;
@@ -2758,7 +2763,7 @@ async function tmSubmitChanges(){
     }
   }
   // Add debug
-  console.log('[tmSubmitChanges] panelId:',panelId,'prodId:',prodId,'type:',type,'keys found:',keys?.filter(k=>k)?.length||0);
+
   const {error}=await SUPA.from('change_requests').insert({
     device_id:panelId,
     device_type:type==='kp'?'keypanel':'beltpack',
