@@ -4834,7 +4834,7 @@ function jumpToPanel(panelId){
 
 async function flushResolved(type){
   const tableMap={change:'change_requests',key:'key_requests',claim:'device_claims'};
-  const statusMap={change:['approved','denied','modified'],key:['fulfilled','denied'],claim:['confirmed','denied','cancelled']};
+  const statusMap={change:['approved','denied','modified'],key:['fulfilled','denied'],claim:['denied','cancelled']};
   const table=tableMap[type]||type;
   const statuses=statusMap[type]||['approved','denied','fulfilled'];
   adminConfirm(
