@@ -5794,7 +5794,8 @@ let _crewAllKeys=[], _crewKeyNotes={}, _crewActiveKeyIdx=null;
 function crewKeyLabel(k){
   if(!k) return null;
   if(typeof k==='string') return k||null;
-  if(k.label&&typeof k.label==='string') return k.label;
+  if(k.l&&typeof k.l==='string') return k.l;           // actual storage format {c, l}
+  if(k.label&&typeof k.label==='string') return k.label; // fallback
   if(k.key&&typeof k.key==='string') return k.key;
   return null;
 }
