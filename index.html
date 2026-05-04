@@ -166,7 +166,7 @@ body { background:var(--bg); color:var(--black); }
 .btn-full:disabled { background:rgba(0,0,0,.25); cursor:not-allowed; }
 .login-hint { margin-top:14px; font-family:var(--f-mono); font-size:var(--t-label); color:var(--tx-secondary); text-align:center; }
 .login-error { margin-top:12px; font-family:var(--f-mono); font-size:var(--t-small); color:var(--red); letter-spacing:var(--ls-normal); display:none; }
-#screen-crew { display:none; height:100vh; flex-direction:column; align-items:center; justify-content:center; background:var(--bg); }
+/* #screen-crew handled in CREW APP block below */
 .placeholder-screen { text-align:center; }
 .placeholder-role-badge { display:inline-block; font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; padding:4px 10px; margin-bottom:32px; }
 .placeholder-role-badge.tm { background:#7C3AED; color:#fff; }
@@ -176,55 +176,118 @@ body { background:var(--bg); color:var(--black); }
 .placeholder-logout:hover { color:var(--black); }
 
 /* ─── CREW APP ─── */
-#screen-crew { display:none; height:100vh; flex-direction:column; background:var(--bg); overflow:hidden; }
-.crew-topbar { display:flex; align-items:center; justify-content:space-between; padding:0 16px; height:52px; background:#0891B2; flex-shrink:0; }
-.crew-topbar-identity { display:flex; flex-direction:column; gap:1px; }
-.crew-topbar-name { font-family:var(--f-mono); font-size:var(--t-ui); font-weight:800; color:#fff; letter-spacing:var(--ls-normal); }
-.crew-topbar-pos { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:rgba(255,255,255,.65); letter-spacing:var(--ls-wide); text-transform:uppercase; }
-.crew-topbar-logout { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:rgba(255,255,255,.7); background:none; border:none; cursor:pointer; padding:6px 0; }
+#screen-crew { display:none; height:100vh; flex-direction:column; align-items:stretch; justify-content:flex-start; background:var(--bg); overflow:hidden; }
+.crew-topbar { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; background:#0891B2; flex-shrink:0; border-bottom:1px solid rgba(0,0,0,.12); }
+.crew-topbar-identity { display:flex; align-items:baseline; gap:10px; }
+.crew-topbar-name { font-family:var(--f-mono); font-size:var(--t-body); font-weight:800; color:#fff; letter-spacing:var(--ls-tight); }
+.crew-topbar-pos { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:600; color:rgba(255,255,255,.65); letter-spacing:var(--ls-xwide); text-transform:uppercase; }
+.crew-topbar-right { display:flex; align-items:center; gap:16px; }
+.crew-topbar-badge { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; padding:3px 8px; background:rgba(0,0,0,.2); color:#fff; }
+.crew-topbar-logout { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:rgba(255,255,255,.65); background:none; border:none; cursor:pointer; padding:0; }
 .crew-topbar-logout:hover { color:#fff; }
-.crew-content { flex:1; overflow-y:auto; padding:20px 16px 40px; -webkit-overflow-scrolling:touch; }
+.crew-content { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.crew-inner { max-width:860px; margin:0 auto; padding:24px 20px 60px; }
 .crew-step { display:none; }
 .crew-step.active { display:block; }
 .crew-section-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:700; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:12px; }
-.crew-back-btn { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:#0891B2; background:none; border:none; cursor:pointer; padding:0; margin-bottom:20px; display:inline-block; }
+.crew-back-btn { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:#0891B2; background:none; border:none; cursor:pointer; padding:0; margin-bottom:20px; display:inline-flex; align-items:center; gap:4px; }
 .crew-back-btn:hover { opacity:.75; }
-.crew-prod-card { background:var(--surface); border:1px solid var(--border-md); border-left:4px solid #0891B2; padding:16px; margin-bottom:10px; cursor:pointer; transition:border-color .1s, background .1s; }
+/* Production list */
+.crew-prod-card { background:var(--surface); border:1px solid var(--border-md); border-left:4px solid #0891B2; padding:16px 18px; margin-bottom:8px; cursor:pointer; transition:background .1s; display:flex; align-items:center; justify-content:space-between; }
 .crew-prod-card:hover { background:rgba(8,145,178,.04); }
 .crew-prod-card:active { background:rgba(8,145,178,.08); }
-.crew-prod-name { font-family:var(--f-mono); font-size:var(--t-body); font-weight:700; color:var(--tx-primary); letter-spacing:var(--ls-tight); margin-bottom:3px; }
+.crew-prod-name { font-family:var(--f-mono); font-size:var(--t-body); font-weight:700; color:var(--tx-primary); letter-spacing:var(--ls-tight); margin-bottom:2px; }
 .crew-prod-meta { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); }
-.crew-type-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px; }
-.crew-type-tile { background:var(--surface); border:1px solid var(--border-md); padding:28px 16px; text-align:center; cursor:pointer; transition:border-color .1s, background .1s; }
-.crew-type-tile:hover { border-color:#0891B2; background:rgba(8,145,178,.04); }
-.crew-type-tile:active { background:rgba(8,145,178,.1); }
-.crew-type-icon { font-size:28px; margin-bottom:10px; }
+.crew-prod-arrow { font-family:var(--f-mono); font-size:var(--t-body); color:var(--tx-tertiary); }
+/* Device type tiles */
+.crew-type-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.crew-type-tile { background:var(--surface); border:1px solid var(--border-md); padding:32px 16px 24px; text-align:center; cursor:pointer; transition:border-color .15s, background .1s; }
+.crew-type-tile:hover { border-color:#0891B2; background:rgba(8,145,178,.03); }
+.crew-type-tile:active { background:rgba(8,145,178,.08); }
+.crew-type-icon { font-size:32px; margin-bottom:12px; line-height:1; }
 .crew-type-label { font-family:var(--f-mono); font-size:var(--t-ui); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-primary); }
-.crew-device-item { background:var(--surface); border:1px solid var(--border-md); padding:14px 16px; margin-bottom:8px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:border-color .1s, background .1s; }
-.crew-device-item:hover { border-color:#0891B2; background:rgba(8,145,178,.04); }
-.crew-device-item:active { background:rgba(8,145,178,.1); }
-.crew-device-item.taken { opacity:.45; cursor:not-allowed; background:var(--bg); }
+.crew-type-desc { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); margin-top:4px; letter-spacing:var(--ls-normal); }
+/* Device list */
+.crew-device-item { background:var(--surface); border:1px solid var(--border-md); padding:14px 18px; margin-bottom:8px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:border-color .1s, background .1s; }
+.crew-device-item:hover { border-color:#0891B2; background:rgba(8,145,178,.03); }
+.crew-device-item:active { background:rgba(8,145,178,.08); }
+.crew-device-item.taken { opacity:.4; cursor:not-allowed; background:var(--bg); }
 .crew-device-item.taken:hover { border-color:var(--border-md); background:var(--bg); }
 .crew-device-id { font-family:var(--f-mono); font-size:var(--t-body); font-weight:700; color:var(--tx-primary); letter-spacing:var(--ls-tight); }
 .crew-device-meta { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); margin-top:2px; }
 .crew-device-status { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-tertiary); }
-.crew-empty { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); line-height:1.6; padding:24px 0 8px; text-align:center; }
-.crew-loading { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-wide); text-transform:uppercase; padding:40px 0; text-align:center; }
-.crew-status-card { border:1px solid var(--border-md); padding:28px 20px; margin-bottom:20px; }
+/* Empty / loading */
+.crew-empty { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); line-height:1.7; padding:32px 0; text-align:center; }
+.crew-loading { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-wide); text-transform:uppercase; padding:48px 0; text-align:center; }
+/* Pending state */
+.crew-status-card { border:1px solid var(--border-md); padding:24px 20px; margin-bottom:16px; }
 .crew-status-card.pending { border-left:5px solid #F59E0B; }
-.crew-status-card.confirmed { border-left:5px solid #10B981; }
-.crew-status-badge { display:inline-block; font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; padding:3px 10px; margin-bottom:16px; }
+.crew-status-badge { display:inline-block; font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; padding:3px 10px; margin-bottom:14px; }
 .crew-status-badge.pending { background:#F59E0B; color:#fff; }
 .crew-status-badge.confirmed { background:#10B981; color:#fff; }
-.crew-status-device { font-family:var(--f-mono); font-size:clamp(1.4rem,6vw,2rem); font-weight:800; color:var(--tx-primary); letter-spacing:var(--ls-tight); margin-bottom:6px; }
-.crew-status-type { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:8px; }
-.crew-status-prod { font-family:var(--f-mono); font-size:var(--t-body); font-weight:700; color:var(--tx-primary); margin-bottom:4px; }
+.crew-status-device { font-family:var(--f-mono); font-size:clamp(1.6rem,5vw,2.2rem); font-weight:800; color:var(--tx-primary); letter-spacing:-.01em; margin-bottom:4px; }
+.crew-status-type { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:10px; }
+.crew-status-prod { font-family:var(--f-mono); font-size:var(--t-body); font-weight:700; color:var(--tx-primary); margin-bottom:2px; }
 .crew-status-location { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); }
-.crew-status-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); margin-top:16px; }
-.crew-cancel-claim { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--red); background:none; border:none; cursor:pointer; padding:0; margin-top:20px; display:block; }
+.crew-status-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); margin-top:14px; }
+.crew-cancel-claim { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--red); background:none; border:none; cursor:pointer; padding:0; margin-top:18px; display:block; }
 .crew-cancel-claim:hover { opacity:.7; }
-.crew-reclaim-btn { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); background:none; border:none; cursor:pointer; padding:0; display:block; }
-.crew-reclaim-btn:hover { color:var(--tx-primary); }
+/* Confirmed home */
+.crew-home-header { background:var(--surface); border:1px solid var(--border-md); border-left:5px solid #10B981; padding:20px 20px 18px; margin-bottom:20px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+.crew-home-device { font-family:var(--f-mono); font-size:clamp(1.6rem,5vw,2.4rem); font-weight:800; color:var(--tx-primary); letter-spacing:-.01em; line-height:1; margin-bottom:4px; }
+.crew-home-type { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:#10B981; margin-bottom:8px; }
+.crew-home-show { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); margin-bottom:2px; }
+.crew-home-location { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); }
+.crew-home-badge { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; padding:3px 10px; background:#10B981; color:#fff; flex-shrink:0; align-self:flex-start; }
+.crew-reclaim-link { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); background:none; border:none; cursor:pointer; padding:0; display:inline-block; margin-top:12px; }
+.crew-reclaim-link:hover { color:var(--tx-primary); }
+/* Key quadrant grid */
+.crew-keys-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:700; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:12px; margin-top:4px; }
+.crew-quad-grid { display:grid; gap:10px; margin-bottom:24px; }
+.crew-quad-grid.grid-2x2 { grid-template-columns:1fr 1fr; }
+.crew-quad-grid.grid-1x2 { grid-template-columns:1fr 1fr; }
+.crew-quad-grid.grid-simple { grid-template-columns:1fr; }
+@media (max-width:520px) { .crew-quad-grid.grid-2x2 { grid-template-columns:1fr; } .crew-quad-grid.grid-1x2 { grid-template-columns:1fr; } }
+.crew-quad { background:var(--surface); border:1px solid var(--border-md); overflow:hidden; }
+.crew-quad-head { padding:10px 14px; background:rgba(0,0,0,.03); border-bottom:1px solid var(--border-md); display:flex; align-items:center; justify-content:space-between; }
+.crew-quad-title { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); }
+.crew-quad-range { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:var(--tx-tertiary); letter-spacing:var(--ls-normal); }
+.crew-key-row { display:flex; align-items:center; justify-content:space-between; padding:9px 14px; border-bottom:1px solid var(--border-md); gap:8px; }
+.crew-key-row:last-child { border-bottom:none; }
+.crew-key-label { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); letter-spacing:var(--ls-tight); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.crew-key-empty { font-family:var(--f-mono); font-size:var(--t-small); font-weight:400; color:var(--tx-ghost); font-style:italic; }
+.crew-key-req-btn { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:#0891B2; background:none; border:1px solid rgba(8,145,178,.3); cursor:pointer; padding:3px 8px; flex-shrink:0; transition:background .1s,color .1s; white-space:nowrap; }
+.crew-key-req-btn:hover { background:#0891B2; color:#fff; border-color:#0891B2; }
+/* Request history */
+.crew-requests-section { margin-top:8px; }
+.crew-req-item { border:1px solid var(--border-md); padding:12px 16px; margin-bottom:8px; display:flex; align-items:flex-start; gap:12px; }
+.crew-req-status { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:2px 8px; flex-shrink:0; margin-top:1px; }
+.crew-req-status.open { background:rgba(8,145,178,.12); color:#0891B2; }
+.crew-req-status.fulfilled { background:rgba(16,185,129,.12); color:#10B981; }
+.crew-req-status.denied { background:rgba(239,68,68,.1); color:var(--red); }
+.crew-req-body { flex:1; min-width:0; }
+.crew-req-key { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); margin-bottom:2px; }
+.crew-req-note { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); }
+/* Request modal */
+.crew-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9000; display:none; align-items:center; justify-content:center; padding:20px; }
+.crew-modal-overlay.active { display:flex; }
+.crew-modal { background:var(--surface); width:100%; max-width:460px; border-top:4px solid #0891B2; }
+.crew-modal-head { padding:20px 22px 16px; border-bottom:1px solid var(--border-md); }
+.crew-modal-title { font-family:var(--f-mono); font-size:var(--t-body); font-weight:800; color:var(--tx-primary); letter-spacing:var(--ls-tight); margin-bottom:2px; }
+.crew-modal-sub { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); }
+.crew-modal-body { padding:20px 22px; }
+.crew-modal-field-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:700; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:8px; display:block; }
+.crew-modal-textarea { width:100%; background:transparent; border:none; border-bottom:1px solid var(--border-md); font-family:var(--f-mono); font-size:var(--t-body); font-weight:500; color:var(--tx-primary); padding:8px 0; resize:none; outline:none; letter-spacing:var(--ls-tight); line-height:1.5; box-sizing:border-box; }
+.crew-modal-textarea:focus { border-bottom-color:var(--black); }
+.crew-modal-textarea::placeholder { color:var(--tx-ghost); font-weight:400; }
+.crew-modal-actions { padding:16px 22px 20px; border-top:1px solid var(--border-md); display:flex; gap:10px; justify-content:flex-end; }
+.crew-modal-btn { font-family:var(--f-mono); font-size:var(--t-ui); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; border:none; cursor:pointer; padding:10px 20px; }
+.crew-modal-btn.cancel { background:transparent; color:var(--tx-secondary); border:1px solid var(--border-md); }
+.crew-modal-btn.cancel:hover { color:var(--tx-primary); }
+.crew-modal-btn.submit { background:#0891B2; color:#fff; }
+.crew-modal-btn.submit:hover { background:#0779a0; }
+.crew-modal-btn.submit:disabled { background:rgba(8,145,178,.35); cursor:not-allowed; }
+/* Denied message */
 .crew-denied-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--red); letter-spacing:var(--ls-normal); padding:12px 16px; background:rgba(239,68,68,.06); border:1px solid rgba(239,68,68,.2); margin-bottom:16px; display:none; }
 .crew-denied-msg.visible { display:block; }
 
@@ -866,61 +929,93 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
       <span class="crew-topbar-name" id="crew-topbar-name">—</span>
       <span class="crew-topbar-pos" id="crew-topbar-pos"></span>
     </div>
-    <button class="crew-topbar-logout" id="btn-crew-logout">Sign out</button>
+    <div class="crew-topbar-right">
+      <span class="crew-topbar-badge">Crew</span>
+      <button class="crew-topbar-logout" id="btn-crew-logout">Sign out</button>
+    </div>
   </div>
-  <div class="crew-content" id="crew-content">
-    <!-- Loading -->
-    <div class="crew-step" id="crew-step-loading">
-      <div class="crew-loading">Checking your assignment…</div>
-    </div>
-    <!-- Select production -->
-    <div class="crew-step" id="crew-step-prod">
-      <div class="crew-denied-msg" id="crew-denied-msg"></div>
-      <div class="crew-section-label">Select your show</div>
-      <div id="crew-prod-list"></div>
-    </div>
-    <!-- Select device type -->
-    <div class="crew-step" id="crew-step-type">
-      <button class="crew-back-btn" id="crew-back-to-prod">← Shows</button>
-      <div class="crew-section-label" id="crew-type-prod-label"></div>
-      <div class="crew-type-grid">
-        <div class="crew-type-tile" onclick="crewSelectType('bp')">
-          <div class="crew-type-icon">🎧</div>
-          <div class="crew-type-label">Beltpack</div>
+  <div class="crew-content">
+    <div class="crew-inner">
+      <!-- Loading -->
+      <div class="crew-step" id="crew-step-loading">
+        <div class="crew-loading">Checking your assignment…</div>
+      </div>
+      <!-- Select production -->
+      <div class="crew-step" id="crew-step-prod">
+        <div class="crew-denied-msg" id="crew-denied-msg"></div>
+        <div class="crew-section-label">Select your show</div>
+        <div id="crew-prod-list"></div>
+      </div>
+      <!-- Select device type -->
+      <div class="crew-step" id="crew-step-type">
+        <button class="crew-back-btn" id="crew-back-to-prod">← Shows</button>
+        <div class="crew-section-label" id="crew-type-prod-label"></div>
+        <div class="crew-type-grid">
+          <div class="crew-type-tile" onclick="crewSelectType('bp')">
+            <div class="crew-type-icon">🎧</div>
+            <div class="crew-type-label">Beltpack</div>
+            <div class="crew-type-desc">Wireless unit</div>
+          </div>
+          <div class="crew-type-tile" onclick="crewSelectType('kp')">
+            <div class="crew-type-icon">⌨️</div>
+            <div class="crew-type-label">Key Panel</div>
+            <div class="crew-type-desc">Fixed position</div>
+          </div>
         </div>
-        <div class="crew-type-tile" onclick="crewSelectType('kp')">
-          <div class="crew-type-icon">⌨️</div>
-          <div class="crew-type-label">Key Panel</div>
+      </div>
+      <!-- Select device -->
+      <div class="crew-step" id="crew-step-device">
+        <button class="crew-back-btn" id="crew-back-to-type">← Device type</button>
+        <div class="crew-section-label" id="crew-device-label">Select your device</div>
+        <div id="crew-device-list"></div>
+      </div>
+      <!-- Pending -->
+      <div class="crew-step" id="crew-step-pending">
+        <div class="crew-status-card pending">
+          <div class="crew-status-badge pending">Pending</div>
+          <div class="crew-status-device" id="crew-pending-device"></div>
+          <div class="crew-status-type" id="crew-pending-type"></div>
+          <div class="crew-status-prod" id="crew-pending-prod"></div>
+          <div class="crew-status-msg">Waiting for TM confirmation…</div>
+          <button class="crew-cancel-claim" onclick="crewCancelClaim()">Cancel claim</button>
         </div>
       </div>
-    </div>
-    <!-- Select device -->
-    <div class="crew-step" id="crew-step-device">
-      <button class="crew-back-btn" id="crew-back-to-type">← Device type</button>
-      <div class="crew-section-label" id="crew-device-label">Select your device</div>
-      <div id="crew-device-list"></div>
-    </div>
-    <!-- Pending -->
-    <div class="crew-step" id="crew-step-pending">
-      <div class="crew-status-card pending">
-        <div class="crew-status-badge pending">Pending</div>
-        <div class="crew-status-device" id="crew-pending-device"></div>
-        <div class="crew-status-type" id="crew-pending-type"></div>
-        <div class="crew-status-prod" id="crew-pending-prod"></div>
-        <div class="crew-status-msg">Waiting for TM confirmation…</div>
-        <button class="crew-cancel-claim" onclick="crewCancelClaim()">Cancel claim</button>
+      <!-- Confirmed home -->
+      <div class="crew-step" id="crew-step-confirmed">
+        <div class="crew-home-header">
+          <div>
+            <div class="crew-home-type" id="crew-home-type"></div>
+            <div class="crew-home-device" id="crew-home-device"></div>
+            <div class="crew-home-show" id="crew-home-show"></div>
+            <div class="crew-home-location" id="crew-home-location"></div>
+          </div>
+          <div class="crew-home-badge">Confirmed</div>
+        </div>
+        <div class="crew-keys-label">Your Keys — tap any key to request a change</div>
+        <div id="crew-quad-grid"></div>
+        <div class="crew-requests-section">
+          <div class="crew-section-label">My Requests</div>
+          <div id="crew-req-list"><div class="crew-empty" style="padding:16px 0;">No requests submitted yet.</div></div>
+        </div>
+        <button class="crew-reclaim-link" onclick="crewStartOver()">← Claim a different device</button>
       </div>
     </div>
-    <!-- Confirmed -->
-    <div class="crew-step" id="crew-step-confirmed">
-      <div class="crew-status-card confirmed">
-        <div class="crew-status-badge confirmed">Confirmed</div>
-        <div class="crew-status-device" id="crew-confirmed-device"></div>
-        <div class="crew-status-type" id="crew-confirmed-type"></div>
-        <div class="crew-status-prod" id="crew-confirmed-prod"></div>
-        <div class="crew-status-location" id="crew-confirmed-location"></div>
+  </div>
+  <!-- Key request modal -->
+  <div class="crew-modal-overlay" id="crew-req-modal">
+    <div class="crew-modal">
+      <div class="crew-modal-head">
+        <div class="crew-modal-title" id="crew-modal-key-label">Request Change</div>
+        <div class="crew-modal-sub" id="crew-modal-device-label"></div>
       </div>
-      <button class="crew-reclaim-btn" onclick="crewStartOver()">Claim a different device</button>
+      <div class="crew-modal-body">
+        <label class="crew-modal-field-label">Describe what you need</label>
+        <textarea class="crew-modal-textarea" id="crew-req-note" rows="4" placeholder="e.g. Need PROD channel, current IFB not working, wrong PL assigned…"></textarea>
+      </div>
+      <div class="crew-modal-actions">
+        <button class="crew-modal-btn cancel" onclick="crewCloseReqModal()">Cancel</button>
+        <button class="crew-modal-btn submit" id="crew-req-submit" onclick="crewSubmitKeyRequest()">Submit</button>
+      </div>
     </div>
   </div>
 </div>
@@ -5329,17 +5424,154 @@ function crewShowPending(){
 
 function crewShowConfirmed(){
   const prod=PRODUCTIONS[_crewClaim.production_id]||{};
-  document.getElementById('crew-confirmed-device').textContent=_crewClaim.device_id;
-  document.getElementById('crew-confirmed-type').textContent=_crewClaim.device_type==='keypanel'?'Key Panel':'Beltpack';
-  document.getElementById('crew-confirmed-prod').textContent=prod.name||_crewClaim.production_id||'';
+  document.getElementById('crew-home-device').textContent=_crewClaim.device_id;
+  document.getElementById('crew-home-type').textContent=_crewClaim.device_type==='keypanel'?'Key Panel':'Beltpack';
+  document.getElementById('crew-home-show').textContent=prod.name||_crewClaim.production_id||'';
   if(_crewClaim.device_type==='keypanel'){
     const panel=KP_PANELS.find(p=>p.id===_crewClaim.device_id);
-    document.getElementById('crew-confirmed-location').textContent=panel?(panel.location+(panel.port?' · Port '+panel.port:'')):'';
+    document.getElementById('crew-home-location').textContent=panel?(panel.location+(panel.port?' · Port '+panel.port:'')):'';
   }else{
-    document.getElementById('crew-confirmed-location').textContent='';
+    document.getElementById('crew-home-location').textContent='';
   }
   crewShowStep('confirmed');
+  crewRenderKeys();
+  crewLoadMyRequests();
 }
+
+async function crewRenderKeys(){
+  const grid=document.getElementById('crew-quad-grid');
+  grid.innerHTML='<div class="crew-loading">Loading keys…</div>';
+  let keys=[];
+
+  try{
+    if(_crewClaim.device_type==='beltpack'){
+      if(SUPA){
+        const {data}=await SUPA.from('beltpack_assignments').select('data').eq('production_id',_crewClaim.production_id).maybeSingle();
+        const entry=data?.data?.[_crewClaim.device_id];
+        keys=entry?.keys||[];
+      }
+      // BP: simple 2-column grid, up to 4 keys typical
+      const count=Math.max(keys.length,4);
+      const mid=Math.ceil(count/2);
+      const groups=[
+        {title:'Left',range:'Keys 1–'+mid,keys:keys.slice(0,mid),offset:0},
+        {title:'Right',range:'Keys '+(mid+1)+'–'+count,keys:keys.slice(mid,count),offset:mid}
+      ];
+      grid.className='crew-quad-grid grid-1x2';
+      grid.innerHTML=groups.map(g=>crewQuadHTML(g)).join('');
+
+    }else{
+      // KP — load from kp_assignments
+      let kpEntry=null;
+      if(SUPA){
+        const {data}=await SUPA.from('kp_assignments').select('data').eq('production_id',_crewClaim.production_id).maybeSingle();
+        kpEntry=data?.data?.[_crewClaim.device_id];
+      }
+      keys=kpEntry?.keys||[];
+      const panel=KP_PANELS.find(p=>p.id===_crewClaim.device_id);
+      const model=panel?.model||'5032';
+      const keyCount=model==='4016'?16:32;
+      // Ensure array is right length
+      while(keys.length<keyCount) keys.push(null);
+
+      if(keyCount===32){
+        const groups=[
+          {title:'Top Left',range:'Keys 1–8',keys:keys.slice(0,8),offset:0},
+          {title:'Top Right',range:'Keys 9–16',keys:keys.slice(8,16),offset:8},
+          {title:'Bottom Left',range:'Keys 17–24',keys:keys.slice(16,24),offset:16},
+          {title:'Bottom Right',range:'Keys 25–32',keys:keys.slice(24,32),offset:24}
+        ];
+        grid.className='crew-quad-grid grid-2x2';
+        grid.innerHTML=groups.map(g=>crewQuadHTML(g)).join('');
+      }else{
+        const groups=[
+          {title:'Top',range:'Keys 1–8',keys:keys.slice(0,8),offset:0},
+          {title:'Bottom',range:'Keys 9–16',keys:keys.slice(8,16),offset:8}
+        ];
+        grid.className='crew-quad-grid grid-1x2';
+        grid.innerHTML=groups.map(g=>crewQuadHTML(g)).join('');
+      }
+    }
+  }catch(e){
+    grid.innerHTML='<div class="crew-empty">Unable to load key data. Check with your TM.</div>';
+  }
+}
+
+function crewQuadHTML(g){
+  const rows=g.keys.map((k,i)=>{
+    const idx=g.offset+i;
+    const label=k&&(k.label||k.key||k)||null;
+    return `<div class="crew-key-row">
+      ${label
+        ?`<span class="crew-key-label">${label}</span>`
+        :`<span class="crew-key-label crew-key-empty">Empty</span>`}
+      <button class="crew-key-req-btn" onclick="crewOpenReqModal(${idx},'${(label||'Key '+(idx+1)).replace(/'/g,"\\'")}')">Request</button>
+    </div>`;
+  }).join('');
+  return `<div class="crew-quad">
+    <div class="crew-quad-head">
+      <span class="crew-quad-title">${g.title}</span>
+      <span class="crew-quad-range">${g.range}</span>
+    </div>
+    ${rows}
+  </div>`;
+}
+
+let _crewReqKeyIndex=null, _crewReqKeyLabel=null;
+function crewOpenReqModal(keyIndex,keyLabel){
+  _crewReqKeyIndex=keyIndex; _crewReqKeyLabel=keyLabel;
+  document.getElementById('crew-modal-key-label').textContent='Key '+(keyIndex+1)+' — '+keyLabel;
+  document.getElementById('crew-modal-device-label').textContent=_crewClaim.device_id+' · '+(_crewClaim.device_type==='keypanel'?'Key Panel':'Beltpack');
+  document.getElementById('crew-req-note').value='';
+  document.getElementById('crew-req-modal').classList.add('active');
+  setTimeout(()=>document.getElementById('crew-req-note').focus(),100);
+}
+function crewCloseReqModal(){ document.getElementById('crew-req-modal').classList.remove('active'); }
+
+async function crewSubmitKeyRequest(){
+  const note=document.getElementById('crew-req-note').value.trim();
+  if(!note){ document.getElementById('crew-req-note').focus(); return; }
+  const btn=document.getElementById('crew-req-submit'); btn.disabled=true; btn.textContent='Submitting…';
+  try{
+    const payload={
+      device_id:_crewClaim.device_id, device_type:_crewClaim.device_type,
+      description:note, note, key_type:'change',
+      requester_role:'crew', status:'open',
+      production_id:_crewClaim.production_id,
+      slot_preference:_crewReqKeyIndex
+    };
+    if(SUPA){
+      const {error}=await SUPA.from('key_requests').insert(payload);
+      if(error) throw error;
+    }
+    crewCloseReqModal();
+    crewLoadMyRequests();
+  }catch(e){ alert('Error submitting request. Try again.'); }
+  finally{ btn.disabled=false; btn.textContent='Submit'; }
+}
+
+async function crewLoadMyRequests(){
+  const el=document.getElementById('crew-req-list');
+  if(!SUPA){ el.innerHTML='<div class="crew-empty" style="padding:16px 0;">No requests submitted yet.</div>'; return; }
+  const {data}=await SUPA.from('key_requests').select('*')
+    .eq('device_id',_crewClaim.device_id).eq('production_id',_crewClaim.production_id)
+    .order('created_at',{ascending:false}).limit(20);
+  if(!data||!data.length){ el.innerHTML='<div class="crew-empty" style="padding:16px 0;">No requests submitted yet.</div>'; return; }
+  el.innerHTML=data.map(r=>{
+    const slotLabel=r.slot_preference!=null?'Key '+(r.slot_preference+1):'';
+    const statusClass=r.status==='fulfilled'?'fulfilled':r.status==='denied'?'denied':'open';
+    return `<div class="crew-req-item">
+      <div class="crew-req-status ${statusClass}">${r.status}</div>
+      <div class="crew-req-body">
+        ${slotLabel?`<div class="crew-req-key">${slotLabel}</div>`:''}
+        <div class="crew-req-note">${r.description||r.note||''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Close modal on overlay click
+document.getElementById('crew-req-modal').addEventListener('click',function(e){ if(e.target===this) crewCloseReqModal(); });
 
 function crewSubscribe(){
   if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
