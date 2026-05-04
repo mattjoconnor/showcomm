@@ -178,8 +178,8 @@ body { background:var(--bg); color:var(--black); }
 /* ─── CREW APP ─── */
 #screen-crew { display:none; height:100vh; flex-direction:column; align-items:stretch; justify-content:flex-start; background:var(--bg); overflow:hidden; }
 .crew-topbar { display:flex; align-items:center; height:52px; background:var(--black); flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.08); gap:0; }
-.crew-topbar-wordmark { font-family:var(--f-ui); font-size:14px; font-weight:900; letter-spacing:.18em; color:#fff; text-transform:uppercase; padding:0 clamp(14px,1.8vw,22px); border-right:1px solid rgba(255,255,255,.08); flex-shrink:0; }
-.crew-topbar-wordmark span { color:#0891B2; }
+.crew-topbar-wordmark { font-family:var(--f-display); font-size:clamp(.85rem,1.2vw,1rem); font-weight:700; letter-spacing:.04em; color:#fff; padding:0 clamp(14px,1.8vw,22px); border-right:1px solid rgba(255,255,255,.08); flex-shrink:0; display:flex; align-items:center; gap:3px; }
+.crew-topbar-wordmark .wm-dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--green); margin-left:1px; vertical-align:middle; flex-shrink:0; }
 .crew-topbar-badge { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:4px 10px; background:#0891B2; color:#fff; flex-shrink:0; margin-left:clamp(12px,1.6vw,20px); }
 .crew-topbar-identity { display:flex; flex-direction:column; gap:1px; margin-left:14px; flex:1; min-width:0; }
 .crew-topbar-name { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:rgba(255,255,255,.85); letter-spacing:var(--ls-tight); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -1055,7 +1055,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 <!-- CREW APP -->
 <div id="screen-crew" style="display:none;">
   <div class="crew-topbar">
-    <div class="crew-topbar-wordmark">SHOWCOMM<span>·</span></div>
+    <div class="crew-topbar-wordmark">ShowComm<span class="wm-dot"></span></div>
     <div class="crew-topbar-badge">Crew</div>
     <div class="crew-topbar-identity">
       <span class="crew-topbar-name" id="crew-topbar-name">—</span>
