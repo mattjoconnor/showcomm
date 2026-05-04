@@ -175,6 +175,59 @@ body { background:var(--bg); color:var(--black); }
 .placeholder-logout { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); cursor:pointer; background:none; border:none; padding:0; }
 .placeholder-logout:hover { color:var(--black); }
 
+/* ─── CREW APP ─── */
+#screen-crew { display:none; height:100vh; flex-direction:column; background:var(--bg); overflow:hidden; }
+.crew-topbar { display:flex; align-items:center; justify-content:space-between; padding:0 16px; height:52px; background:#0891B2; flex-shrink:0; }
+.crew-topbar-identity { display:flex; flex-direction:column; gap:1px; }
+.crew-topbar-name { font-family:var(--f-mono); font-size:var(--t-ui); font-weight:800; color:#fff; letter-spacing:var(--ls-normal); }
+.crew-topbar-pos { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:rgba(255,255,255,.65); letter-spacing:var(--ls-wide); text-transform:uppercase; }
+.crew-topbar-logout { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:rgba(255,255,255,.7); background:none; border:none; cursor:pointer; padding:6px 0; }
+.crew-topbar-logout:hover { color:#fff; }
+.crew-content { flex:1; overflow-y:auto; padding:20px 16px 40px; -webkit-overflow-scrolling:touch; }
+.crew-step { display:none; }
+.crew-step.active { display:block; }
+.crew-section-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:700; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:12px; }
+.crew-back-btn { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:#0891B2; background:none; border:none; cursor:pointer; padding:0; margin-bottom:20px; display:inline-block; }
+.crew-back-btn:hover { opacity:.75; }
+.crew-prod-card { background:var(--surface); border:1px solid var(--border-md); border-left:4px solid #0891B2; padding:16px; margin-bottom:10px; cursor:pointer; transition:border-color .1s, background .1s; }
+.crew-prod-card:hover { background:rgba(8,145,178,.04); }
+.crew-prod-card:active { background:rgba(8,145,178,.08); }
+.crew-prod-name { font-family:var(--f-mono); font-size:var(--t-body); font-weight:700; color:var(--tx-primary); letter-spacing:var(--ls-tight); margin-bottom:3px; }
+.crew-prod-meta { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); }
+.crew-type-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px; }
+.crew-type-tile { background:var(--surface); border:1px solid var(--border-md); padding:28px 16px; text-align:center; cursor:pointer; transition:border-color .1s, background .1s; }
+.crew-type-tile:hover { border-color:#0891B2; background:rgba(8,145,178,.04); }
+.crew-type-tile:active { background:rgba(8,145,178,.1); }
+.crew-type-icon { font-size:28px; margin-bottom:10px; }
+.crew-type-label { font-family:var(--f-mono); font-size:var(--t-ui); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-primary); }
+.crew-device-item { background:var(--surface); border:1px solid var(--border-md); padding:14px 16px; margin-bottom:8px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:border-color .1s, background .1s; }
+.crew-device-item:hover { border-color:#0891B2; background:rgba(8,145,178,.04); }
+.crew-device-item:active { background:rgba(8,145,178,.1); }
+.crew-device-item.taken { opacity:.45; cursor:not-allowed; background:var(--bg); }
+.crew-device-item.taken:hover { border-color:var(--border-md); background:var(--bg); }
+.crew-device-id { font-family:var(--f-mono); font-size:var(--t-body); font-weight:700; color:var(--tx-primary); letter-spacing:var(--ls-tight); }
+.crew-device-meta { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); margin-top:2px; }
+.crew-device-status { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-tertiary); }
+.crew-empty { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); line-height:1.6; padding:24px 0 8px; text-align:center; }
+.crew-loading { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-wide); text-transform:uppercase; padding:40px 0; text-align:center; }
+.crew-status-card { border:1px solid var(--border-md); padding:28px 20px; margin-bottom:20px; }
+.crew-status-card.pending { border-left:5px solid #F59E0B; }
+.crew-status-card.confirmed { border-left:5px solid #10B981; }
+.crew-status-badge { display:inline-block; font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; padding:3px 10px; margin-bottom:16px; }
+.crew-status-badge.pending { background:#F59E0B; color:#fff; }
+.crew-status-badge.confirmed { background:#10B981; color:#fff; }
+.crew-status-device { font-family:var(--f-mono); font-size:clamp(1.4rem,6vw,2rem); font-weight:800; color:var(--tx-primary); letter-spacing:var(--ls-tight); margin-bottom:6px; }
+.crew-status-type { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:8px; }
+.crew-status-prod { font-family:var(--f-mono); font-size:var(--t-body); font-weight:700; color:var(--tx-primary); margin-bottom:4px; }
+.crew-status-location { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); }
+.crew-status-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); margin-top:16px; }
+.crew-cancel-claim { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--red); background:none; border:none; cursor:pointer; padding:0; margin-top:20px; display:block; }
+.crew-cancel-claim:hover { opacity:.7; }
+.crew-reclaim-btn { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); background:none; border:none; cursor:pointer; padding:0; display:block; }
+.crew-reclaim-btn:hover { color:var(--tx-primary); }
+.crew-denied-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--red); letter-spacing:var(--ls-normal); padding:12px 16px; background:rgba(239,68,68,.06); border:1px solid rgba(239,68,68,.2); margin-bottom:16px; display:none; }
+.crew-denied-msg.visible { display:block; }
+
 /* ─── RIBBON ─── */
 .ribbon { background:var(--black); height:clamp(42px,5.4vh,52px); display:flex; align-items:stretch; flex-shrink:0; }
 .r-brand { display:flex; align-items:center; padding:0 clamp(16px,2.2vw,26px); flex-shrink:0; border-right:1px solid #1e1e1e; }
@@ -806,14 +859,69 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
     </div>
   </div>
 </div>
-<!-- CREW PLACEHOLDER -->
+<!-- CREW APP -->
 <div id="screen-crew" style="display:none;">
-  <div class="placeholder-screen">
-    <div class="login-wordmark">SHOWCOMM<span style="color:var(--green)">·</span></div>
-    <div style="margin-bottom:16px;"></div>
-    <div class="placeholder-role-badge crew">Crew</div>
-    <div class="placeholder-msg" id="crew-welcome-msg">Welcome</div>
-    <button class="placeholder-logout" id="btn-crew-logout">Sign out</button>
+  <div class="crew-topbar">
+    <div class="crew-topbar-identity">
+      <span class="crew-topbar-name" id="crew-topbar-name">—</span>
+      <span class="crew-topbar-pos" id="crew-topbar-pos"></span>
+    </div>
+    <button class="crew-topbar-logout" id="btn-crew-logout">Sign out</button>
+  </div>
+  <div class="crew-content" id="crew-content">
+    <!-- Loading -->
+    <div class="crew-step" id="crew-step-loading">
+      <div class="crew-loading">Checking your assignment…</div>
+    </div>
+    <!-- Select production -->
+    <div class="crew-step" id="crew-step-prod">
+      <div class="crew-denied-msg" id="crew-denied-msg"></div>
+      <div class="crew-section-label">Select your show</div>
+      <div id="crew-prod-list"></div>
+    </div>
+    <!-- Select device type -->
+    <div class="crew-step" id="crew-step-type">
+      <button class="crew-back-btn" id="crew-back-to-prod">← Shows</button>
+      <div class="crew-section-label" id="crew-type-prod-label"></div>
+      <div class="crew-type-grid">
+        <div class="crew-type-tile" onclick="crewSelectType('bp')">
+          <div class="crew-type-icon">🎧</div>
+          <div class="crew-type-label">Beltpack</div>
+        </div>
+        <div class="crew-type-tile" onclick="crewSelectType('kp')">
+          <div class="crew-type-icon">⌨️</div>
+          <div class="crew-type-label">Key Panel</div>
+        </div>
+      </div>
+    </div>
+    <!-- Select device -->
+    <div class="crew-step" id="crew-step-device">
+      <button class="crew-back-btn" id="crew-back-to-type">← Device type</button>
+      <div class="crew-section-label" id="crew-device-label">Select your device</div>
+      <div id="crew-device-list"></div>
+    </div>
+    <!-- Pending -->
+    <div class="crew-step" id="crew-step-pending">
+      <div class="crew-status-card pending">
+        <div class="crew-status-badge pending">Pending</div>
+        <div class="crew-status-device" id="crew-pending-device"></div>
+        <div class="crew-status-type" id="crew-pending-type"></div>
+        <div class="crew-status-prod" id="crew-pending-prod"></div>
+        <div class="crew-status-msg">Waiting for TM confirmation…</div>
+        <button class="crew-cancel-claim" onclick="crewCancelClaim()">Cancel claim</button>
+      </div>
+    </div>
+    <!-- Confirmed -->
+    <div class="crew-step" id="crew-step-confirmed">
+      <div class="crew-status-card confirmed">
+        <div class="crew-status-badge confirmed">Confirmed</div>
+        <div class="crew-status-device" id="crew-confirmed-device"></div>
+        <div class="crew-status-type" id="crew-confirmed-type"></div>
+        <div class="crew-status-prod" id="crew-confirmed-prod"></div>
+        <div class="crew-status-location" id="crew-confirmed-location"></div>
+      </div>
+      <button class="crew-reclaim-btn" onclick="crewStartOver()">Claim a different device</button>
+    </div>
   </div>
 </div>
 
@@ -1440,9 +1548,8 @@ function showScreen(role){
     loadProds().then(()=>initTMApp()).catch(()=>initTMApp());
   }
   else if(role==='crew'){
-    const n=_currentProfile?_currentProfile.display_name:''; const p=_currentProfile?_currentProfile.position:'';
-    const m=document.getElementById('crew-welcome-msg'); if(m) m.textContent='Welcome, '+n+(p?' · '+p:'');
     document.getElementById('screen-crew').style.display='flex';
+    initCrewApp();
   }
 }
 
@@ -1497,6 +1604,9 @@ function doLogout(){
     _tmMode=false;
   }
   if((_currentRole==='admin'||_currentRole==='tm') && SUPA) SUPA.auth.signOut();
+  // Cleanup crew state
+  if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
+  _crewClaim=null; _crewProdId=null; _crewDeviceType=null;
   _currentUser=null; _currentProfile=null; _currentRole=null; _selectedRole=null; _tmMode=false;
   document.querySelectorAll('.login-role-btn').forEach(b=>b.classList.remove('active'));
   ['login-username','login-pw','crew-name','crew-position'].forEach(id=>{ const el=$(id); if(el) el.value=''; });
@@ -1554,12 +1664,24 @@ $('btn-login').addEventListener('click',async()=>{
 $('login-pw').addEventListener('keydown',e=>{ if(e.key==='Enter') $('btn-login').click(); });
 $('login-username').addEventListener('keydown',e=>{ if(e.key==='Enter') $('login-pw').focus(); });
 
-document.getElementById('btn-crew-login').addEventListener('click',()=>{
+document.getElementById('btn-crew-login').addEventListener('click',async()=>{
   const name=$('crew-name').value.trim(), pos=$('crew-position').value.trim();
   const errEl=$('login-error');
   if(!name||!pos){ errEl.textContent='Enter your name and position.'; errEl.style.display='block'; return; }
-  _currentProfile={display_name:name,position:pos,role:'crew'}; _currentRole='crew';
-  showScreen('crew');
+  const btn=document.getElementById('btn-crew-login'); btn.textContent='Entering…'; btn.disabled=true;
+  try{
+    // Soft profiles lookup — use matched profile if found, otherwise proceed with typed values
+    let profile={display_name:name,position:pos,role:'crew'};
+    if(SUPA){
+      const {data}=await SUPA.from('profiles').select('*').ilike('display_name',name).eq('role','crew').maybeSingle();
+      if(data) profile={...data,position:pos};
+    }
+    _currentProfile=profile; _currentRole='crew';
+    localStorage.setItem('sc_crew_name',name);
+    localStorage.setItem('sc_crew_pos',pos);
+    showScreen('crew');
+  }catch(err){ errEl.textContent='Error connecting. Try again.'; errEl.style.display='block'; }
+  finally{ btn.textContent='Enter ShowComm'; btn.disabled=false; }
 });
 $('crew-position').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('btn-crew-login').click(); });
 
@@ -1574,6 +1696,16 @@ if(SUPA) SUPA.auth.getSession().then(async({data:{session}})=>{
   _currentUser=session.user; _currentProfile=profile; _currentRole=profile.role;
   showScreen(profile.role);
 });
+
+// Auto-fill crew login from localStorage
+(function(){
+  const n=localStorage.getItem('sc_crew_name'), p=localStorage.getItem('sc_crew_pos');
+  if(n&&p){
+    const cn=$('crew-name'), cp=$('crew-position');
+    if(cn) cn.value=n;
+    if(cp) cp.value=p;
+  }
+})();
 
 // ─── VIEW ROUTER ──────────────────────────────────────────────
 function setView(v){
@@ -5035,6 +5167,217 @@ async function tmSubmitRequest(){
 (document.getElementById('tm-req-modal')||document.createElement('div')).addEventListener('click',function(e){
   if(e.target===this) this.classList.remove('active');
 });
+
+// ── CREW APP ────────────────────────────────────────────────────────────────
+let _crewClaim=null, _crewProdId=null, _crewDeviceType=null, _crewChannel=null;
+
+async function initCrewApp(){
+  const name=_currentProfile.display_name, pos=_currentProfile.position;
+  document.getElementById('crew-topbar-name').textContent=name;
+  document.getElementById('crew-topbar-pos').textContent=pos;
+  crewShowStep('loading');
+
+  // Load productions first (needed for both restore and fresh flow)
+  if(SUPA){
+    const {data}=await SUPA.from('productions').select('*').neq('status','archived').order('sort_order',{ascending:true});
+    if(data){ PRODUCTIONS={}; data.forEach(r=>{ PRODUCTIONS[r.id]=rowToProd(r); }); }
+  }
+
+  // Check for existing active claim
+  if(SUPA){
+    const {data}=await SUPA.from('device_claims')
+      .select('*').ilike('crew_name',name)
+      .in('status',['pending','confirmed'])
+      .order('claimed_at',{ascending:false}).limit(1);
+    if(data&&data.length>0){
+      _crewClaim=data[0];
+      _crewProdId=_crewClaim.production_id;
+      _crewDeviceType=_crewClaim.device_type==='keypanel'?'kp':'bp';
+      crewSubscribe();
+      crewShowClaimState();
+      return;
+    }
+  }
+
+  // No active claim — show production picker
+  crewRenderProdList();
+  crewShowStep('prod');
+}
+
+function crewRenderProdList(){
+  const el=document.getElementById('crew-prod-list');
+  const prods=Object.values(PRODUCTIONS).filter(p=>p.status!=='archived')
+    .sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  if(!prods.length){
+    el.innerHTML='<div class="crew-empty">No active productions found.</div>'; return;
+  }
+  el.innerHTML=prods.map(p=>`
+    <div class="crew-prod-card" onclick="crewSelectProd('${p.id}')">
+      <div class="crew-prod-name">${p.name}</div>
+      <div class="crew-prod-meta">${p.controlRoom||''}</div>
+    </div>`).join('');
+}
+
+function crewSelectProd(prodId){
+  _crewProdId=prodId;
+  const prod=PRODUCTIONS[prodId];
+  document.getElementById('crew-type-prod-label').textContent=prod?prod.name:prodId;
+  crewShowStep('type');
+}
+
+function crewSelectType(type){
+  _crewDeviceType=type;
+  document.getElementById('crew-device-label').textContent=type==='bp'?'Select your beltpack':'Select your key panel';
+  crewLoadDevices();
+  crewShowStep('device');
+}
+
+async function crewLoadDevices(){
+  const el=document.getElementById('crew-device-list');
+  el.innerHTML='<div class="crew-loading">Loading…</div>';
+  const prod=PRODUCTIONS[_crewProdId];
+
+  if(_crewDeviceType==='bp'){
+    const bps=prod?.beltpacks||[];
+    if(!bps.length){
+      el.innerHTML='<div class="crew-empty">No beltpacks configured for this show yet.<br>Check with your TM.</div>'; return;
+    }
+    let taken=new Set();
+    if(SUPA){
+      const {data}=await SUPA.from('device_claims').select('device_id')
+        .eq('production_id',_crewProdId).eq('device_type','beltpack').in('status',['pending','confirmed']);
+      if(data) data.forEach(r=>taken.add(r.device_id));
+    }
+    el.innerHTML=bps.map(bp=>{
+      const t=taken.has(bp);
+      return `<div class="crew-device-item${t?' taken':''}"${t?'':` onclick="crewClaimDevice('${bp}')"`}>
+        <div><div class="crew-device-id">${bp}</div></div>
+        ${t?'<div class="crew-device-status">Claimed</div>':''}
+      </div>`;
+    }).join('');
+
+  }else{
+    // KP — load from kp_assignments for this production
+    let kpData=null;
+    if(SUPA){
+      const {data}=await SUPA.from('kp_assignments').select('data').eq('production_id',_crewProdId).maybeSingle();
+      kpData=data?.data;
+    }
+    if(!kpData||!Object.keys(kpData).length){
+      el.innerHTML='<div class="crew-empty">KP assignments haven\'t been set up for this show yet.<br>Check with your TM.</div>'; return;
+    }
+    let taken=new Set();
+    if(SUPA){
+      const {data}=await SUPA.from('device_claims').select('device_id')
+        .eq('production_id',_crewProdId).eq('device_type','keypanel').in('status',['pending','confirmed']);
+      if(data) data.forEach(r=>taken.add(r.device_id));
+    }
+    const panelIds=Object.keys(kpData);
+    el.innerHTML=panelIds.map(pid=>{
+      const panel=KP_PANELS.find(p=>p.id===pid)||{name:pid,location:'',port:''};
+      const t=taken.has(pid);
+      return `<div class="crew-device-item${t?' taken':''}"${t?'':` onclick="crewClaimDevice('${pid}')"`}>
+        <div>
+          <div class="crew-device-id">${panel.name}</div>
+          ${panel.location?`<div class="crew-device-meta">${panel.location}${panel.port?' · Port '+panel.port:''}</div>`:''}
+        </div>
+        ${t?'<div class="crew-device-status">Claimed</div>':''}
+      </div>`;
+    }).join('');
+  }
+}
+
+async function crewClaimDevice(deviceId){
+  const deviceType=_crewDeviceType==='bp'?'beltpack':'keypanel';
+  const claimData={
+    device_id:deviceId, device_type:deviceType,
+    crew_name:_currentProfile.display_name, crew_position:_currentProfile.position,
+    claimed_at:new Date().toISOString(), production_id:_crewProdId, status:'pending'
+  };
+  if(SUPA){
+    const {data,error}=await SUPA.from('device_claims').insert(claimData).select().single();
+    if(error){ alert('Error submitting claim. Please try again.'); return; }
+    _crewClaim=data;
+  }else{
+    _crewClaim={...claimData,id:'local'};
+  }
+  crewSubscribe();
+  crewShowClaimState();
+}
+
+function crewShowClaimState(){
+  if(!_crewClaim) return;
+  if(_crewClaim.status==='confirmed') crewShowConfirmed();
+  else if(_crewClaim.status==='denied'){
+    const msg=document.getElementById('crew-denied-msg');
+    if(msg){ msg.textContent='Your claim for '+_crewClaim.device_id+' was denied. Please select another device.'; msg.classList.add('visible'); }
+    _crewClaim=null;
+    crewRenderProdList();
+    crewShowStep('prod');
+  }else{
+    crewShowPending();
+  }
+}
+
+function crewShowPending(){
+  const prod=PRODUCTIONS[_crewClaim.production_id]||{};
+  document.getElementById('crew-pending-device').textContent=_crewClaim.device_id;
+  document.getElementById('crew-pending-type').textContent=_crewClaim.device_type==='keypanel'?'Key Panel':'Beltpack';
+  document.getElementById('crew-pending-prod').textContent=prod.name||_crewClaim.production_id||'';
+  crewShowStep('pending');
+}
+
+function crewShowConfirmed(){
+  const prod=PRODUCTIONS[_crewClaim.production_id]||{};
+  document.getElementById('crew-confirmed-device').textContent=_crewClaim.device_id;
+  document.getElementById('crew-confirmed-type').textContent=_crewClaim.device_type==='keypanel'?'Key Panel':'Beltpack';
+  document.getElementById('crew-confirmed-prod').textContent=prod.name||_crewClaim.production_id||'';
+  if(_crewClaim.device_type==='keypanel'){
+    const panel=KP_PANELS.find(p=>p.id===_crewClaim.device_id);
+    document.getElementById('crew-confirmed-location').textContent=panel?(panel.location+(panel.port?' · Port '+panel.port:'')):'';
+  }else{
+    document.getElementById('crew-confirmed-location').textContent='';
+  }
+  crewShowStep('confirmed');
+}
+
+function crewSubscribe(){
+  if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
+  if(!SUPA||!_crewClaim?.id||_crewClaim.id==='local') return;
+  _crewChannel=SUPA.channel('showcomm-crew-'+_crewClaim.id)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'device_claims',filter:'id=eq.'+_crewClaim.id},
+      (payload)=>{ _crewClaim=payload.new; crewShowClaimState(); })
+    .subscribe();
+}
+
+async function crewCancelClaim(){
+  if(!_crewClaim) return;
+  if(SUPA&&_crewClaim.id!=='local') await SUPA.from('device_claims').update({status:'cancelled'}).eq('id',_crewClaim.id);
+  if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
+  _crewClaim=null;
+  crewRenderProdList();
+  crewShowStep('prod');
+}
+
+function crewStartOver(){
+  if(_crewClaim&&SUPA&&_crewClaim.id!=='local'){
+    SUPA.from('device_claims').update({status:'released'}).eq('id',_crewClaim.id).then(()=>{});
+  }
+  if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
+  _crewClaim=null;
+  crewRenderProdList();
+  crewShowStep('prod');
+}
+
+function crewShowStep(step){
+  document.querySelectorAll('.crew-step').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById('crew-step-'+step);
+  if(el) el.classList.add('active');
+}
+
+// Crew back button wiring
+document.getElementById('crew-back-to-prod').addEventListener('click',()=>{ crewRenderProdList(); crewShowStep('prod'); });
+document.getElementById('crew-back-to-type').addEventListener('click',()=>crewShowStep('type'));
 </script>
 </body>
 </html>
