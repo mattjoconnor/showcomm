@@ -257,13 +257,11 @@ body { background:var(--bg); color:var(--black); }
 .crew-schematic { margin-bottom:12px; }
 .crew-schematic-section { margin-bottom:10px; }
 .crew-schematic-section-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); padding:6px 12px; background:rgba(0,0,0,.03); border:1px solid var(--border-md); border-bottom:none; }
-.crew-bp-column { border:1px solid var(--border-md); overflow:hidden; display:grid; grid-template-columns:1fr 1fr; }
-.crew-bp-column .crew-key-cell:nth-child(odd) { border-right:1px solid var(--border-md); }
-.crew-bp-column .crew-key-cell:nth-child(n+3) { border-top:1px solid var(--border-md); border-bottom:none; }
+.crew-bp-column { border:1px solid var(--border-md); overflow:hidden; display:grid; grid-template-columns:repeat(4,1fr); }
 .crew-kp-grid { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--border-md); overflow:hidden; }
 .crew-key-cell { padding:10px 12px; cursor:pointer; border-bottom:1px solid var(--border-md); border-right:1px solid var(--border-md); position:relative; transition:background .08s; box-sizing:border-box; min-height:clamp(52px,8vw,64px); }
-.crew-bp-column .crew-key-cell { border-right:none; border-bottom:1px solid var(--border-md); min-height:clamp(70px,15vw,90px); }
-.crew-bp-column .crew-key-cell:nth-last-child(-n+2) { border-bottom:none; }
+.crew-bp-column .crew-key-cell { border-bottom:none; border-right:1px solid var(--border-md); min-height:clamp(70px,15vw,90px); }
+.crew-bp-column .crew-key-cell:last-child { border-right:none; }
 .crew-kp-grid .crew-key-cell:nth-child(4n) { border-right:none; }
 .crew-key-cell:hover { opacity:.88; }
 .crew-key-cell.annotated { outline:3px solid #F59E0B; outline-offset:-1px; }
@@ -6021,7 +6019,7 @@ function crewCellHTML(idx,k){
   }
   return `<div class="crew-key-cell${label?' programmed':''}" id="crew-cell-${idx}" style="${cellStyle}" onclick="crewToggleKey(${idx})">
     <div class="crew-key-cell-num" style="${label?'color:inherit;opacity:.5;':''}">${idx+1}</div>
-    <div class="crew-key-cell-name${label?'':' empty'}" style="${nameStyle}">${label||'Empty'}</div>
+    <div class="crew-key-cell-name${label?'':' empty'}" style="${nameStyle}">${label?(label.slice(0,4)+(label.slice(4)?'<br>'+label.slice(4,8):'')):'Empty'}</div>
     <div class="crew-key-cell-preview" id="crew-cell-preview-${idx}"></div>
     <div class="crew-key-note-wrap">
       <textarea class="crew-key-note-input" id="crew-note-${idx}" rows="2"
