@@ -5179,7 +5179,7 @@ async function initCrewApp(){
 
   // Load productions first (needed for both restore and fresh flow)
   if(SUPA){
-    const {data}=await SUPA.from('productions').select('*').neq('status','archived').order('sort_order',{ascending:true});
+    const {data}=await SUPA.from('productions').select('*');
     if(data){ PRODUCTIONS={}; data.forEach(r=>{ PRODUCTIONS[r.id]=rowToProd(r); }); }
   }
 
