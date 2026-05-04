@@ -5829,7 +5829,7 @@ async function crewClaimDevice(deviceId){
 
 function crewShowClaimState(){
   if(!_crewClaim) return;
-  if(_crewClaim.status==='confirmed') crewShowConfirmed();
+  if(_crewClaim.status==='confirmed'||_crewClaim.status==='pending') crewShowDeviceHome();
   else if(_crewClaim.status==='denied'){
     const msg=document.getElementById('crew-denied-msg');
     if(msg){ msg.textContent='Your claim for '+_crewClaim.device_id+' was denied. Please select another device.'; msg.classList.add('visible'); }
@@ -5841,29 +5841,51 @@ function crewShowClaimState(){
     crewRenderProdList();
     crewShowStep('prod');
   }else{
-    crewShowPending();
+    crewShowDeviceHome();
   }
 }
 
-function crewShowPending(){
-  const prod=PRODUCTIONS[_crewClaim.production_id]||{};
-  document.getElementById('crew-pending-device').textContent=_crewClaim.device_id;
-  document.getElementById('crew-pending-type').textContent=_crewClaim.device_type==='keypanel'?'Keypanel':'Beltpack';
-  document.getElementById('crew-pending-prod').textContent=prod.name||_crewClaim.production_id||'';
-  crewShowStep('pending');
-}
+function crewShowPending(){ crewShowDeviceHome(); } // kept for compat
 
-function crewShowConfirmed(){
+function crewShowConfirmed(){ crewShowDeviceHome(); } // kept for compat
+
+function crewShowDeviceHome(){
   const prod=PRODUCTIONS[_crewClaim.production_id]||{};
   const roomClr=crFg(prod.controlRoom)||'#0891B2';
+  const isPending=_crewClaim.status==='pending';
+
   document.getElementById('crew-home-device').textContent=_crewClaim.device_id;
   document.getElementById('crew-home-type').textContent=(_crewClaim.device_type==='keypanel'?'Keypanel':'Beltpack')+(prod.controlRoom?' · '+prod.controlRoom:'');
   document.getElementById('crew-home-show').textContent=prod.name||_crewClaim.production_id||'';
+
+  // Badge: amber for pending, green for confirmed
+  const badge=document.getElementById('crew-home-badge');
+  if(badge){
+    badge.textContent=isPending?'Pending Confirmation':'Confirmed';
+    badge.style.background=isPending?'#F59E0B':'#10B981';
+  }
+
+  // Pending sub-banner
+  let pendingBanner=document.getElementById('crew-pending-banner');
+  if(isPending){
+    if(!pendingBanner){
+      pendingBanner=document.createElement('div');
+      pendingBanner.id='crew-pending-banner';
+      pendingBanner.style.cssText='font-family:var(--f-mono);font-size:var(--t-small);font-weight:500;color:#92600a;background:rgba(245,158,11,.08);border-bottom:1px solid rgba(245,158,11,.2);padding:8px 20px;letter-spacing:var(--ls-normal);';
+      const confirmed=document.getElementById('crew-step-confirmed');
+      const header=document.getElementById('crew-home-header');
+      if(confirmed&&header) confirmed.insertBefore(pendingBanner,header.nextSibling);
+    }
+    pendingBanner.textContent='Awaiting confirmation from your TM or Admin — you can still view and request keys below.';
+  }else if(pendingBanner){
+    pendingBanner.remove();
+  }
+
   const hdr=document.getElementById('crew-home-header');
   if(hdr){ hdr.style.borderLeft='5px solid '+roomClr; hdr.style.borderBottom='none'; }
   if(_crewClaim.device_type==='keypanel'){
     const panel=KP_PANELS.find(p=>p.id===_crewClaim.device_id);
-    document.getElementById('crew-home-location').textContent=panel?(panel.location+(panel.port?' · Port '+panel.port:'')):'';;
+    document.getElementById('crew-home-location').textContent=panel?(panel.location+(panel.port?' · Port '+panel.port:'')):'';
   }else{
     document.getElementById('crew-home-location').textContent='';
   }
@@ -5995,6 +6017,14 @@ async function crewRenderSchematic(){
           <div class="crew-kp-grid">${botCells}</div>
         </div>`;
     }
+    // Show contextual note if all keys are empty
+    const allEmpty=_crewAllKeys.every(k=>!crewKeyLabel(k));
+    if(allEmpty){
+      const note=document.createElement('div');
+      note.style.cssText='font-family:var(--f-mono);font-size:var(--t-small);font-weight:500;color:var(--tx-secondary);padding:10px 0 4px;letter-spacing:var(--ls-normal);';
+      note.textContent='Keys not yet programmed — check with your TM. You can still submit requests below.';
+      container.appendChild(note);
+    }
   }catch(e){
     console.error('crewRenderSchematic:',e);
     const count=_crewClaim.device_type==='beltpack'?4:32;
@@ -6061,6 +6091,14 @@ function crewNoteInput(idx,val){
   crewUpdateSubmitBar();
 }
 
+function crewShowToast(msg,duration=3000){
+  let t=document.getElementById('crew-toast');
+  if(!t){ t=document.createElement('div'); t.id='crew-toast'; t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--black);color:#fff;font-family:var(--f-mono);font-size:var(--t-small);font-weight:700;letter-spacing:var(--ls-normal);padding:10px 18px;z-index:9999;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none;'; document.getElementById('screen-crew').appendChild(t); }
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{ t.style.opacity='0'; },duration);
+}
+
 function crewUpdateSubmitBar(){
   const bar=document.getElementById('crew-submit-bar');
   const count=document.getElementById('crew-submit-count');
@@ -6112,6 +6150,7 @@ async function crewSubmitBundle(){
     setTimeout(()=>{ btn.textContent='Submit Request'; crewUpdateSubmitBar(); },2000);
     document.getElementById('crew-submit-bar').classList.remove('visible');
     crewLoadMyRequests();
+    crewShowToast('Request submitted — your TM has been notified');
   }catch(e){
     btn.disabled=false; btn.textContent='Submit Request';
     alert('Error submitting. Please try again.');
@@ -6142,9 +6181,33 @@ async function crewLoadMyRequests(){
       <div class="crew-req-body">
         <div class="crew-req-summary">${summary}</div>
         ${detail?`<div class="crew-req-detail">${detail}</div>`:''}
+        ${r.status==='denied'?`<button onclick="crewReRequest('${r.id.replace(/'/g,"\\'")}','${(r.note||'').replace(/'/g,"\\'").replace(/\n/g,' ')}')" style="margin-top:6px;font-family:var(--f-mono);font-size:var(--t-micro);font-weight:800;letter-spacing:var(--ls-wide);text-transform:uppercase;color:#0891B2;background:none;border:1px solid rgba(8,145,178,.3);cursor:pointer;padding:3px 8px;">Flag Again</button>`:''}
       </div>
     </div>`;
   }).join('');
+}
+
+async function crewReRequest(reqId, noteJson){
+  // Re-submit a denied request — parse notes and pre-populate key annotations
+  try{
+    const notes=JSON.parse(noteJson||'[]');
+    if(Array.isArray(notes)&&notes.length){
+      notes.forEach(n=>{ if(n.keyIndex!=null&&n.note){ _crewKeyNotes[n.keyIndex]=n.note; } });
+      crewUpdateSubmitBar();
+      // Visually mark the cells
+      notes.forEach(n=>{
+        const cell=document.getElementById('crew-cell-'+n.keyIndex);
+        const preview=document.getElementById('crew-cell-preview-'+n.keyIndex);
+        if(cell){ cell.classList.add('annotated'); }
+        if(preview) preview.textContent='"'+n.note+'"';
+        const ta=document.getElementById('crew-note-'+n.keyIndex);
+        if(ta) ta.value=n.note;
+      });
+      crewShowToast('Keys re-flagged — review and resubmit');
+      // Scroll to top of schematic
+      document.getElementById('crew-schematic')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  }catch(e){}
 }
 
 function crewSubscribe(){
