@@ -1400,11 +1400,13 @@ function initAdminApp(){
       .on('postgres_changes',{event:'*',schema:'public',table:'productions'},        ()=>{ if(!_blockProdReload) loadProds(); })
       .on('postgres_changes',{event:'*',schema:'public',table:'beltpack_assignments'},function(p){
         if(p.new&&p.new.production_id) localStorage.setItem('sc_bp_'+p.new.production_id,JSON.stringify(p.new.data));
-        if(state.view==='allbeltpacks') renderAllBeltpacks();
+        if(_tmMode&&_tmActiveView==='beltpacks') renderAllBeltpacks();
+        else if(!_tmMode&&state.view==='allbeltpacks') renderAllBeltpacks();
       })
       .on('postgres_changes',{event:'*',schema:'public',table:'kp_assignments'},function(p){
         if(p.new&&p.new.production_id) localStorage.setItem('sc_kp_'+p.new.production_id,JSON.stringify(p.new.data));
-        if(state.view==='keypanels') renderKeypanels();
+        if(_tmMode&&_tmActiveView==='keypanels') renderKeypanels();
+        else if(!_tmMode&&state.view==='keypanels') renderKeypanels();
       })
       .on('postgres_changes',{event:'*',schema:'public',table:'go_options'},()=>loadGlobalOptions())
       .subscribe();
