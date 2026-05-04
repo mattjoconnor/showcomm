@@ -4573,21 +4573,26 @@ function reqToggleArchive(id){
 
 function renderClaimCard(r){
   const isPending = r.status==='pending';
-  const accentClr = '#F59E0B';
+  const isActive = r.status==='confirmed';
+  const accentClr = isPending?'#F59E0B':isActive?'#10B981':'#aaa';
   const actions = isPending
     ? `<button class="req-btn-approve" onclick="resolveRequest('device_claims','${r.id}','confirmed')">Confirm</button>
        <button class="req-btn-deny" onclick="openDeny('device_claims','${r.id}')">Deny</button>`
+    : isActive
+    ? `<button class="req-btn-deny" onclick="resolveRequest('device_claims','${r.id}','released')">Release</button>`
+    : r.status==='denied'||r.status==='cancelled'
+    ? `<button class="req-btn-deny" onclick="resolveRequest('device_claims','${r.id}','released')">Clear</button>`
     : `<span class="req-status-pill ${r.status}">${r.status.toUpperCase()}</span>`;
   return `<div class="req-card">
     <div class="req-card-accent" style="background:${accentClr}"></div>
     <div class="req-card-body">
       <span class="req-type-badge" style="background:rgba(245,158,11,.12);color:#92600a;">DEVICE CLAIM</span>
       <div class="req-device">${r.device_id} <span style="font-weight:400;font-size:.85em;color:rgba(0,0,0,.45);">${r.device_type}</span></div>
-      <div class="req-meta">${r.crew_name} · ${r.crew_position} · ${relTime(r.claimed_at)}</div>
-      ${r.crew_name ? '' : ''}
+      <div class="req-meta">${r.crew_name||'—'} · ${r.crew_position||'—'} · ${relTime(r.claimed_at)}</div>
     </div>
     <div class="req-card-actions">${actions}</div>
   </div>`;
+}
 }
 
 function renderChangeCard(r){
@@ -5519,6 +5524,10 @@ function crewShowClaimState(){
     _crewClaim=null;
     crewRenderProdList();
     crewShowStep('prod');
+  }else if(_crewClaim.status==='released'||_crewClaim.status==='cancelled'){
+    _crewClaim=null;
+    crewRenderProdList();
+    crewShowStep('prod');
   }else{
     crewShowPending();
   }
@@ -5660,7 +5669,7 @@ async function crewSubmitKeyRequest(){
   const btn=document.getElementById('crew-req-submit'); btn.disabled=true; btn.textContent='Submitting…';
   try{
     const payload={
-      device_id:_crewClaim.device_id, device_type:_crewClaim.device_type,
+      device_id:_crewClaim.device_id,
       description:note, note, key_type:'change',
       requester_role:'crew', status:'open',
       production_id:_crewClaim.production_id,
