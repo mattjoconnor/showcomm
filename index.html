@@ -408,6 +408,15 @@ body { background:var(--bg); color:var(--black); }
 .kp-claim-release { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:none; border:1px solid rgba(0,0,0,.12); color:var(--tx-secondary); cursor:pointer; padding:3px 8px; transition:color .1s,border-color .1s; white-space:nowrap; }
 .kp-claim-release:hover { color:var(--red); border-color:rgba(239,68,68,.3); }
 .kp-req-indicator { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:2px 7px; background:rgba(245,158,11,.12); color:#92600a; white-space:nowrap; }
+.kp-inline-reqs { padding:10px clamp(14px,1.8vw,22px) 14px; background:rgba(245,158,11,.03); }
+.kp-inline-reqs-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:#92600a; margin-bottom:8px; }
+.kp-inline-req-item { display:flex; align-items:flex-start; gap:10px; padding:7px 0; border-bottom:1px solid var(--border-md); }
+.kp-inline-req-item:last-child { border-bottom:none; }
+.kp-inline-req-body { flex:1; min-width:0; }
+.kp-inline-req-summary { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); margin-bottom:3px; }
+.kp-inline-req-notes { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); line-height:1.5; }
+.kp-inline-req-time { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:var(--tx-tertiary); margin-top:2px; }
+.kp-inline-req-actions { display:flex; gap:6px; flex-shrink:0; align-items:flex-start; margin-top:1px; }
 .claims-strip { border-bottom:1px solid var(--border-md); background:rgba(245,158,11,.04); padding:8px clamp(16px,2.2vw,28px); display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
 .claims-strip-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:#92600a; margin-right:4px; flex-shrink:0; }
 .claim-pill { display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid rgba(245,158,11,.35); padding:4px 10px 4px 12px; }
@@ -2484,6 +2493,8 @@ let _kpActivePanel = null; // {panelId, prodId, keyIndex}
 let _kpLocOpen   = new Set();  // collapsed by default — nothing in set = all collapsed
 let _kpCardOpen  = new Set();  // individual cards open
 let _kpReassignTarget = null;  // {panelId, prodId}
+let _kpClaimsCache = {};  // panelId → claim row, refreshed on renderKeypanels
+let _kpReqsCache = {};    // panelId → open request count
 
 function getPanelProdLabel(panelId){
   const prod = Object.values(PRODUCTIONS).find(p=>
@@ -2593,6 +2604,8 @@ async function renderKeypanels(){
       .eq('requester_role','crew').eq('status','open');
     if(data) data.forEach(r=>{ _kpReqsMap[r.device_id]=(_kpReqsMap[r.device_id]||0)+1; });
   }
+  _kpClaimsCache=_kpClaimsMap;
+  _kpReqsCache=_kpReqsMap;
   document.getElementById('kp-claims-strip').innerHTML='';
   const main=$('kp-main-content');
   if(!main) return;
@@ -2758,6 +2771,7 @@ function buildKpCard(panel, prod, entry, claim=null, openReqs=0){
       const _nowOpen=_kpCardOpen.has(cardKey);
       if(_body){ _body.style.display=_nowOpen?'block':'none'; _body.classList.toggle('open',_nowOpen); }
       if(_chev) _chev.classList.toggle('open',_nowOpen);
+      if(_nowOpen) loadInlinePanelRequests(panel.id);
     }
   });
   _kpIn.appendChild(hdr);
@@ -2925,8 +2939,19 @@ function buildKpCard(panel, prod, entry, claim=null, openReqs=0){
     actBar.appendChild(clrBtn); // always last — margin-left:auto pins it right
   }
   body.appendChild(actBar);
+
+  // Inline crew requests section
+  const reqSection=document.createElement('div');
+  reqSection.id='kp-inline-reqs-'+panel.id.replace(/\s/g,'_');
+  reqSection.style.cssText='border-top:1px solid var(--border-md);';
+  body.appendChild(reqSection);
+
   _kpIn.appendChild(body);
   card.appendChild(_kpIn);
+
+  // Load inline requests if card is already open
+  if(isOpen) setTimeout(()=>loadInlinePanelRequests(panel.id),0);
+
   return card;
 }
 
@@ -3059,8 +3084,12 @@ function refreshKpCard(panelId, prodId){
   if(!prod&&!_tmMode) return;
   const panel=KP_PANELS.find(p=>p.id===panelId)||{model:'5032',name:panelId,location:'',port:''};
   const claimedKP=loadClaimedKP(prodId);
-  const newCard=buildKpCard(panel,prod,claimedKP[panelId]);
+  const newCard=buildKpCard(panel,prod,claimedKP[panelId],_kpClaimsCache[panelId]||null,_kpReqsCache[panelId]||0);
   existing.replaceWith(newCard);
+  // Reload inline requests if card is open
+  if(_kpCardOpen.has(prodId+'_'+panelId)||_kpCardOpen.has('avail_'+panelId.replace(/\s/g,'_'))){
+    loadInlinePanelRequests(panelId);
+  }
 }
 
 // KP Room Assignment Modal
@@ -4725,6 +4754,36 @@ function renderChangeCard(r){
   </div>`;
 }
 
+async function loadInlinePanelRequests(panelId){
+  const el=document.getElementById('kp-inline-reqs-'+panelId.replace(/\s/g,'_'));
+  if(!el||!SUPA) return;
+  const {data}=await SUPA.from('key_requests').select('*')
+    .eq('device_id',panelId).eq('status','open')
+    .order('created_at',{ascending:false}).limit(10);
+  if(!data||!data.length){ el.innerHTML=''; return; }
+  const items=data.map(r=>{
+    let notesHTML='';
+    try{
+      const notes=JSON.parse(r.note||'[]');
+      if(Array.isArray(notes)&&notes.length){
+        notesHTML='<div class="kp-inline-req-notes">'+notes.map(n=>`<div>Key ${n.keyIndex+1} (${n.label}): ${n.note}</div>`).join('')+'</div>';
+      }
+    }catch(e){ notesHTML=r.note?`<div class="kp-inline-req-notes">${r.description||r.note}</div>`:''; }
+    return `<div class="kp-inline-req-item">
+      <div class="kp-inline-req-body">
+        <div class="kp-inline-req-summary">${r.description||'—'}</div>
+        ${notesHTML}
+        <div class="kp-inline-req-time">${relTime(r.created_at)}</div>
+      </div>
+      <div class="kp-inline-req-actions">
+        <button class="req-btn-approve" style="padding:5px 10px;font-size:.6rem;" onclick="resolveRequest('key_requests','${r.id}','fulfilled');this.closest('.kp-inline-req-item').remove();">Fulfill</button>
+        <button class="req-btn-deny" style="padding:5px 10px;font-size:.6rem;" onclick="openDeny('key_requests','${r.id}')">Deny</button>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div class="kp-inline-reqs"><div class="kp-inline-reqs-label">Crew Requests (${data.length})</div>${items}</div>`;
+}
+
 function renderKeyCard(r){
   const isOpen = r.status==='open';
   const isCrew = r.requester_role==='crew';
@@ -4777,8 +4836,9 @@ function jumpToPanel(panelId){
 }
 
 async function flushResolved(type){
-  const tableMap={change:'change_requests',key:'key_requests',claims:'device_claims'};
-  const statusMap={change:['approved','denied','modified'],key:['fulfilled','denied'],claims:['confirmed','denied']};
+  const tableMap={change:'change_requests',key:'key_requests',claim:'device_claims'};
+  const statusMap={change:['approved','denied','modified'],key:['fulfilled','denied'],claim:['confirmed','denied','cancelled']};
+  const table=tableMap[type]||type;
   const table=tableMap[type]||type;
   const statuses=statusMap[type]||['approved','denied','fulfilled'];
   adminConfirm(
