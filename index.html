@@ -241,30 +241,28 @@ body { background:var(--bg); color:var(--black); }
 .crew-schematic-section-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); padding:6px 12px; background:rgba(0,0,0,.03); border:1px solid var(--border-md); border-bottom:none; }
 .crew-bp-column { border:1px solid var(--border-md); overflow:hidden; }
 .crew-kp-grid { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--border-md); overflow:hidden; }
-.crew-key-cell { padding:10px 12px; cursor:pointer; border-bottom:1px solid var(--border-md); border-right:1px solid var(--border-md); position:relative; transition:background .08s; box-sizing:border-box; }
-.crew-bp-column .crew-key-cell { border-right:none; }
+.crew-key-cell { padding:10px 12px; cursor:pointer; border-bottom:1px solid var(--border-md); border-right:1px solid var(--border-md); position:relative; transition:background .08s; box-sizing:border-box; min-height:clamp(52px,8vw,64px); }
+.crew-bp-column .crew-key-cell { border-right:none; min-height:clamp(56px,10vw,70px); }
 .crew-bp-column .crew-key-cell:last-child { border-bottom:none; }
 .crew-kp-grid .crew-key-cell:nth-child(4n) { border-right:none; }
-.crew-key-cell:hover { background:rgba(0,0,0,.02); }
-.crew-key-cell.annotated { background:rgba(245,158,11,.05); border-left:3px solid #F59E0B; }
-.crew-key-cell.active { background:rgba(8,145,178,.04); }
-.crew-key-cell.active.annotated { background:rgba(245,158,11,.07); }
+.crew-key-cell:hover { opacity:.88; }
+.crew-key-cell.annotated { outline:3px solid #F59E0B; outline-offset:-1px; }
+.crew-key-cell.active { outline:2px solid #0891B2; outline-offset:-1px; }
 .crew-key-cell-num { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:var(--tx-tertiary); line-height:1; margin-bottom:3px; }
-.crew-key-cell-name { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); letter-spacing:var(--ls-tight); line-height:1.2; }
+.crew-key-cell-name { font-family:var(--f-mono); font-size:clamp(.68rem,2.2vw,.75rem); font-weight:800; color:var(--tx-primary); letter-spacing:var(--ls-tight); line-height:1.2; }
 .crew-key-cell-name.empty { color:var(--tx-ghost); font-weight:400; font-style:italic; }
-.crew-key-cell-preview { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:#92600a; margin-top:4px; line-height:1.3; display:none; }
+.crew-key-cell-preview { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:#92600a; margin-top:4px; line-height:1.3; display:none; background:rgba(245,158,11,.08); padding:2px 4px; }
 .crew-key-cell.annotated .crew-key-cell-preview { display:block; }
 .crew-key-cell.active .crew-key-cell-preview { display:none; }
 .crew-key-note-wrap { display:none; margin-top:8px; }
 .crew-key-cell.active .crew-key-note-wrap { display:block; }
-.crew-key-note-input { width:100%; background:transparent; border:none; border-bottom:1px solid rgba(0,0,0,.15); font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-primary); resize:none; outline:none; padding:4px 0; line-height:1.4; box-sizing:border-box; }
-.crew-key-note-input:focus { border-bottom-color:var(--black); }
-.crew-key-note-input::placeholder { color:var(--tx-ghost); font-weight:400; }
-/* Submit bar — sits outside scroll area */
-.crew-submit-bar { flex-shrink:0; border-top:2px solid var(--black); padding:12px 20px; display:none; align-items:center; gap:12px; background:var(--surface); }
+.crew-key-note-input { width:100%; background:rgba(255,255,255,.9); border:none; border-bottom:2px solid rgba(0,0,0,.3); font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--black); resize:none; outline:none; padding:4px 0; line-height:1.4; box-sizing:border-box; }
+.crew-key-note-input::placeholder { color:rgba(0,0,0,.35); font-weight:400; }
+/* Submit bar */
+.crew-submit-bar { flex-shrink:0; border-top:2px solid var(--black); padding:14px 20px; display:none; align-items:center; gap:12px; background:var(--surface); z-index:10; }
 .crew-submit-bar.visible { display:flex; }
 .crew-submit-count { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-secondary); flex:1; }
-.crew-submit-btn { font-family:var(--f-mono); font-size:var(--t-ui); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:var(--black); color:#fff; border:none; cursor:pointer; padding:11px 22px; white-space:nowrap; }
+.crew-submit-btn { font-family:var(--f-mono); font-size:var(--t-ui); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:var(--black); color:#fff; border:none; cursor:pointer; padding:13px 24px; white-space:nowrap; flex-shrink:0; }
 .crew-submit-btn:hover { background:#333; }
 .crew-submit-btn:disabled { background:rgba(0,0,0,.2); cursor:not-allowed; }
 /* Request history */
@@ -334,13 +332,13 @@ body { background:var(--bg); color:var(--black); }
 .crew-status-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); margin-top:14px; }
 .crew-cancel-claim { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--red); background:none; border:none; cursor:pointer; padding:0; margin-top:18px; display:block; }
 .crew-cancel-claim:hover { opacity:.7; }
-/* Confirmed home header */
-.crew-home-header { background:var(--black); color:#fff; padding:20px 20px 18px; margin-bottom:20px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; border-left:5px solid #0891B2; }
-.crew-home-type { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:#0891B2; margin-bottom:6px; }
-.crew-home-device { font-family:var(--f-ui); font-size:clamp(1.8rem,6vw,2.6rem); font-weight:900; color:#fff; letter-spacing:-.02em; line-height:1; margin-bottom:6px; }
-.crew-home-show { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:rgba(255,255,255,.6); margin-bottom:2px; }
-.crew-home-location { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:rgba(255,255,255,.35); letter-spacing:var(--ls-normal); }
-.crew-home-badge { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; padding:4px 10px; background:#10B981; color:#fff; flex-shrink:0; align-self:flex-start; }
+/* Confirmed home header — matches TM page header pattern */
+.crew-home-header { background:var(--surface); border-bottom:3px solid var(--black); padding:clamp(14px,2vh,20px) 20px; margin-bottom:0; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+.crew-home-type { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:4px; }
+.crew-home-device { font-family:var(--f-ui); font-size:clamp(1.6rem,5vw,2.4rem); font-weight:900; color:var(--tx-primary); letter-spacing:-.02em; line-height:1; margin-bottom:4px; }
+.crew-home-show { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); margin-bottom:2px; }
+.crew-home-location { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); }
+.crew-home-badge { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; padding:4px 10px; background:#10B981; color:#fff; flex-shrink:0; align-self:flex-start; margin-top:2px; }
 .crew-reclaim-link { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); background:none; border:none; cursor:pointer; padding:0; display:inline-block; margin-top:12px; }
 .crew-reclaim-link:hover { color:var(--tx-primary); }
 /* Key quadrant grid */
@@ -1112,7 +1110,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
       </div>
       <!-- Confirmed home -->
       <div class="crew-step" id="crew-step-confirmed">
-        <div class="crew-home-header">
+        <div class="crew-home-header" id="crew-home-header">
           <div>
             <div class="crew-home-type" id="crew-home-type"></div>
             <div class="crew-home-device" id="crew-home-device"></div>
@@ -3473,6 +3471,7 @@ function renderBpCards(bpToProd){
     const conflict = !entry && prod ? getBpConflict(bp, prod.id) : null;
     const cardClass=!prod?'unassigned-card':conflict?'conflict-card':!entry?'available-card':hasPendingSwap?'swap-card':entry.status==='confirmed'?'confirmed-card':'pending-card';
     card.className='bp-card '+cardClass;
+    card.id='bp-card-'+bp.replace(/\s/g,'_');
     const _bpStrip=document.createElement('div');
     _bpStrip.className='bp-room-strip';
     const _bpRoom=entry&&entry.controlRoom?entry.controlRoom:'';
@@ -4788,8 +4787,10 @@ function renderKeyCard(r){
   const badgeStyle = isCrew?'background:rgba(245,158,11,.1);color:#92600a;':'background:rgba(8,145,178,.1);color:#0e6a82;';
   const badgeLabel = isCrew?'CREW REQUEST':'KEY REQUEST';
   const isKP = r.device_id&&KP_PANELS.some(p=>p.id===r.device_id);
+  const isBP = r.device_id&&!isKP;
   const actions = isOpen
     ? `${isKP?`<button class="req-btn-outline" onclick="jumpToPanel('${r.device_id.replace(/'/g,"\\'")}')">Open Panel →</button>`:''}
+       ${isBP?`<button class="req-btn-outline" onclick="jumpToBP('${r.device_id.replace(/'/g,"\\'")}')">Open BP →</button>`:''}
        <button class="req-btn-approve" onclick="resolveRequest('key_requests','${r.id}','fulfilled')">Fulfill</button>
        <button class="req-btn-deny" onclick="openDeny('key_requests','${r.id}')">Deny</button>`
     : `<span class="req-status-pill ${r.status}">${r.status.toUpperCase()}</span>`;
@@ -4819,6 +4820,14 @@ function renderKeyCard(r){
     </div>
     <div class="req-card-actions">${actions}</div>
   </div>`;
+}
+
+function jumpToBP(bpId){
+  setView('allbeltpacks');
+  setTimeout(()=>{
+    const el=document.getElementById('bp-card-'+bpId.replace(/\s/g,'_'));
+    if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+  },400);
 }
 
 function jumpToPanel(panelId){
@@ -5585,11 +5594,16 @@ function crewRenderProdList(){
   if(!prods.length){
     el.innerHTML='<div class="crew-empty">No active productions found.</div>'; return;
   }
-  el.innerHTML=prods.map(p=>`
-    <div class="crew-prod-card" onclick="crewSelectProd('${p.id}')">
-      <div class="crew-prod-name">${p.name}</div>
-      <div class="crew-prod-meta">${p.controlRoom||''}</div>
-    </div>`).join('');
+  el.innerHTML=prods.map(p=>{
+    const clr=crFg(p.controlRoom)||'#0891B2';
+    return `<div class="crew-prod-card" style="border-left-color:${clr};" onclick="crewSelectProd('${p.id}')">
+      <div>
+        <div class="crew-prod-name">${p.name}</div>
+        <div class="crew-prod-meta" style="color:${clr};">${p.controlRoom||''}</div>
+      </div>
+      <span class="crew-prod-arrow">›</span>
+    </div>`;
+  }).join('');
 }
 
 function crewSelectProd(prodId){
@@ -5707,12 +5721,15 @@ function crewShowPending(){
 
 function crewShowConfirmed(){
   const prod=PRODUCTIONS[_crewClaim.production_id]||{};
+  const roomClr=crFg(prod.controlRoom)||'#0891B2';
   document.getElementById('crew-home-device').textContent=_crewClaim.device_id;
-  document.getElementById('crew-home-type').textContent=_crewClaim.device_type==='keypanel'?'Key Panel':'Beltpack';
+  document.getElementById('crew-home-type').textContent=(_crewClaim.device_type==='keypanel'?'Key Panel':'Beltpack')+(prod.controlRoom?' · '+prod.controlRoom:'');
   document.getElementById('crew-home-show').textContent=prod.name||_crewClaim.production_id||'';
+  const hdr=document.getElementById('crew-home-header');
+  if(hdr) hdr.style.borderBottom='3px solid '+roomClr;
   if(_crewClaim.device_type==='keypanel'){
     const panel=KP_PANELS.find(p=>p.id===_crewClaim.device_id);
-    document.getElementById('crew-home-location').textContent=panel?(panel.location+(panel.port?' · Port '+panel.port:'')):'';
+    document.getElementById('crew-home-location').textContent=panel?(panel.location+(panel.port?' · Port '+panel.port:'')):'';;
   }else{
     document.getElementById('crew-home-location').textContent='';
   }
@@ -5720,7 +5737,6 @@ function crewShowConfirmed(){
   crewRenderSchematic();
   crewLoadMyRequests();
 }
-
 async function crewRenderKeys(){
   const grid=document.getElementById('crew-quad-grid');
   grid.innerHTML='<div class="crew-loading">Loading keys…</div>';
@@ -5855,9 +5871,21 @@ async function crewRenderSchematic(){
 
 function crewCellHTML(idx,k){
   const label=crewKeyLabel(k);
-  return `<div class="crew-key-cell" id="crew-cell-${idx}" onclick="crewToggleKey(${idx})">
-    <div class="crew-key-cell-num">${idx+1}</div>
-    <div class="crew-key-cell-name${label?'':' empty'}">${label||'Empty'}</div>
+  // Apply same color coding as admin key grid
+  let cellStyle='', nameStyle='';
+  if(k&&label){
+    const cat=k.c||k.category||'';
+    const opt=cat?findOpt(cat,label):null;
+    if(opt){
+      const bg=rgbStr(optBgRgb(opt));
+      const fg=rgbStr(optFgRgb(opt));
+      cellStyle=`background:${bg};`;
+      nameStyle=`color:${fg};`;
+    }
+  }
+  return `<div class="crew-key-cell${label?' programmed':''}" id="crew-cell-${idx}" style="${cellStyle}" onclick="crewToggleKey(${idx})">
+    <div class="crew-key-cell-num" style="${label?'color:inherit;opacity:.5;':''}">${idx+1}</div>
+    <div class="crew-key-cell-name${label?'':' empty'}" style="${nameStyle}">${label||'Empty'}</div>
     <div class="crew-key-cell-preview" id="crew-cell-preview-${idx}"></div>
     <div class="crew-key-note-wrap">
       <textarea class="crew-key-note-input" id="crew-note-${idx}" rows="2"
