@@ -407,14 +407,10 @@ body { background:var(--bg); color:var(--black); }
 .kp-key-req-glow { outline:3px solid #F59E0B !important; outline-offset:-1px; box-shadow:0 0 0 4px rgba(245,158,11,.25) !important; z-index:2; }
 .kp-inline-req-item.req-lit { background:rgba(245,158,11,.14) !important; }
 .kp-inline-reqs { padding:10px clamp(14px,1.8vw,22px) 14px; background:rgba(245,158,11,.03); }
-.kp-inline-reqs-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:#92600a; margin-bottom:8px; }
-.kp-inline-req-item { display:flex; align-items:flex-start; gap:10px; padding:7px 0; border-bottom:1px solid var(--border-md); }
-.kp-inline-req-item:last-child { border-bottom:none; }
-.kp-inline-req-body { flex:1; min-width:0; }
-.kp-inline-req-summary { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); margin-bottom:3px; }
-.kp-inline-req-notes { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); line-height:1.5; }
-.kp-inline-req-time { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:var(--tx-tertiary); margin-top:2px; }
-.kp-inline-req-actions { display:flex; gap:6px; flex-shrink:0; align-items:flex-start; margin-top:1px; }
+.kp-inline-reqs-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; }
+@media(max-width:900px){ .kp-inline-reqs-grid { grid-template-columns:repeat(2,1fr); } }
+.kp-inline-req-item { display:flex; flex-direction:column; gap:2px; padding:6px 8px; border:1px solid var(--border-md); border-left:3px solid #F59E0B; cursor:default; transition:background .08s; }
+.kp-inline-req-item.req-lit { background:rgba(245,158,11,.12) !important; border-color:rgba(245,158,11,.5); }
 .claims-strip { border-bottom:1px solid var(--border-md); background:rgba(245,158,11,.04); padding:8px clamp(16px,2.2vw,28px); display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
 .claims-strip-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:#92600a; margin-right:4px; flex-shrink:0; }
 .claim-pill { display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid rgba(245,158,11,.35); padding:4px 10px 4px 12px; }
@@ -4821,18 +4817,19 @@ async function loadInlineBPRequests(bp){
   const bpSafe=bp.replace(/\s/g,'_');
   const items=rows.map((row,i)=>`
     <div class="kp-inline-req-item" id="breq-row-${bpSafe}-${i}">
-      <div class="kp-inline-req-body">
-        ${row.keyIndex>=0?`<div class="kp-inline-req-summary">Key ${row.keyIndex+1}${row.label?' — '+row.label:''}</div>`:''}
-        <div class="kp-inline-req-notes">${row.note}</div>
-        <div class="kp-inline-req-time">${relTime(row.time)}</div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:4px;">
+        <span style="font-family:var(--f-mono);font-size:var(--t-micro);font-weight:800;color:var(--tx-primary);letter-spacing:.04em;">${row.keyIndex>=0?'Key '+(row.keyIndex+1)+(row.label?' — '+row.label:''):row.label||'—'}</span>
+        <span style="font-family:var(--f-mono);font-size:.55rem;color:var(--tx-tertiary);white-space:nowrap;">${relTime(row.time)}</span>
       </div>
-      <div class="kp-inline-req-actions">
-        <button class="req-btn-approve" style="padding:5px 10px;font-size:.6rem;" onclick="resolveRequest('key_requests','${row.reqId}','fulfilled');loadInlineBPRequests('${bp.replace(/'/g,"\\'")}')">Fulfill</button>
-        <button class="req-btn-deny" style="padding:5px 10px;font-size:.6rem;" onclick="openDeny('key_requests','${row.reqId}')">Deny</button>
+      <div style="font-family:var(--f-mono);font-size:var(--t-micro);font-weight:500;color:var(--tx-secondary);line-height:1.4;">${row.note}</div>
+      <div style="display:flex;gap:4px;margin-top:3px;">
+        <button class="req-btn-approve" style="padding:2px 7px;font-size:.55rem;" onclick="resolveRequest('key_requests','${row.reqId}','fulfilled');loadInlineBPRequests('${bp.replace(/'/g,"\\'")}')">Fulfill</button>
+        <button class="req-btn-deny" style="padding:2px 7px;font-size:.55rem;" onclick="openDeny('key_requests','${row.reqId}')">Deny</button>
       </div>
     </div>`).join('');
 
-  el.innerHTML=`<div class="kp-inline-reqs"><div class="kp-inline-reqs-label">Crew Requests — ${rows.length} key${rows.length!==1?'s':''} flagged</div>${items}</div>`;
+  el.innerHTML=`<div class="kp-inline-reqs"><div class="kp-inline-reqs-label" style="font-family:var(--f-mono);font-size:var(--t-micro);font-weight:800;letter-spacing:var(--ls-xwide);text-transform:uppercase;color:#92600a;margin-bottom:6px;">Crew Requests — ${rows.length} key${rows.length!==1?'s':''} flagged</div><div class="kp-inline-reqs-grid">${items}</div></div>`;
+
 
   const cardEl=document.getElementById('bp-card-'+bpSafe);
   if(!cardEl) return;
@@ -4884,19 +4881,19 @@ async function loadInlinePanelRequests(panelId){
 
   const items=rows.map((row,i)=>`
     <div class="kp-inline-req-item" id="kreq-row-${panelId.replace(/\s/g,'_')}-${i}">
-      <div class="kp-inline-req-body">
-        ${row.keyIndex>=0?`<div class="kp-inline-req-summary">Key ${row.keyIndex+1}${row.label?' — '+row.label:''}</div>`:''}
-        <div class="kp-inline-req-notes">${row.note}</div>
-        <div class="kp-inline-req-time">${relTime(row.time)}</div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:4px;">
+        <span style="font-family:var(--f-mono);font-size:var(--t-micro);font-weight:800;color:var(--tx-primary);letter-spacing:.04em;">${row.keyIndex>=0?'Key '+(row.keyIndex+1)+(row.label?' — '+row.label:''):row.label||'—'}</span>
+        <span style="font-family:var(--f-mono);font-size:.55rem;color:var(--tx-tertiary);white-space:nowrap;">${relTime(row.time)}</span>
       </div>
-      <div class="kp-inline-req-actions">
-        <button class="req-btn-approve" style="padding:5px 10px;font-size:.6rem;" onclick="resolveRequest('key_requests','${row.reqId}','fulfilled');loadInlinePanelRequests('${panelId.replace(/'/g,"\\'")}')">Fulfill</button>
-        <button class="req-btn-deny" style="padding:5px 10px;font-size:.6rem;" onclick="openDeny('key_requests','${row.reqId}')">Deny</button>
+      <div style="font-family:var(--f-mono);font-size:var(--t-micro);font-weight:500;color:var(--tx-secondary);line-height:1.4;">${row.note}</div>
+      <div style="display:flex;gap:4px;margin-top:3px;">
+        <button class="req-btn-approve" style="padding:2px 7px;font-size:.55rem;" onclick="resolveRequest('key_requests','${row.reqId}','fulfilled');loadInlinePanelRequests('${panelId.replace(/'/g,"\\'")}')">Fulfill</button>
+        <button class="req-btn-deny" style="padding:2px 7px;font-size:.55rem;" onclick="openDeny('key_requests','${row.reqId}')">Deny</button>
       </div>
     </div>`).join('');
 
   const totalReqs=data.length;
-  el.innerHTML=`<div class="kp-inline-reqs"><div class="kp-inline-reqs-label">Crew Requests — ${rows.length} key${rows.length!==1?'s':''} flagged</div>${items}</div>`;
+  el.innerHTML=`<div class="kp-inline-reqs"><div class="kp-inline-reqs-label" style="font-family:var(--f-mono);font-size:var(--t-micro);font-weight:800;letter-spacing:var(--ls-xwide);text-transform:uppercase;color:#92600a;margin-bottom:6px;">Crew Requests — ${rows.length} key${rows.length!==1?'s':''} flagged</div><div class="kp-inline-reqs-grid">${items}</div></div>`;
 
   // Apply amber borders and bidirectional hover
   const cardEl=document.getElementById('kp-card-'+panelId.replace(/\s/g,'_'));
