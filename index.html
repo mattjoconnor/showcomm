@@ -274,7 +274,7 @@ body { background:var(--bg); color:var(--black); }
 /* ─── KEY GRID ─── */
 .kp-key-grid-wrap { background:#E8E8E6; padding:clamp(10px,1.6vh,14px) clamp(14px,1.8vw,22px); }
 .kp-key-row { display:flex; gap:2px; }
-.kp-key-row-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:700; color:var(--tx-secondary); letter-spacing:var(--ls-wide); text-transform:uppercase; padding:5px 0 2px; }
+.kp-key-row-label { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-secondary); letter-spacing:var(--ls-wide); text-transform:uppercase; padding:6px 0 3px; }
 .kp-key-break { width:8px; flex-shrink:0; border-left:2px solid rgba(0,0,0,.08); }
 .kp-key-cell { flex:1; min-width:0; overflow:hidden; height:clamp(44px,6.5vh,60px); background:#F4F4F2; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:var(--t-label); font-weight:700; text-align:center; line-height:1.15; letter-spacing:var(--ls-tight); text-transform:uppercase; position:relative; cursor:pointer; transition:background .08s, color .08s; user-select:none; }
 .kp-key-cell .kl { font-size:clamp(.58rem,.82vw,.7rem); font-weight:700; line-height:1.15; }
@@ -2690,19 +2690,11 @@ function tmCheckDirtyBeforeOpen(newPanelId, newProdId){
   const btns=document.createElement('div'); btns.style.cssText='display:flex;gap:10px;';
   const doSubmit=async()=>{
     overlay.remove();
-    const keys=type==='kp'?loadClaimedKP(prodId)[panelId]?.keys:loadClaimed(prodId)[panelId]?.keys;
-    if(SUPA){
-      const {error}=await SUPA.from('change_requests').insert({
-        device_id:panelId,device_type:type==='kp'?'keypanel':'beltpack',
-        note:noteTA.value.trim()||'Key update submitted by TM',
-        requested_by:_currentUser?.id, requested_state:{keys:keys||[]},requester_role:'tm',status:'pending',
-        production_id:(prodId&&prodId!=='__draft__'?prodId:null)||_tmActiveProd||(_tmProductions[0]?.id)
-      });
-      if(error){ toast('Error: '+error.message,'danger'); return; }
-    }
-    _tmDirty=null; toast('Changes submitted','success');
+    _tmPendingSubmit={panelId, prodId, type};
+    const noteEl=document.getElementById('tm-submit-note');
+    if(noteEl) noteEl.value=noteTA.value.trim();
+    await tmSubmitChanges();
     if(_isNav&&_tmPendingNav){ const v=_tmPendingNav; _tmPendingNav=null; setTMView(v); }
-    else if(!_isNav){ if(type==='kp') renderKeypanels(); else renderAllBeltpacks(); }
   };
   const ok=document.createElement('button'); ok.textContent='Submit Changes';
   ok.style.cssText='font-family:var(--f-mono);font-size:clamp(.65rem,.92vw,.78rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;flex:1;padding:clamp(9px,1.4vh,12px);background:var(--green);color:#fff;border:none;cursor:pointer;';
@@ -4231,18 +4223,21 @@ function renderChangeCard(r){
     if(s.label) return s.label;
     if(s.production_name) return 'Assign to: '+s.production_name+(s.production_id?' ('+s.production_id+')':'');
     if(s.keys){
-      // Render key snapshot as small colored tiles
+      const assignedKeys=(s.keys||[]).filter(k=>k&&normKey(k)&&normKey(k).label);
+      const total=s.keys.length;
+      // Summary line
+      const summary='<div style="font-family:var(--f-mono);font-size:11px;font-weight:700;color:var(--tx-secondary);margin-bottom:6px;letter-spacing:.06em;">'+assignedKeys.length+' of '+total+' keys assigned</div>';
       const tiles=(s.keys||[]).map((k,i)=>{
         const nk=normKey(k);
         if(nk&&nk.label){
           const opt=findOpt(nk.category,nk.label);
           const bg=opt?rgbStr(optBgRgb(opt)):'#333';
           const fg=opt?rgbStr(optFgRgb(opt)):'#fff';
-          return '<span style="display:inline-block;background:'+bg+';color:'+fg+';font-family:var(--f-mono);font-size:9px;font-weight:800;padding:3px 7px;margin:2px;letter-spacing:.04em;min-width:36px;text-align:center;">'+(nk.label.length>7?nk.label.slice(0,4)+'…':nk.label)+'</span>';
+          return '<span style="display:inline-block;background:'+bg+';color:'+fg+';font-family:var(--f-mono);font-size:9px;font-weight:800;padding:3px 7px;margin:2px;letter-spacing:.04em;min-width:40px;text-align:center;">'+(nk.label.length>7?nk.label.slice(0,5)+'…':nk.label)+'</span>';
         }
-        return '<span style="display:inline-block;background:rgba(0,0,0,.06);color:rgba(0,0,0,.25);font-family:var(--f-mono);font-size:9px;padding:3px 7px;margin:2px;min-width:36px;text-align:center;">—</span>';
+        return '<span style="display:inline-block;background:#e8e8e6;color:#999;font-family:var(--f-mono);font-size:9px;padding:3px 7px;margin:2px;min-width:40px;text-align:center;">—</span>';
       }).join('');
-      return '<div style="display:flex;flex-wrap:wrap;gap:1px;max-width:400px;">'+tiles+'</div>';
+      return summary+'<div style="display:flex;flex-wrap:wrap;gap:1px;max-width:600px;">'+tiles+'</div>';
     }
     return Object.entries(s).map(([k,v])=>k+': '+String(v)).join(' · ');
   };
