@@ -399,13 +399,13 @@ body { background:var(--bg); color:var(--black); }
 .crew-denied-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--red); letter-spacing:var(--ls-normal); padding:12px 16px; background:rgba(239,68,68,.06); border:1px solid rgba(239,68,68,.2); margin-bottom:16px; display:none; }
 .crew-denied-msg.visible { display:block; }
 
-.kp-claim-indicator { display:flex; align-items:center; gap:6px; margin-left:auto; padding-right:6px; flex-shrink:0; }
+.kp-claim-indicator { display:flex; align-items:center; gap:6px; margin-left:auto; padding:0 8px; flex-shrink:0; border-left:1px solid var(--border-md); }
 .kp-claim-name { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); letter-spacing:var(--ls-tight); white-space:nowrap; }
-.kp-claim-pos { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); }
-.kp-claim-badge { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:2px 7px; }
+.kp-claim-pos { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); white-space:nowrap; }
+.kp-claim-badge { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:2px 7px; white-space:nowrap; }
 .kp-claim-badge.confirmed { background:rgba(16,185,129,.12); color:#10B981; }
 .kp-claim-badge.pending { background:rgba(245,158,11,.12); color:#92600a; }
-.kp-claim-release { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:none; border:1px solid rgba(0,0,0,.12); color:var(--tx-secondary); cursor:pointer; padding:2px 7px; transition:color .1s,border-color .1s; }
+.kp-claim-release { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:none; border:1px solid rgba(0,0,0,.12); color:var(--tx-secondary); cursor:pointer; padding:3px 8px; transition:color .1s,border-color .1s; white-space:nowrap; }
 .kp-claim-release:hover { color:var(--red); border-color:rgba(239,68,68,.3); }
 .kp-req-indicator { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:2px 7px; background:rgba(245,158,11,.12); color:#92600a; white-space:nowrap; }
 .claims-strip { border-bottom:1px solid var(--border-md); background:rgba(245,158,11,.04); padding:8px clamp(16px,2.2vw,28px); display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
@@ -862,6 +862,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 .req-note { font-family:var(--f-mono); font-size:var(--t-small); color:var(--tx-tertiary); font-style:italic; margin-top:2px; }
 .req-btn-outline { font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:7px 14px; background:transparent; color:var(--tx-secondary); border:1px solid var(--border-md); cursor:pointer; white-space:nowrap; transition:color .1s,border-color .1s; }
 .req-btn-outline:hover { color:var(--black); border-color:rgba(0,0,0,.3); }
+.req-btn-approve { font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:7px 14px; background:var(--green); color:#fff; border:none; cursor:pointer; white-space:nowrap; transition:opacity .1s; }
 .req-btn-approve:hover { opacity:.85; }
 .req-btn-deny { font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:7px 12px; background:transparent; color:var(--red); border:1px solid rgba(200,0,0,.25); cursor:pointer; white-space:nowrap; transition:background .1s; }
 .req-btn-deny:hover { background:rgba(200,0,0,.06); }
@@ -2568,8 +2569,8 @@ async function renderClaimsStrip(containerId, deviceType){
 
 async function releaseClaim(id, containerId, deviceType){
   if(!SUPA) return;
-  const {error}=await SUPA.from('device_claims').update({status:'cancelled'}).eq('id',id);
-  if(error){ toast('Error releasing claim','danger'); return; }
+  const {error}=await SUPA.from('device_claims').delete().eq('id',id);
+  if(error){ toast('Error: '+error.message,'danger'); return; }
   toast('Claim released','success');
   if(deviceType==='keypanel') renderKeypanels();
   else renderClaimsStrip(containerId, deviceType);
@@ -4648,9 +4649,9 @@ function renderClaimCard(r){
     ? `<button class="req-btn-approve" onclick="resolveRequest('device_claims','${r.id}','confirmed')">Confirm</button>
        <button class="req-btn-deny" onclick="openDeny('device_claims','${r.id}')">Deny</button>`
     : isActive
-    ? `<button class="req-btn-deny" onclick="resolveRequest('device_claims','${r.id}','cancelled')">Release</button>`
+    ? `<button class="req-btn-deny" onclick="deleteClaimRequest('${r.id}')">Release</button>`
     : r.status==='denied'||r.status==='cancelled'
-    ? `<button class="req-btn-deny" onclick="resolveRequest('device_claims','${r.id}','cancelled')">Clear</button>`
+    ? `<button class="req-btn-deny" onclick="deleteClaimRequest('${r.id}')">Clear</button>`
     : `<span class="req-status-pill ${r.status}">${r.status.toUpperCase()}</span>`;
   return `<div class="req-card">
     <div class="req-card-accent" style="background:${accentClr}"></div>
@@ -4765,18 +4766,14 @@ function renderKeyCard(r){
 }
 
 function jumpToPanel(panelId){
-  setView('keypanels');
+  const prod=Object.values(PRODUCTIONS).find(p=>(p.keypanels||[]).some(kp=>kp.id===panelId));
+  const cardKey=prod?(prod.id+'_'+panelId):('avail_'+panelId.replace(/\s/g,'_'));
+  _kpCardOpen.add(cardKey);
+  setView('keypanels'); // renderKeypanels is called here, _kpCardOpen already has the card
   setTimeout(()=>{
-    const prod=Object.values(PRODUCTIONS).find(p=>(p.keypanels||[]).some(kp=>kp.id===panelId));
-    const cardKey=prod?(prod.id+'_'+panelId):('avail_'+panelId.replace(/\s/g,'_'));
-    _kpCardOpen.add(cardKey);
-    renderKeypanels().then(()=>{
-      setTimeout(()=>{
-        const el=document.getElementById('kp-card-'+panelId.replace(/\s/g,'_'));
-        if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
-      },150);
-    });
-  },80);
+    const el=document.getElementById('kp-card-'+panelId.replace(/\s/g,'_'));
+    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  },600); // give async render time to complete
 }
 
 async function flushResolved(type){
@@ -4796,6 +4793,14 @@ async function flushResolved(type){
       loadRequests();
     }
   );
+}
+
+async function deleteClaimRequest(id){
+  if(!SUPA) return;
+  const {error}=await SUPA.from('device_claims').delete().eq('id',id);
+  if(error){ toast('Error: '+error.message,'danger'); return; }
+  toast('Claim removed','success');
+  loadRequests();
 }
 
 async function resolveRequest(table, id, status){
@@ -5920,6 +5925,8 @@ function crewSubscribe(){
   _crewChannel=SUPA.channel('showcomm-crew-'+_crewClaim.id)
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'device_claims',filter:'id=eq.'+_crewClaim.id},
       (payload)=>{ _crewClaim=payload.new; crewShowClaimState(); })
+    .on('postgres_changes',{event:'DELETE',schema:'public',table:'device_claims',filter:'id=eq.'+_crewClaim.id},
+      ()=>{ _crewClaim=null; crewRenderProdList(); crewShowStep('prod'); })
     .subscribe();
 }
 
