@@ -2126,18 +2126,7 @@ function confirmSwap(bp,code,ki){ const c=loadClaimed(code),e=c[bp],req=e.swapRe
 function dismissSwap(bp,code,ki){ const c=loadClaimed(code); c[bp].swapRequests=(c[bp].swapRequests||[]).filter(r=>r.keyIndex!==ki); saveClaimed(code,c); toast('Request dismissed', 'info'); updateSidebarStats(); renderSidebarPending(); if(state.view==='allbeltpacks') renderAllBeltpacks(); }
 
 // ─── CONFIRM MODAL ────────────────────────────────────────────
-function openConfirmModal(bp,code){ quickConfirm(bp,code); return; // modal removed
-  state.pendingConfirmBP=bp; state.pendingConfirmCode=code;
-  const claimed=loadClaimed(code),entry=claimed[bp];
-  $('confirm-bp-num').textContent=bp; $('confirm-user-name').textContent=entry.userName;
-  const list=$('confirm-keys-list'); list.innerHTML='';
-  entry.keys.forEach((k,i)=>{
-    const row=document.createElement('div'); row.className='confirm-key-row';
-    const nk=normKey(k); if(nk&&nk.label){row.innerHTML=`<div class="confirm-key-num">${i+1}</div><div class="confirm-key-val">${splitLabel(nk.label)}</div><div class="confirm-key-cat ${catClass(nk.category)}">${catFull(nk.category)}</div>`;}
-    else{row.innerHTML=`<div class="confirm-key-num">${i+1}</div><div class="confirm-key-val" style="color:var(--text-muted);font-weight:500;font-size:13px;">— Blank —</div>`;}
-    list.appendChild(row);
-  });
-}
+function openConfirmModal(bp,code){ quickConfirm(bp,code); }
 // btn-do-confirm removed with modal
 // btn-cancel-confirm removed with modal
 
@@ -4789,8 +4778,8 @@ async function renderTMRequests(){
   let pendingKP=0, pendingBP=0;
   await Promise.all(_tmProductions.map(async prod=>{
     const [kpRes,bpRes]=await Promise.all([
-      SUPA.from('kp_assignments').select('data').eq('production_id',prod.id).single(),
-      SUPA.from('beltpack_assignments').select('data').eq('production_id',prod.id).single()
+      SUPA.from('kp_assignments').select('data').eq('production_id',prod.id).maybeSingle(),
+      SUPA.from('beltpack_assignments').select('data').eq('production_id',prod.id).maybeSingle()
     ]);
     if(kpRes.data?.data) pendingKP+=Object.values(kpRes.data.data).filter(e=>e.status==='pending').length;
     if(bpRes.data?.data) pendingBP+=Object.values(bpRes.data.data).filter(e=>e.status==='pending').length;
