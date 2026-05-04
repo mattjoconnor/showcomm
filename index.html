@@ -231,13 +231,7 @@ body { background:var(--bg); color:var(--black); }
 .crew-status-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); margin-top:12px; }
 .crew-cancel-claim { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--red); background:none; border:none; cursor:pointer; padding:0; margin-top:16px; display:block; }
 .crew-cancel-claim:hover { opacity:.7; }
-/* Confirmed home */
-.crew-home-header { background:var(--surface); border:1px solid var(--border-md); border-left:4px solid #0891B2; padding:18px 20px; margin-bottom:20px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
-.crew-home-type { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:4px; }
-.crew-home-device { font-family:var(--f-mono); font-size:clamp(1.5rem,5vw,2rem); font-weight:800; color:var(--tx-primary); letter-spacing:-.01em; line-height:1; margin-bottom:5px; }
-.crew-home-show { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); margin-bottom:1px; }
-.crew-home-location { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); }
-.crew-home-badge { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; padding:3px 10px; background:#10B981; color:#fff; flex-shrink:0; align-self:flex-start; }
+/* Confirmed home — replaced by block below */
 .crew-reclaim-link { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-tertiary); background:none; border:none; cursor:pointer; padding:0; display:inline-block; margin-top:16px; }
 .crew-reclaim-link:hover { color:var(--tx-secondary); }
 /* Key schematic */
@@ -340,13 +334,13 @@ body { background:var(--bg); color:var(--black); }
 .crew-status-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); margin-top:14px; }
 .crew-cancel-claim { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--red); background:none; border:none; cursor:pointer; padding:0; margin-top:18px; display:block; }
 .crew-cancel-claim:hover { opacity:.7; }
-/* Confirmed home */
-.crew-home-header { background:var(--surface); border:1px solid var(--border-md); border-left:5px solid #10B981; padding:20px 20px 18px; margin-bottom:20px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
-.crew-home-device { font-family:var(--f-mono); font-size:clamp(1.6rem,5vw,2.4rem); font-weight:800; color:var(--tx-primary); letter-spacing:-.01em; line-height:1; margin-bottom:4px; }
-.crew-home-type { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:#10B981; margin-bottom:8px; }
-.crew-home-show { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); margin-bottom:2px; }
-.crew-home-location { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); }
-.crew-home-badge { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; padding:3px 10px; background:#10B981; color:#fff; flex-shrink:0; align-self:flex-start; }
+/* Confirmed home header */
+.crew-home-header { background:var(--black); color:#fff; padding:20px 20px 18px; margin-bottom:20px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; border-left:5px solid #0891B2; }
+.crew-home-type { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:#0891B2; margin-bottom:6px; }
+.crew-home-device { font-family:var(--f-ui); font-size:clamp(1.8rem,6vw,2.6rem); font-weight:900; color:#fff; letter-spacing:-.02em; line-height:1; margin-bottom:6px; }
+.crew-home-show { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:rgba(255,255,255,.6); margin-bottom:2px; }
+.crew-home-location { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:rgba(255,255,255,.35); letter-spacing:var(--ls-normal); }
+.crew-home-badge { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; padding:4px 10px; background:#10B981; color:#fff; flex-shrink:0; align-self:flex-start; }
 .crew-reclaim-link { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); background:none; border:none; cursor:pointer; padding:0; display:inline-block; margin-top:12px; }
 .crew-reclaim-link:hover { color:var(--tx-primary); }
 /* Key quadrant grid */
@@ -5962,16 +5956,20 @@ async function crewLoadMyRequests(){
   if(!data||!data.length){ el.innerHTML='<div class="crew-empty" style="padding:16px 0;">No requests submitted yet.</div>'; return; }
   el.innerHTML=data.map(r=>{
     const statusClass=r.status==='fulfilled'?'fulfilled':r.status==='denied'?'denied':'open';
-    // Parse bundled notes if JSON, otherwise show description
     let detail='';
+    let summary=r.description||'';
     try{
       const notes=JSON.parse(r.note||'[]');
-      if(Array.isArray(notes)&&notes.length) detail=notes.map(n=>`Key ${n.keyIndex+1} (${n.label}): ${n.note}`).join(' · ');
+      if(Array.isArray(notes)&&notes.length){
+        // Use just the key notes as the summary, not the full description with crew name prefix
+        summary=notes.length+' key'+(notes.length!==1?'s':'')+' flagged';
+        detail=notes.map(n=>`Key ${n.keyIndex+1} (${n.label}): ${n.note}`).join(' · ');
+      }
     }catch(e){ detail=r.description||r.note||''; }
     return `<div class="crew-req-item">
       <div class="crew-req-status ${statusClass}">${r.status}</div>
       <div class="crew-req-body">
-        <div class="crew-req-summary">${r.description||''}</div>
+        <div class="crew-req-summary">${summary}</div>
         ${detail?`<div class="crew-req-detail">${detail}</div>`:''}
       </div>
     </div>`;
@@ -5981,11 +5979,15 @@ async function crewLoadMyRequests(){
 function crewSubscribe(){
   if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
   if(!SUPA||!_crewClaim?.id||_crewClaim.id==='local') return;
+  const assignTable=_crewClaim.device_type==='keypanel'?'kp_assignments':'beltpack_assignments';
   _crewChannel=SUPA.channel('showcomm-crew-'+_crewClaim.id)
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'device_claims',filter:'id=eq.'+_crewClaim.id},
       (payload)=>{ _crewClaim=payload.new; crewShowClaimState(); })
     .on('postgres_changes',{event:'DELETE',schema:'public',table:'device_claims',filter:'id=eq.'+_crewClaim.id},
       ()=>{ _crewClaim=null; crewRenderProdList(); crewShowStep('prod'); })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:assignTable,
+      filter:'production_id=eq.'+_crewClaim.production_id},
+      ()=>{ crewRenderSchematic(); })
     .subscribe();
 }
 
