@@ -4455,6 +4455,25 @@ async function initTMApp(){
   if(_tmProductions.length) _tmActiveProd=_tmProductions[0].id;
   // Highlight first prod pill
   setTMView('keypanels');
+
+  // Real-time subscription for live TM updates
+  if(SUPA){
+    SUPA.channel('showcomm-tm-rt')
+      .on('postgres_changes',{event:'*',schema:'public',table:'beltpack_assignments'},function(p){
+        if(p.new&&p.new.production_id) localStorage.setItem('sc_bp_'+p.new.production_id,JSON.stringify(p.new.data));
+        if(_tmActiveView==='beltpacks') renderAllBeltpacks();
+        updateDeviceBadges();
+      })
+      .on('postgres_changes',{event:'*',schema:'public',table:'kp_assignments'},function(p){
+        if(p.new&&p.new.production_id) localStorage.setItem('sc_kp_'+p.new.production_id,JSON.stringify(p.new.data));
+        if(_tmActiveView==='keypanels') renderKeypanels();
+        updateDeviceBadges();
+      })
+      .on('postgres_changes',{event:'*',schema:'public',table:'change_requests'},function(){
+        if(_tmActiveView==='requests') renderTMRequests();
+      })
+      .subscribe();
+  }
 }
 
 function setTMView(view){
