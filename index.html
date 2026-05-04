@@ -399,7 +399,15 @@ body { background:var(--bg); color:var(--black); }
 .crew-denied-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--red); letter-spacing:var(--ls-normal); padding:12px 16px; background:rgba(239,68,68,.06); border:1px solid rgba(239,68,68,.2); margin-bottom:16px; display:none; }
 .crew-denied-msg.visible { display:block; }
 
-/* ─── CLAIMS STRIP ─── */
+.kp-claim-indicator { display:flex; align-items:center; gap:6px; margin-left:auto; padding-right:6px; flex-shrink:0; }
+.kp-claim-name { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); letter-spacing:var(--ls-tight); white-space:nowrap; }
+.kp-claim-pos { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); }
+.kp-claim-badge { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:2px 7px; }
+.kp-claim-badge.confirmed { background:rgba(16,185,129,.12); color:#10B981; }
+.kp-claim-badge.pending { background:rgba(245,158,11,.12); color:#92600a; }
+.kp-claim-release { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:none; border:1px solid rgba(0,0,0,.12); color:var(--tx-secondary); cursor:pointer; padding:2px 7px; transition:color .1s,border-color .1s; }
+.kp-claim-release:hover { color:var(--red); border-color:rgba(239,68,68,.3); }
+.kp-req-indicator { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:2px 7px; background:rgba(245,158,11,.12); color:#92600a; white-space:nowrap; }
 .claims-strip { border-bottom:1px solid var(--border-md); background:rgba(245,158,11,.04); padding:8px clamp(16px,2.2vw,28px); display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
 .claims-strip-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:#92600a; margin-right:4px; flex-shrink:0; }
 .claim-pill { display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid rgba(245,158,11,.35); padding:4px 10px 4px 12px; }
@@ -852,7 +860,8 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 .req-state-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:700; color:var(--tx-secondary); letter-spacing:var(--ls-wide); text-transform:uppercase; margin-bottom:3px; }
 .req-state-val { font-family:var(--f-mono); font-size:var(--t-label); font-weight:500; color:var(--black); letter-spacing:var(--ls-tight); }
 .req-note { font-family:var(--f-mono); font-size:var(--t-small); color:var(--tx-tertiary); font-style:italic; margin-top:2px; }
-.req-btn-approve { font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:7px 14px; background:var(--green); color:#fff; border:none; cursor:pointer; white-space:nowrap; transition:opacity .1s; }
+.req-btn-outline { font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:7px 14px; background:transparent; color:var(--tx-secondary); border:1px solid var(--border-md); cursor:pointer; white-space:nowrap; transition:color .1s,border-color .1s; }
+.req-btn-outline:hover { color:var(--black); border-color:rgba(0,0,0,.3); }
 .req-btn-approve:hover { opacity:.85; }
 .req-btn-deny { font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:7px 12px; background:transparent; color:var(--red); border:1px solid rgba(200,0,0,.25); cursor:pointer; white-space:nowrap; transition:background .1s; }
 .req-btn-deny:hover { background:rgba(200,0,0,.06); }
@@ -2562,13 +2571,28 @@ async function releaseClaim(id, containerId, deviceType){
   const {error}=await SUPA.from('device_claims').update({status:'cancelled'}).eq('id',id);
   if(error){ toast('Error releasing claim','danger'); return; }
   toast('Claim released','success');
-  renderClaimsStrip(containerId, deviceType);
+  if(deviceType==='keypanel') renderKeypanels();
+  else renderClaimsStrip(containerId, deviceType);
 }
 
-function renderKeypanels(){
+async function renderKeypanels(){
   buildProdPills();
   rebuildRoomProdPills();
-  renderClaimsStrip('kp-claims-strip','keypanel');
+  // Pre-load all KP claims for inline display (don't block render)
+  let _kpClaimsMap={};
+  if(SUPA){
+    const {data}=await SUPA.from('device_claims').select('*')
+      .eq('device_type','keypanel').in('status',['pending','confirmed']);
+    if(data) data.forEach(r=>{ _kpClaimsMap[r.device_id]=r; });
+  }
+  // Pre-load open key requests for indicator
+  let _kpReqsMap={};
+  if(SUPA){
+    const {data}=await SUPA.from('key_requests').select('device_id,id')
+      .eq('requester_role','crew').eq('status','open');
+    if(data) data.forEach(r=>{ _kpReqsMap[r.device_id]=(_kpReqsMap[r.device_id]||0)+1; });
+  }
+  document.getElementById('kp-claims-strip').innerHTML='';
   const main=$('kp-main-content');
   if(!main) return;
   main.innerHTML='';
@@ -2635,7 +2659,7 @@ function renderKeypanels(){
       panels.forEach(panel=>{
         const entry=panelEntryMap[panel.id]||null;
         const prod=panelProdMap[panel.id]||null;
-        const card=buildKpCard(panel,prod,entry);
+        const card=buildKpCard(panel,prod,entry,_kpClaimsMap[panel.id]||null,_kpReqsMap[panel.id]||0);
         if(card) bodyEl.appendChild(card);
       });
     }
@@ -2650,7 +2674,7 @@ function renderKeypanels(){
 }
 
 
-function buildKpCard(panel, prod, entry){
+function buildKpCard(panel, prod, entry, claim=null, openReqs=0){
   const cardKey = prod?(prod.id+'_'+panel.id):('avail_'+panel.id.replace(/\s/g,'_'));
   const isOpen  = _kpCardOpen.has(cardKey);
   // Load draft keys for unassigned panels
@@ -2697,6 +2721,27 @@ function buildKpCard(panel, prod, entry){
   const chev = document.createElement('span');
   chev.className='kp-card-chevron'+(isOpen?' open':'');
   chev.textContent='›';
+
+  // Inline claim indicator
+  if(claim||openReqs>0){
+    const ind=document.createElement('div');
+    ind.className='kp-claim-indicator';
+    if(openReqs>0){
+      const reqBadge=document.createElement('span');
+      reqBadge.className='kp-req-indicator';
+      reqBadge.textContent=openReqs+' request'+(openReqs!==1?'s':'');
+      ind.appendChild(reqBadge);
+    }
+    if(claim){
+      const nm=document.createElement('span'); nm.className='kp-claim-name'; nm.textContent=claim.crew_name||'—'; ind.appendChild(nm);
+      if(claim.crew_position){ const pos=document.createElement('span'); pos.className='kp-claim-pos'; pos.textContent='· '+claim.crew_position; ind.appendChild(pos); }
+      const badge=document.createElement('span'); badge.className='kp-claim-badge '+claim.status; badge.textContent=claim.status; ind.appendChild(badge);
+      const rel=document.createElement('button'); rel.className='kp-claim-release'; rel.textContent='Release ×';
+      rel.onclick=function(e){ e.stopPropagation(); releaseClaim(claim.id,'kp-claims-strip','keypanel'); };
+      ind.appendChild(rel);
+    }
+    hdr.appendChild(ind);
+  }
   hdr.appendChild(chev);
   hdr.addEventListener('click',function(){
     if(_tmMode&&_tmDirty&&_tmDirty.panelId!==panel.id){
@@ -4685,8 +4730,10 @@ function renderKeyCard(r){
   const accentClr = isCrew?'#F59E0B':'#0891B2';
   const badgeStyle = isCrew?'background:rgba(245,158,11,.1);color:#92600a;':'background:rgba(8,145,178,.1);color:#0e6a82;';
   const badgeLabel = isCrew?'CREW REQUEST':'KEY REQUEST';
+  const isKP = r.device_id&&KP_PANELS.some(p=>p.id===r.device_id);
   const actions = isOpen
-    ? `<button class="req-btn-approve" onclick="resolveRequest('key_requests','${r.id}','fulfilled')">Fulfill</button>
+    ? `${isKP?`<button class="req-btn-outline" onclick="jumpToPanel('${r.device_id.replace(/'/g,"\\'")}')">Open Panel →</button>`:''}
+       <button class="req-btn-approve" onclick="resolveRequest('key_requests','${r.id}','fulfilled')">Fulfill</button>
        <button class="req-btn-deny" onclick="openDeny('key_requests','${r.id}')">Deny</button>`
     : `<span class="req-status-pill ${r.status}">${r.status.toUpperCase()}</span>`;
   // Parse bundled notes from crew
@@ -4700,18 +4747,36 @@ function renderKeyCard(r){
         ).join('')+'</div>';
       }
     }catch(e){ notesHTML=r.note?`<div class="req-note">"${r.note}"</div>`:''; }
-  }else if(r.note){ notesHTML=`<div class="req-note">"${r.note}"</div>`; }
+  }else if(r.note&&!isCrew){ notesHTML=`<div class="req-note">"${r.note}"</div>`; }
+  // Device + panel info
+  const panel=r.device_id?KP_PANELS.find(p=>p.id===r.device_id):null;
+  const deviceLine=r.device_id?`<div class="req-device">${r.device_id}${panel?` <span style="font-weight:400;font-size:.85em;color:rgba(0,0,0,.4);">${panel.location} · Port ${panel.port}</span>`:''}</div>`:'';
   return `<div class="req-card">
     <div class="req-card-accent" style="background:${accentClr}"></div>
     <div class="req-card-body">
       <span class="req-type-badge" style="${badgeStyle}">${badgeLabel}</span>
-      <div class="req-device">${r.description||r.device_id||'—'}</div>
-      ${r.device_id&&!isCrew?`<div class="req-meta">Device: ${r.device_id}${r.slot_preference!=null?' · Slot '+(r.slot_preference+1):''}</div>`:''}
+      ${deviceLine}
+      <div class="req-meta">${r.description||''}</div>
       ${notesHTML}
-      <div class="req-meta">${r.requester_role||''} · ${relTime(r.created_at)}</div>
+      <div class="req-meta" style="margin-top:4px;">${relTime(r.created_at)}</div>
     </div>
     <div class="req-card-actions">${actions}</div>
   </div>`;
+}
+
+function jumpToPanel(panelId){
+  setView('keypanels');
+  setTimeout(()=>{
+    const prod=Object.values(PRODUCTIONS).find(p=>(p.keypanels||[]).some(kp=>kp.id===panelId));
+    const cardKey=prod?(prod.id+'_'+panelId):('avail_'+panelId.replace(/\s/g,'_'));
+    _kpCardOpen.add(cardKey);
+    renderKeypanels().then(()=>{
+      setTimeout(()=>{
+        const el=document.getElementById('kp-card-'+panelId.replace(/\s/g,'_'));
+        if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+      },150);
+    });
+  },80);
 }
 
 async function flushResolved(type){
@@ -5790,7 +5855,7 @@ async function crewSubmitBundle(){
     const label=crewKeyLabel(_crewAllKeys[+idx])||('Key '+(+idx+1));
     return {keyIndex:+idx, label, note};
   });
-  const summary=n+' key'+(n!==1?'s':'')+' flagged: '+annotated.map(a=>a.label).join(', ');
+  const summary=(_currentProfile.display_name||'Crew')+' · '+_crewClaim.device_id+' — '+n+' key'+(n!==1?'s':'')+' flagged: '+annotated.map(a=>a.label).join(', ');
 
   try{
     if(SUPA){
