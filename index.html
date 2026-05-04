@@ -240,52 +240,49 @@ body { background:var(--bg); color:var(--black); }
 .crew-home-badge { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; padding:3px 10px; background:#10B981; color:#fff; flex-shrink:0; align-self:flex-start; }
 .crew-reclaim-link { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-tertiary); background:none; border:none; cursor:pointer; padding:0; display:inline-block; margin-top:16px; }
 .crew-reclaim-link:hover { color:var(--tx-secondary); }
-/* Key quadrants */
+/* Key schematic */
 .crew-keys-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:700; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:10px; }
-.crew-quad-grid { display:grid; gap:8px; margin-bottom:24px; }
-.crew-quad-grid.grid-2x2 { grid-template-columns:1fr 1fr; }
-.crew-quad-grid.grid-1x2 { grid-template-columns:1fr 1fr; }
-.crew-quad-grid.grid-flat { grid-template-columns:1fr; }
-@media(max-width:540px){ .crew-quad-grid.grid-2x2,.crew-quad-grid.grid-1x2 { grid-template-columns:1fr; } }
-.crew-quad { background:var(--surface); border:1px solid var(--border-md); overflow:hidden; }
-.crew-quad-head { padding:8px 14px; background:rgba(0,0,0,.025); border-bottom:1px solid var(--border-md); display:flex; align-items:center; justify-content:space-between; }
-.crew-quad-title { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); }
-.crew-quad-range { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:var(--tx-tertiary); }
-.crew-key-row { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; border-bottom:1px solid var(--border-md); gap:8px; }
-.crew-key-row:last-child { border-bottom:none; }
-.crew-key-label { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); letter-spacing:var(--ls-tight); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.crew-key-empty { color:var(--tx-ghost); font-weight:400; font-style:italic; }
-.crew-key-req-btn { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); background:none; border:1px solid var(--border-md); cursor:pointer; padding:3px 8px; flex-shrink:0; transition:background .1s,color .1s,border-color .1s; white-space:nowrap; }
-.crew-key-req-btn:hover { background:var(--black); color:#fff; border-color:var(--black); }
+.crew-schematic { margin-bottom:12px; }
+.crew-schematic-section { margin-bottom:10px; }
+.crew-schematic-section-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); padding:6px 12px; background:rgba(0,0,0,.03); border:1px solid var(--border-md); border-bottom:none; }
+.crew-bp-column { border:1px solid var(--border-md); overflow:hidden; }
+.crew-kp-grid { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--border-md); overflow:hidden; }
+.crew-key-cell { padding:10px 12px; cursor:pointer; border-bottom:1px solid var(--border-md); border-right:1px solid var(--border-md); position:relative; transition:background .08s; box-sizing:border-box; }
+.crew-bp-column .crew-key-cell { border-right:none; }
+.crew-bp-column .crew-key-cell:last-child { border-bottom:none; }
+.crew-kp-grid .crew-key-cell:nth-child(4n) { border-right:none; }
+.crew-key-cell:hover { background:rgba(0,0,0,.02); }
+.crew-key-cell.annotated { background:rgba(245,158,11,.05); border-left:3px solid #F59E0B; }
+.crew-key-cell.active { background:rgba(8,145,178,.04); }
+.crew-key-cell.active.annotated { background:rgba(245,158,11,.07); }
+.crew-key-cell-num { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:var(--tx-tertiary); line-height:1; margin-bottom:3px; }
+.crew-key-cell-name { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); letter-spacing:var(--ls-tight); line-height:1.2; }
+.crew-key-cell-name.empty { color:var(--tx-ghost); font-weight:400; font-style:italic; }
+.crew-key-cell-preview { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:#92600a; margin-top:4px; line-height:1.3; display:none; }
+.crew-key-cell.annotated .crew-key-cell-preview { display:block; }
+.crew-key-cell.active .crew-key-cell-preview { display:none; }
+.crew-key-note-wrap { display:none; margin-top:8px; }
+.crew-key-cell.active .crew-key-note-wrap { display:block; }
+.crew-key-note-input { width:100%; background:transparent; border:none; border-bottom:1px solid rgba(0,0,0,.15); font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-primary); resize:none; outline:none; padding:4px 0; line-height:1.4; box-sizing:border-box; }
+.crew-key-note-input:focus { border-bottom-color:var(--black); }
+.crew-key-note-input::placeholder { color:var(--tx-ghost); font-weight:400; }
+/* Submit bar — sits outside scroll area */
+.crew-submit-bar { flex-shrink:0; border-top:2px solid var(--black); padding:12px 20px; display:none; align-items:center; gap:12px; background:var(--surface); }
+.crew-submit-bar.visible { display:flex; }
+.crew-submit-count { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-secondary); flex:1; }
+.crew-submit-btn { font-family:var(--f-mono); font-size:var(--t-ui); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:var(--black); color:#fff; border:none; cursor:pointer; padding:11px 22px; white-space:nowrap; }
+.crew-submit-btn:hover { background:#333; }
+.crew-submit-btn:disabled { background:rgba(0,0,0,.2); cursor:not-allowed; }
 /* Request history */
-.crew-requests-section { margin-top:4px; }
+.crew-requests-section { margin-top:20px; }
 .crew-req-item { border:1px solid var(--border-md); padding:10px 14px; margin-bottom:6px; display:flex; align-items:flex-start; gap:10px; }
 .crew-req-status { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:2px 8px; flex-shrink:0; margin-top:1px; }
 .crew-req-status.open { background:rgba(0,0,0,.06); color:var(--tx-secondary); }
 .crew-req-status.fulfilled { background:rgba(16,185,129,.1); color:#10B981; }
 .crew-req-status.denied { background:rgba(239,68,68,.08); color:var(--red); }
 .crew-req-body { flex:1; min-width:0; }
-.crew-req-key { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); margin-bottom:2px; }
-.crew-req-note { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); }
-/* Request modal */
-.crew-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:9000; display:none; align-items:center; justify-content:center; padding:20px; }
-.crew-modal-overlay.active { display:flex; }
-.crew-modal { background:var(--surface); width:100%; max-width:460px; border-top:3px solid var(--black); }
-.crew-modal-head { padding:18px 22px 14px; border-bottom:1px solid var(--border-md); }
-.crew-modal-title { font-family:var(--f-mono); font-size:var(--t-body); font-weight:800; color:var(--tx-primary); letter-spacing:var(--ls-tight); margin-bottom:2px; }
-.crew-modal-sub { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); letter-spacing:var(--ls-normal); }
-.crew-modal-body { padding:18px 22px; }
-.crew-modal-field-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:700; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:8px; display:block; }
-.crew-modal-textarea { width:100%; background:transparent; border:none; border-bottom:1px solid var(--border-md); font-family:var(--f-mono); font-size:var(--t-body); font-weight:500; color:var(--tx-primary); padding:8px 0; resize:none; outline:none; letter-spacing:var(--ls-tight); line-height:1.5; box-sizing:border-box; }
-.crew-modal-textarea:focus { border-bottom-color:var(--black); }
-.crew-modal-textarea::placeholder { color:var(--tx-ghost); font-weight:400; }
-.crew-modal-actions { padding:14px 22px 18px; border-top:1px solid var(--border-md); display:flex; gap:8px; justify-content:flex-end; }
-.crew-modal-btn { font-family:var(--f-mono); font-size:var(--t-ui); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; border:none; cursor:pointer; padding:10px 20px; }
-.crew-modal-btn.cancel { background:transparent; color:var(--tx-secondary); border:1px solid var(--border-md); }
-.crew-modal-btn.cancel:hover { color:var(--tx-primary); border-color:rgba(0,0,0,.25); }
-.crew-modal-btn.submit { background:var(--black); color:#fff; }
-.crew-modal-btn.submit:hover { background:#333; }
-.crew-modal-btn.submit:disabled { background:rgba(0,0,0,.2); cursor:not-allowed; }
+.crew-req-summary { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); margin-bottom:2px; }
+.crew-req-detail { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); line-height:1.5; }
 /* Denied message */
 .crew-denied-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--red); letter-spacing:var(--ls-normal); padding:10px 14px; background:rgba(239,68,68,.05); border:1px solid rgba(239,68,68,.18); margin-bottom:14px; display:none; }
 .crew-denied-msg.visible { display:block; }
@@ -1111,8 +1108,8 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
           </div>
           <div class="crew-home-badge">Confirmed</div>
         </div>
-        <div class="crew-keys-label">Your Keys — tap any key to request a change</div>
-        <div id="crew-quad-grid"></div>
+        <div class="crew-keys-label">Tap any key to flag a change — then submit all at once</div>
+        <div class="crew-schematic" id="crew-schematic"></div>
         <div class="crew-requests-section">
           <div class="crew-section-label">My Requests</div>
           <div id="crew-req-list"><div class="crew-empty" style="padding:16px 0;">No requests submitted yet.</div></div>
@@ -1121,22 +1118,10 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
       </div>
     </div>
   </div>
-  <!-- Key request modal -->
-  <div class="crew-modal-overlay" id="crew-req-modal">
-    <div class="crew-modal">
-      <div class="crew-modal-head">
-        <div class="crew-modal-title" id="crew-modal-key-label">Request Change</div>
-        <div class="crew-modal-sub" id="crew-modal-device-label"></div>
-      </div>
-      <div class="crew-modal-body">
-        <label class="crew-modal-field-label">Describe what you need</label>
-        <textarea class="crew-modal-textarea" id="crew-req-note" rows="4" placeholder="e.g. Need PROD channel, current IFB not working, wrong PL assigned…"></textarea>
-      </div>
-      <div class="crew-modal-actions">
-        <button class="crew-modal-btn cancel" onclick="crewCloseReqModal()">Cancel</button>
-        <button class="crew-modal-btn submit" id="crew-req-submit" onclick="crewSubmitKeyRequest()">Submit</button>
-      </div>
-    </div>
+  <!-- Submit bar — outside scroll, sticks to bottom of screen-crew -->
+  <div class="crew-submit-bar" id="crew-submit-bar">
+    <span class="crew-submit-count" id="crew-submit-count"></span>
+    <button class="crew-submit-btn" id="crew-submit-btn" onclick="crewSubmitBundle()">Submit Request</button>
   </div>
 </div>
 
@@ -1205,7 +1190,8 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
         <div id="kp-main-content"></div>
       </div>
 
-      <!-- ALL BELTPACKS — filters now in sidebar -->\n      <div id="view-allbeltpacks" class="view">
+      <!-- ALL BELTPACKS — filters now in sidebar -->
+      <div id="view-allbeltpacks" class="view">
         <div id="bp-claims-strip"></div>
         <div class="bp-card-grid" id="all-bp-card-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(6px,.9vw,10px);padding:clamp(10px,1.6vh,16px) clamp(16px,2.2vw,28px);"></div>
       </div>
@@ -4695,18 +4681,33 @@ function renderChangeCard(r){
 
 function renderKeyCard(r){
   const isOpen = r.status==='open';
-  const accentClr = '#0891B2';
+  const isCrew = r.requester_role==='crew';
+  const accentClr = isCrew?'#F59E0B':'#0891B2';
+  const badgeStyle = isCrew?'background:rgba(245,158,11,.1);color:#92600a;':'background:rgba(8,145,178,.1);color:#0e6a82;';
+  const badgeLabel = isCrew?'CREW REQUEST':'KEY REQUEST';
   const actions = isOpen
     ? `<button class="req-btn-approve" onclick="resolveRequest('key_requests','${r.id}','fulfilled')">Fulfill</button>
        <button class="req-btn-deny" onclick="openDeny('key_requests','${r.id}')">Deny</button>`
     : `<span class="req-status-pill ${r.status}">${r.status.toUpperCase()}</span>`;
+  // Parse bundled notes from crew
+  let notesHTML='';
+  if(isCrew&&r.note){
+    try{
+      const notes=JSON.parse(r.note);
+      if(Array.isArray(notes)&&notes.length){
+        notesHTML='<div style="margin-top:6px;">'+notes.map(n=>
+          `<div class="req-meta" style="margin-bottom:2px;"><strong>Key ${n.keyIndex+1} (${n.label}):</strong> ${n.note}</div>`
+        ).join('')+'</div>';
+      }
+    }catch(e){ notesHTML=r.note?`<div class="req-note">"${r.note}"</div>`:''; }
+  }else if(r.note){ notesHTML=`<div class="req-note">"${r.note}"</div>`; }
   return `<div class="req-card">
     <div class="req-card-accent" style="background:${accentClr}"></div>
     <div class="req-card-body">
-      <span class="req-type-badge" style="background:rgba(8,145,178,.1);color:#0e6a82;">NEW KEY REQUEST</span>
-      <div class="req-device">${r.description}</div>
-      ${r.device_id?`<div class="req-meta">Preferred device: ${r.device_id}${r.slot_preference!=null?' · Slot '+(r.slot_preference+1):''}</div>`:''}
-      ${r.note?`<div class="req-note">"${r.note}"</div>`:''}
+      <span class="req-type-badge" style="${badgeStyle}">${badgeLabel}</span>
+      <div class="req-device">${r.description||r.device_id||'—'}</div>
+      ${r.device_id&&!isCrew?`<div class="req-meta">Device: ${r.device_id}${r.slot_preference!=null?' · Slot '+(r.slot_preference+1):''}</div>`:''}
+      ${notesHTML}
       <div class="req-meta">${r.requester_role||''} · ${relTime(r.created_at)}</div>
     </div>
     <div class="req-card-actions">${actions}</div>
@@ -5590,7 +5591,7 @@ function crewShowConfirmed(){
     document.getElementById('crew-home-location').textContent='';
   }
   crewShowStep('confirmed');
-  crewRenderKeys();
+  crewRenderSchematic();
   crewLoadMyRequests();
 }
 
@@ -5661,6 +5662,9 @@ async function crewRenderKeys(){
   }
 }
 
+// ── CREW KEY SCHEMATIC ──────────────────────────────────────────────────────
+let _crewAllKeys=[], _crewKeyNotes={}, _crewActiveKeyIdx=null;
+
 function crewKeyLabel(k){
   if(!k) return null;
   if(typeof k==='string') return k||null;
@@ -5669,57 +5673,155 @@ function crewKeyLabel(k){
   return null;
 }
 
-function crewQuadHTML(g){
-  const rows=g.keys.map((k,i)=>{
-    const idx=g.offset+i;
-    const label=crewKeyLabel(k);
-    const display=label||(g.showIndex!==false?'Key '+(idx+1):'Empty');
-    const safe=String(display).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<div class="crew-key-row">
-      <span class="crew-key-label${label?'':' crew-key-empty'}">${display}</span>
-      <button class="crew-key-req-btn" onclick="crewOpenReqModal(${idx},'${safe}')">Request</button>
-    </div>`;
-  }).join('');
-  return `<div class="crew-quad">
-    <div class="crew-quad-head">
-      <span class="crew-quad-title">${g.title}</span>
-      <span class="crew-quad-range">${g.range}</span>
+async function crewRenderSchematic(){
+  const container=document.getElementById('crew-schematic');
+  container.innerHTML='<div class="crew-loading">Loading keys…</div>';
+  _crewKeyNotes={}; _crewActiveKeyIdx=null;
+  crewUpdateSubmitBar();
+
+  try{
+    if(_crewClaim.device_type==='beltpack'){
+      if(SUPA){
+        const {data}=await SUPA.from('beltpack_assignments').select('data').eq('production_id',_crewClaim.production_id).maybeSingle();
+        _crewAllKeys=data?.data?.[_crewClaim.device_id]?.keys||[];
+      }
+      const count=Math.max(_crewAllKeys.length,4);
+      while(_crewAllKeys.length<count) _crewAllKeys.push(null);
+      container.innerHTML=`<div class="crew-bp-column">${_crewAllKeys.map((k,i)=>crewCellHTML(i,k)).join('')}</div>`;
+
+    }else{
+      let kpEntry=null;
+      if(SUPA){
+        const {data,error}=await SUPA.from('kp_assignments').select('data').eq('production_id',_crewClaim.production_id).maybeSingle();
+        if(!error) kpEntry=data?.data?.[_crewClaim.device_id];
+      }
+      _crewAllKeys=kpEntry?.keys||[];
+      const panel=KP_PANELS.find(p=>p.id===_crewClaim.device_id);
+      const keyCount=(panel?.model==='4016')?16:32;
+      while(_crewAllKeys.length<keyCount) _crewAllKeys.push(null);
+
+      const half=keyCount/2;
+      const topCells=_crewAllKeys.slice(0,half).map((k,i)=>crewCellHTML(i,k)).join('');
+      const botCells=_crewAllKeys.slice(half).map((k,i)=>crewCellHTML(half+i,k)).join('');
+      container.innerHTML=
+        `<div class="crew-schematic-section">
+          <div class="crew-schematic-section-label">Top — Keys 1–${half}</div>
+          <div class="crew-kp-grid">${topCells}</div>
+        </div>
+        <div class="crew-schematic-section">
+          <div class="crew-schematic-section-label">Bottom — Keys ${half+1}–${keyCount}</div>
+          <div class="crew-kp-grid">${botCells}</div>
+        </div>`;
+    }
+  }catch(e){
+    console.error('crewRenderSchematic:',e);
+    const count=_crewClaim.device_type==='beltpack'?4:32;
+    while(_crewAllKeys.length<count) _crewAllKeys.push(null);
+    container.innerHTML=`<div class="crew-bp-column">${_crewAllKeys.map((k,i)=>crewCellHTML(i,k)).join('')}</div>`;
+  }
+}
+
+function crewCellHTML(idx,k){
+  const label=crewKeyLabel(k);
+  return `<div class="crew-key-cell" id="crew-cell-${idx}" onclick="crewToggleKey(${idx})">
+    <div class="crew-key-cell-num">${idx+1}</div>
+    <div class="crew-key-cell-name${label?'':' empty'}">${label||'Empty'}</div>
+    <div class="crew-key-cell-preview" id="crew-cell-preview-${idx}"></div>
+    <div class="crew-key-note-wrap">
+      <textarea class="crew-key-note-input" id="crew-note-${idx}" rows="2"
+        placeholder="What do you need changed?"
+        oninput="crewNoteInput(${idx},this.value)"
+        onclick="event.stopPropagation()"></textarea>
     </div>
-    ${rows}
   </div>`;
 }
 
-let _crewReqKeyIndex=null, _crewReqKeyLabel=null;
-function crewOpenReqModal(keyIndex,keyLabel){
-  _crewReqKeyIndex=keyIndex; _crewReqKeyLabel=keyLabel;
-  document.getElementById('crew-modal-key-label').textContent='Key '+(keyIndex+1)+' — '+keyLabel;
-  document.getElementById('crew-modal-device-label').textContent=_crewClaim.device_id+' · '+(_crewClaim.device_type==='keypanel'?'Key Panel':'Beltpack');
-  document.getElementById('crew-req-note').value='';
-  document.getElementById('crew-req-modal').classList.add('active');
-  setTimeout(()=>document.getElementById('crew-req-note').focus(),100);
+function crewToggleKey(idx){
+  if(_crewActiveKeyIdx===idx){
+    // collapse current
+    const cell=document.getElementById('crew-cell-'+idx);
+    if(cell) cell.classList.remove('active');
+    _crewActiveKeyIdx=null;
+    return;
+  }
+  // collapse previous
+  if(_crewActiveKeyIdx!==null){
+    const prev=document.getElementById('crew-cell-'+_crewActiveKeyIdx);
+    if(prev) prev.classList.remove('active');
+  }
+  _crewActiveKeyIdx=idx;
+  const cell=document.getElementById('crew-cell-'+idx);
+  if(cell) cell.classList.add('active');
+  const ta=document.getElementById('crew-note-'+idx);
+  if(ta){ ta.value=_crewKeyNotes[idx]||''; setTimeout(()=>ta.focus(),50); }
 }
-function crewCloseReqModal(){ document.getElementById('crew-req-modal').classList.remove('active'); }
 
-async function crewSubmitKeyRequest(){
-  const note=document.getElementById('crew-req-note').value.trim();
-  if(!note){ document.getElementById('crew-req-note').focus(); return; }
-  const btn=document.getElementById('crew-req-submit'); btn.disabled=true; btn.textContent='Submitting…';
+function crewNoteInput(idx,val){
+  const trimmed=val.trim();
+  if(trimmed) _crewKeyNotes[idx]=trimmed;
+  else delete _crewKeyNotes[idx];
+  const cell=document.getElementById('crew-cell-'+idx);
+  const preview=document.getElementById('crew-cell-preview-'+idx);
+  if(cell) cell.classList.toggle('annotated',!!trimmed);
+  if(preview) preview.textContent=trimmed?'"'+trimmed+'"':'';
+  crewUpdateSubmitBar();
+}
+
+function crewUpdateSubmitBar(){
+  const bar=document.getElementById('crew-submit-bar');
+  const count=document.getElementById('crew-submit-count');
+  const btn=document.getElementById('crew-submit-btn');
+  if(!bar) return;
+  const n=Object.keys(_crewKeyNotes).length;
+  if(n===0){ bar.classList.remove('visible'); return; }
+  bar.classList.add('visible');
+  if(count) count.textContent=n+' key'+(n!==1?'s':'')+' flagged';
+  if(btn){ btn.disabled=false; btn.textContent='Submit Request'; }
+}
+
+async function crewSubmitBundle(){
+  const notes=_crewKeyNotes;
+  const n=Object.keys(notes).length;
+  if(!n) return;
+  const btn=document.getElementById('crew-submit-btn');
+  btn.disabled=true; btn.textContent='Submitting…';
+
+  const annotated=Object.entries(notes).map(([idx,note])=>{
+    const label=crewKeyLabel(_crewAllKeys[+idx])||('Key '+(+idx+1));
+    return {keyIndex:+idx, label, note};
+  });
+  const summary=n+' key'+(n!==1?'s':'')+' flagged: '+annotated.map(a=>a.label).join(', ');
+
   try{
-    const payload={
-      device_id:_crewClaim.device_id,
-      description:note, note, key_type:'change',
-      requester_role:'crew', status:'open',
-      production_id:_crewClaim.production_id,
-      slot_preference:_crewReqKeyIndex
-    };
     if(SUPA){
-      const {error}=await SUPA.from('key_requests').insert(payload);
+      const {error}=await SUPA.from('key_requests').insert({
+        device_id:_crewClaim.device_id,
+        description:summary,
+        note:JSON.stringify(annotated),
+        key_type:'change',
+        requester_role:'crew',
+        status:'open',
+        production_id:_crewClaim.production_id
+      });
       if(error) throw error;
     }
-    crewCloseReqModal();
+    // Clear notes + UI
+    _crewKeyNotes={};
+    document.querySelectorAll('.crew-key-cell.annotated').forEach(c=>c.classList.remove('annotated'));
+    document.querySelectorAll('.crew-key-cell-preview').forEach(p=>p.textContent='');
+    if(_crewActiveKeyIdx!==null){
+      const cell=document.getElementById('crew-cell-'+_crewActiveKeyIdx);
+      if(cell) cell.classList.remove('active');
+      _crewActiveKeyIdx=null;
+    }
+    btn.textContent='✓ Submitted';
+    setTimeout(()=>{ btn.textContent='Submit Request'; crewUpdateSubmitBar(); },2000);
+    document.getElementById('crew-submit-bar').classList.remove('visible');
     crewLoadMyRequests();
-  }catch(e){ alert('Error submitting request. Try again.'); }
-  finally{ btn.disabled=false; btn.textContent='Submit'; }
+  }catch(e){
+    btn.disabled=false; btn.textContent='Submit Request';
+    alert('Error submitting. Please try again.');
+  }
 }
 
 async function crewLoadMyRequests(){
@@ -5730,20 +5832,22 @@ async function crewLoadMyRequests(){
     .order('created_at',{ascending:false}).limit(20);
   if(!data||!data.length){ el.innerHTML='<div class="crew-empty" style="padding:16px 0;">No requests submitted yet.</div>'; return; }
   el.innerHTML=data.map(r=>{
-    const slotLabel=r.slot_preference!=null?'Key '+(r.slot_preference+1):'';
     const statusClass=r.status==='fulfilled'?'fulfilled':r.status==='denied'?'denied':'open';
+    // Parse bundled notes if JSON, otherwise show description
+    let detail='';
+    try{
+      const notes=JSON.parse(r.note||'[]');
+      if(Array.isArray(notes)&&notes.length) detail=notes.map(n=>`Key ${n.keyIndex+1} (${n.label}): ${n.note}`).join(' · ');
+    }catch(e){ detail=r.description||r.note||''; }
     return `<div class="crew-req-item">
       <div class="crew-req-status ${statusClass}">${r.status}</div>
       <div class="crew-req-body">
-        ${slotLabel?`<div class="crew-req-key">${slotLabel}</div>`:''}
-        <div class="crew-req-note">${r.description||r.note||''}</div>
+        <div class="crew-req-summary">${r.description||''}</div>
+        ${detail?`<div class="crew-req-detail">${detail}</div>`:''}
       </div>
     </div>`;
   }).join('');
 }
-
-// Close modal on overlay click
-document.getElementById('crew-req-modal').addEventListener('click',function(e){ if(e.target===this) crewCloseReqModal(); });
 
 function crewSubscribe(){
   if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
@@ -5777,6 +5881,8 @@ function crewShowStep(step){
   document.querySelectorAll('.crew-step').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById('crew-step-'+step);
   if(el) el.classList.add('active');
+  const bar=document.getElementById('crew-submit-bar');
+  if(bar&&step!=='confirmed') bar.classList.remove('visible');
 }
 
 // Crew back button wiring
