@@ -4579,9 +4579,9 @@ function renderClaimCard(r){
     ? `<button class="req-btn-approve" onclick="resolveRequest('device_claims','${r.id}','confirmed')">Confirm</button>
        <button class="req-btn-deny" onclick="openDeny('device_claims','${r.id}')">Deny</button>`
     : isActive
-    ? `<button class="req-btn-deny" onclick="resolveRequest('device_claims','${r.id}','released')">Release</button>`
+    ? `<button class="req-btn-deny" onclick="resolveRequest('device_claims','${r.id}','cancelled')">Release</button>`
     : r.status==='denied'||r.status==='cancelled'
-    ? `<button class="req-btn-deny" onclick="resolveRequest('device_claims','${r.id}','released')">Clear</button>`
+    ? `<button class="req-btn-deny" onclick="resolveRequest('device_claims','${r.id}','cancelled')">Clear</button>`
     : `<span class="req-status-pill ${r.status}">${r.status.toUpperCase()}</span>`;
   return `<div class="req-card">
     <div class="req-card-accent" style="background:${accentClr}"></div>
@@ -5727,7 +5727,7 @@ async function crewCancelClaim(){
 
 function crewStartOver(){
   if(_crewClaim&&SUPA&&_crewClaim.id!=='local'){
-    SUPA.from('device_claims').update({status:'released'}).eq('id',_crewClaim.id).then(()=>{});
+    SUPA.from('device_claims').update({status:'cancelled'}).eq('id',_crewClaim.id).then(()=>{});
   }
   if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
   _crewClaim=null;
