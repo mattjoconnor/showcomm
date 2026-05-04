@@ -4646,7 +4646,7 @@ async function loadRequests(){
   document.title = pendingCount ? '(' + pendingCount + ') ' + baseTitle : baseTitle;
 
   el.innerHTML = renderReqSection('Device Claims', 'claim', claims,
-    r=>r.status==='pending', r=>renderClaimCard(r))
+    r=>r.status==='pending'||r.status==='confirmed', r=>renderClaimCard(r))
     + renderReqSection('Change Requests', 'change', changes,
     r=>r.status==='pending', r=>renderChangeCard(r))
     + renderReqSection('New Key Requests', 'key', keys,
@@ -5024,12 +5024,13 @@ function openDeny(table, id){
 document.getElementById('deny-confirm-btn').addEventListener('click', async()=>{
   if(!_denyTarget||!SUPA) return;
   const note = document.getElementById('deny-note').value.trim();
-  const {error} = await SUPA.from(_denyTarget.table).update({
-    status: 'denied',
-    admin_note: note||null,
-    resolved_by: _currentUser?.id,
-    resolved_at: new Date().toISOString()
-  }).eq('id', _denyTarget.id);
+  const updateData={status:'denied'};
+  if(_denyTarget.table!=='device_claims'){
+    updateData.admin_note=note||null;
+    updateData.resolved_by=_currentUser?.id;
+    updateData.resolved_at=new Date().toISOString();
+  }
+  const {error} = await SUPA.from(_denyTarget.table).update(updateData).eq('id', _denyTarget.id);
   document.getElementById('deny-overlay').classList.remove('active');
   if(error){ toast('Error: '+error.message, 'danger'); return; }
   toast('Request denied', 'info');
@@ -5811,6 +5812,18 @@ async function crewLoadDevices(){
 
 async function crewClaimDevice(deviceId){
   const deviceType=_crewDeviceType==='bp'?'beltpack':'keypanel';
+  // Guard: one device per type per crew member
+  if(SUPA){
+    const {data}=await SUPA.from('device_claims').select('device_id')
+      .ilike('crew_name',_currentProfile.display_name)
+      .eq('device_type',deviceType)
+      .in('status',['pending','confirmed']);
+    if(data&&data.length>0){
+      const el=document.getElementById('crew-device-list');
+      el.innerHTML=`<div class="crew-empty" style="color:var(--red);">You already have a ${deviceType} claim (${data[0].device_id}). Release it first before claiming another.</div>`;
+      return;
+    }
+  }
   const claimData={
     device_id:deviceId, device_type:deviceType,
     crew_name:_currentProfile.display_name, crew_position:_currentProfile.position,
@@ -5831,8 +5844,10 @@ function crewShowClaimState(){
   if(!_crewClaim) return;
   if(_crewClaim.status==='confirmed'||_crewClaim.status==='pending') crewShowDeviceHome();
   else if(_crewClaim.status==='denied'){
+    const deniedDevice=_crewClaim.device_id;
     const msg=document.getElementById('crew-denied-msg');
-    if(msg){ msg.textContent='Your claim for '+_crewClaim.device_id+' was denied. Please select another device.'; msg.classList.add('visible'); }
+    if(msg){ msg.textContent='Your claim for '+deniedDevice+' was denied. Please select another device.'; msg.classList.add('visible'); }
+    crewShowToast('Your '+deniedDevice+' claim was denied — please select another device');
     _crewClaim=null;
     crewRenderProdList();
     crewShowStep('prod');
@@ -5972,9 +5987,9 @@ function crewKeyLabel(k){
   return null;
 }
 
-async function crewRenderSchematic(){
+async function crewRenderSchematic(silent=false){
   const container=document.getElementById('crew-schematic');
-  container.innerHTML='<div class="crew-loading">Loading keys…</div>';
+  if(!silent) container.innerHTML='<div class="crew-loading">Loading keys…</div>';
   _crewKeyNotes={}; _crewActiveKeyIdx=null;
   crewUpdateSubmitBar();
 
@@ -6221,7 +6236,7 @@ function crewSubscribe(){
       ()=>{ _crewClaim=null; crewRenderProdList(); crewShowStep('prod'); })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:assignTable,
       filter:'production_id=eq.'+_crewClaim.production_id},
-      ()=>{ crewRenderSchematic(); })
+      ()=>{ clearTimeout(window._crewSchematicTimer); window._crewSchematicTimer=setTimeout(()=>crewRenderSchematic(true),400); })
     .subscribe();
 }
 
