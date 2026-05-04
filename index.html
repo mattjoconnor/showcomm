@@ -406,6 +406,7 @@ body { background:var(--bg); color:var(--black); }
 .kp-key-has-req { outline:2px solid #F59E0B !important; outline-offset:-2px; z-index:1; }
 .kp-key-req-glow { outline:3px solid #F59E0B !important; outline-offset:-1px; box-shadow:0 0 0 4px rgba(245,158,11,.25) !important; z-index:2; }
 .kp-inline-req-item.req-lit { background:rgba(245,158,11,.14) !important; }
+.kp-inline-reqs { padding:10px clamp(14px,1.8vw,22px) 14px; background:rgba(245,158,11,.03); }
 .kp-inline-reqs-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:#92600a; margin-bottom:8px; }
 .kp-inline-req-item { display:flex; align-items:flex-start; gap:10px; padding:7px 0; border-bottom:1px solid var(--border-md); }
 .kp-inline-req-item:last-child { border-bottom:none; }
@@ -1723,7 +1724,13 @@ function initAdminApp(){
     SUPA.channel('showcomm-requests')
       .on('postgres_changes',{event:'*',schema:'public',table:'device_claims'},      ()=>onRequestChange())
       .on('postgres_changes',{event:'*',schema:'public',table:'change_requests'},    ()=>onRequestChange())
-      .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'},       ()=>onRequestChange())
+      .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'}, (payload)=>{
+        onRequestChange();
+        const deviceId=payload.new?.device_id||payload.old?.device_id;
+        if(!deviceId) return;
+        if(!_tmMode&&state.view==='keypanels') loadInlinePanelRequests(deviceId);
+        else if(!_tmMode&&state.view==='allbeltpacks') loadInlineBPRequests(deviceId);
+      })
       .on('postgres_changes',{event:'*',schema:'public',table:'productions'},        ()=>{ if(!_blockProdReload) loadProds(); })
       .on('postgres_changes',{event:'*',schema:'public',table:'beltpack_assignments'},function(p){
         if(p.new&&p.new.production_id) localStorage.setItem('sc_bp_'+p.new.production_id,JSON.stringify(p.new.data));
@@ -4785,50 +4792,54 @@ async function loadInlineBPRequests(bp){
     .order('created_at',{ascending:false}).limit(5);
   if(!data||!data.length){ el.innerHTML=''; el.style.fontSize=''; return; }
 
-  // Build keyIndex → reqId map
+  const rows=[];
   const keyReqMap={};
   data.forEach(r=>{
     try{
       const notes=JSON.parse(r.note||'[]');
-      if(Array.isArray(notes)) notes.forEach(n=>{ keyReqMap[n.keyIndex]=r.id; });
-    }catch(e){ if(r.slot_preference!=null) keyReqMap[r.slot_preference]=r.id; }
+      if(Array.isArray(notes)&&notes.length){
+        notes.forEach(n=>{
+          const rowIdx=rows.length;
+          rows.push({keyIndex:n.keyIndex, label:n.label, note:n.note, reqId:r.id, time:r.created_at, rowIdx});
+          keyReqMap[n.keyIndex]=rowIdx;
+        });
+      } else {
+        const ki=r.slot_preference??-1;
+        const rowIdx=rows.length;
+        rows.push({keyIndex:ki, label:'', note:r.description||r.note||'', reqId:r.id, time:r.created_at, rowIdx});
+        if(ki>=0) keyReqMap[ki]=rowIdx;
+      }
+    }catch(e){
+      const ki=r.slot_preference??-1;
+      const rowIdx=rows.length;
+      rows.push({keyIndex:ki, label:'', note:r.description||r.note||'', reqId:r.id, time:r.created_at, rowIdx});
+      if(ki>=0) keyReqMap[ki]=rowIdx;
+    }
   });
 
   el.style.fontSize='';
-  const items=data.map(r=>{
-    let notesHTML='';
-    try{
-      const notes=JSON.parse(r.note||'[]');
-      if(Array.isArray(notes)&&notes.length){
-        notesHTML='<div class="kp-inline-req-notes">'+notes.map(n=>`<div>Key ${n.keyIndex+1} (${n.label}): ${n.note}</div>`).join('')+'</div>';
-      }
-    }catch(e){ notesHTML=r.note?`<div class="kp-inline-req-notes">${r.description||r.note}</div>`:''; }
-    return `<div class="kp-inline-req-item" data-req-id="${r.id}" id="breq-${r.id}">
+  const bpSafe=bp.replace(/\s/g,'_');
+  const items=rows.map((row,i)=>`
+    <div class="kp-inline-req-item" id="breq-row-${bpSafe}-${i}">
       <div class="kp-inline-req-body">
-        <div class="kp-inline-req-summary">${r.description||'—'}</div>
-        ${notesHTML}
-        <div class="kp-inline-req-time">${relTime(r.created_at)}</div>
+        ${row.keyIndex>=0?`<div class="kp-inline-req-summary">Key ${row.keyIndex+1}${row.label?' — '+row.label:''}</div>`:''}
+        <div class="kp-inline-req-notes">${row.note}</div>
+        <div class="kp-inline-req-time">${relTime(row.time)}</div>
       </div>
       <div class="kp-inline-req-actions">
-        <button class="req-btn-approve" style="padding:5px 10px;font-size:.6rem;" onclick="resolveRequest('key_requests','${r.id}','fulfilled');this.closest('.kp-inline-req-item').remove();">Fulfill</button>
-        <button class="req-btn-deny" style="padding:5px 10px;font-size:.6rem;" onclick="openDeny('key_requests','${r.id}')">Deny</button>
+        <button class="req-btn-approve" style="padding:5px 10px;font-size:.6rem;" onclick="resolveRequest('key_requests','${row.reqId}','fulfilled');loadInlineBPRequests('${bp.replace(/'/g,"\\'")}')">Fulfill</button>
+        <button class="req-btn-deny" style="padding:5px 10px;font-size:.6rem;" onclick="openDeny('key_requests','${row.reqId}')">Deny</button>
       </div>
-    </div>`;
-  }).join('');
-  el.innerHTML=`<div class="kp-inline-reqs"><div class="kp-inline-reqs-label">Crew Requests (${data.length})</div>${items}</div>`;
+    </div>`).join('');
 
-  // Apply amber borders to flagged BP key cells
-  const cardEl=document.getElementById('bp-card-'+bp.replace(/\s/g,'_'));
+  el.innerHTML=`<div class="kp-inline-reqs"><div class="kp-inline-reqs-label">Crew Requests — ${rows.length} key${rows.length!==1?'s':''} flagged</div>${items}</div>`;
+
+  const cardEl=document.getElementById('bp-card-'+bpSafe);
   if(!cardEl) return;
-  Object.keys(keyReqMap).forEach(ki=>{
+  Object.entries(keyReqMap).forEach(([ki,rowIdx])=>{
     const cell=cardEl.querySelector('[data-ki="'+ki+'"]');
+    const reqRow=document.getElementById('breq-row-'+bpSafe+'-'+rowIdx);
     if(cell) cell.style.outline='2px solid #F59E0B';
-  });
-
-  // Bidirectional hover
-  Object.entries(keyReqMap).forEach(([ki,reqId])=>{
-    const cell=cardEl.querySelector('[data-ki="'+ki+'"]');
-    const reqRow=document.getElementById('breq-'+reqId);
     if(!cell||!reqRow) return;
     cell.addEventListener('mouseenter',()=>reqRow.classList.add('req-lit'));
     cell.addEventListener('mouseleave',()=>reqRow.classList.remove('req-lit'));
@@ -4845,56 +4856,61 @@ async function loadInlinePanelRequests(panelId){
     .order('created_at',{ascending:false}).limit(10);
   if(!data||!data.length){ el.innerHTML=''; return; }
 
-  // Build keyIndex → requestId map from all bundled notes
-  const keyReqMap={}; // keyIndex → reqId
+  // Expand bundled requests into per-key rows
+  const rows=[]; // {keyIndex, label, note, reqId, time}
+  const keyReqMap={}; // keyIndex → rowIndex in rows[]
   data.forEach(r=>{
     try{
       const notes=JSON.parse(r.note||'[]');
-      if(Array.isArray(notes)) notes.forEach(n=>{ keyReqMap[n.keyIndex]=r.id; });
-    }catch(e){ if(r.slot_preference!=null) keyReqMap[r.slot_preference]=r.id; }
+      if(Array.isArray(notes)&&notes.length){
+        notes.forEach(n=>{
+          const rowIdx=rows.length;
+          rows.push({keyIndex:n.keyIndex, label:n.label, note:n.note, reqId:r.id, time:r.created_at, rowIdx});
+          keyReqMap[n.keyIndex]=rowIdx;
+        });
+      } else {
+        const ki=r.slot_preference??-1;
+        const rowIdx=rows.length;
+        rows.push({keyIndex:ki, label:ki>=0?'Key '+(ki+1):'', note:r.description||r.note||'', reqId:r.id, time:r.created_at, rowIdx});
+        if(ki>=0) keyReqMap[ki]=rowIdx;
+      }
+    }catch(e){
+      const ki=r.slot_preference??-1;
+      const rowIdx=rows.length;
+      rows.push({keyIndex:ki, label:'', note:r.description||r.note||'', reqId:r.id, time:r.created_at, rowIdx});
+      if(ki>=0) keyReqMap[ki]=rowIdx;
+    }
   });
 
-  const items=data.map(r=>{
-    let notesHTML='';
-    try{
-      const notes=JSON.parse(r.note||'[]');
-      if(Array.isArray(notes)&&notes.length){
-        notesHTML='<div class="kp-inline-req-notes">'+notes.map(n=>`<div>Key ${n.keyIndex+1} (${n.label}): ${n.note}</div>`).join('')+'</div>';
-      }
-    }catch(e){ notesHTML=r.note?`<div class="kp-inline-req-notes">${r.description||r.note}</div>`:''; }
-    return `<div class="kp-inline-req-item" data-req-id="${r.id}" id="kreq-${r.id}">
+  const items=rows.map((row,i)=>`
+    <div class="kp-inline-req-item" id="kreq-row-${panelId.replace(/\s/g,'_')}-${i}">
       <div class="kp-inline-req-body">
-        <div class="kp-inline-req-summary">${r.description||'—'}</div>
-        ${notesHTML}
-        <div class="kp-inline-req-time">${relTime(r.created_at)}</div>
+        ${row.keyIndex>=0?`<div class="kp-inline-req-summary">Key ${row.keyIndex+1}${row.label?' — '+row.label:''}</div>`:''}
+        <div class="kp-inline-req-notes">${row.note}</div>
+        <div class="kp-inline-req-time">${relTime(row.time)}</div>
       </div>
       <div class="kp-inline-req-actions">
-        <button class="req-btn-approve" style="padding:5px 10px;font-size:.6rem;" onclick="resolveRequest('key_requests','${r.id}','fulfilled');this.closest('.kp-inline-req-item').remove();loadInlinePanelRequests('${panelId.replace(/'/g,"\\'")}')">Fulfill</button>
-        <button class="req-btn-deny" style="padding:5px 10px;font-size:.6rem;" onclick="openDeny('key_requests','${r.id}')">Deny</button>
+        <button class="req-btn-approve" style="padding:5px 10px;font-size:.6rem;" onclick="resolveRequest('key_requests','${row.reqId}','fulfilled');loadInlinePanelRequests('${panelId.replace(/'/g,"\\'")}')">Fulfill</button>
+        <button class="req-btn-deny" style="padding:5px 10px;font-size:.6rem;" onclick="openDeny('key_requests','${row.reqId}')">Deny</button>
       </div>
-    </div>`;
-  }).join('');
-  el.innerHTML=`<div class="kp-inline-reqs"><div class="kp-inline-reqs-label">Crew Requests (${data.length})</div>${items}</div>`;
+    </div>`).join('');
 
-  // Apply amber borders to flagged key cells
+  const totalReqs=data.length;
+  el.innerHTML=`<div class="kp-inline-reqs"><div class="kp-inline-reqs-label">Crew Requests — ${rows.length} key${rows.length!==1?'s':''} flagged</div>${items}</div>`;
+
+  // Apply amber borders and bidirectional hover
   const cardEl=document.getElementById('kp-card-'+panelId.replace(/\s/g,'_'));
   if(!cardEl) return;
-  Object.keys(keyReqMap).forEach(ki=>{
+  const pid=panelId.replace(/\s/g,'_');
+  Object.entries(keyReqMap).forEach(([ki,rowIdx])=>{
     const cell=cardEl.querySelector('[data-key-index="'+ki+'"]');
+    const reqRow=document.getElementById('kreq-row-'+pid+'-'+rowIdx);
     if(cell) cell.classList.add('kp-key-has-req');
-  });
-
-  // Bidirectional hover: key cell ↔ request row
-  Object.entries(keyReqMap).forEach(([ki,reqId])=>{
-    const cell=cardEl.querySelector('[data-key-index="'+ki+'"]');
-    const reqRow=document.getElementById('kreq-'+reqId);
     if(!cell||!reqRow) return;
-    // Hover key → light up request
     const origEnter=cell.onmouseenter;
     cell.onmouseenter=function(e){ if(origEnter) origEnter.call(this,e); reqRow.classList.add('req-lit'); };
     const origLeave=cell.onmouseleave;
     cell.onmouseleave=function(e){ if(origLeave) origLeave.call(this,e); reqRow.classList.remove('req-lit'); };
-    // Hover request → glow key
     reqRow.addEventListener('mouseenter',()=>cell.classList.add('kp-key-req-glow'));
     reqRow.addEventListener('mouseleave',()=>cell.classList.remove('kp-key-req-glow'));
   });
