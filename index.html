@@ -716,6 +716,8 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 
 .tm-prod-bar { display:flex; gap:0; align-items:center; padding:0 clamp(16px,2.2vw,28px); height:40px; border-bottom:1px solid var(--border-md); background:var(--surface); overflow-x:auto; flex-shrink:0; }
 .tm-prod-bar .kp-filter-pill { margin-right:4px; }
+.tm-pending-jump { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.1em; color:var(--amber); background:transparent; border:1px solid rgba(245,158,11,.3); padding:4px 10px; cursor:pointer; text-transform:uppercase; }
+.tm-pending-jump:hover { background:rgba(245,158,11,.1); }
 .tm-empty { padding:clamp(20px,3vh,32px) clamp(16px,2.2vw,28px); font-family:var(--f-mono); font-size:var(--t-label); color:var(--tx-ghost); letter-spacing:var(--ls-wide); text-transform:uppercase; }
 
 /* TM Request Modal */
@@ -835,8 +837,8 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
   <div class="ribbon">
     <div class="r-brand"><span class="wordmark">ShowComm<span class="wm-dot"></span></span></div>
     <nav class="r-nav" id="sidebar-nav">
-      <button class="ribbon-tab" data-view="keypanels">Keypanels</button>
-      <button class="ribbon-tab" data-view="allbeltpacks">Beltpacks</button>
+      <button class="ribbon-tab" data-view="keypanels">Keypanels<span class="req-badge" id="kp-badge" style="display:none"></span></button>
+      <button class="ribbon-tab" data-view="allbeltpacks">Beltpacks<span class="req-badge" id="bp-badge" style="display:none"></span></button>
       <button class="ribbon-tab" data-view="requests" id="ribbon-tab-requests">Requests<span class="req-badge" id="req-badge" style="display:none"></span></button>
       <button class="ribbon-tab" data-view="options">Options</button>
     </nav>
@@ -4136,6 +4138,20 @@ function onRequestChange(){
   }
 }
 
+function updateDeviceBadges(){
+  let kpPending=0, bpPending=0;
+  Object.values(PRODUCTIONS).filter(p=>p.status!=='archived').forEach(prod=>{
+    const kps=loadClaimedKP(prod.id);
+    const bps=loadClaimed(prod.id);
+    kpPending+=Object.values(kps).filter(e=>e.status==='pending').length;
+    bpPending+=Object.values(bps).filter(e=>e.status==='pending').length;
+  });
+  const kpB=document.getElementById('kp-badge');
+  const bpB=document.getElementById('bp-badge');
+  if(kpB){ kpB.textContent=kpPending; kpB.style.display=kpPending?'inline-flex':'none'; }
+  if(bpB){ bpB.textContent=bpPending; bpB.style.display=bpPending?'inline-flex':'none'; }
+}
+
 async function loadRequests(){
   if(!SUPA) return;
   const el = document.getElementById('requests-content');
@@ -4158,6 +4174,8 @@ async function loadRequests(){
 
   const badge = document.getElementById('req-badge');
   if(badge){ badge.textContent = pendingCount; badge.style.display = pendingCount ? 'inline-flex' : 'none'; }
+  // Update KP/BP pending badges
+  updateDeviceBadges();
   // Red fill on ribbon tab when pending requests exist
   const reqTab = document.getElementById('ribbon-tab-requests');
   if(reqTab){
@@ -4718,6 +4736,8 @@ function openTMBpRequestModal(bp){
 }
 
 document.addEventListener('click', function(e){
+  const jump=e.target.closest('.tm-pending-jump');
+  if(jump){ tmJumpToPending(jump.dataset.jump); return; }
   const hdr=e.target.closest('.req-archive-hdr[data-archive-id]');
   if(!hdr) return;
   const id=hdr.dataset.archiveId;
@@ -4727,6 +4747,27 @@ document.addEventListener('click', function(e){
   const sp=hdr.querySelector('span');
   if(sp) sp.textContent=(open?'▶':'▼')+sp.textContent.slice(1);
 });
+
+function tmJumpToPending(view){
+  setTMView(view);
+  // Set status filter to pending
+  setTimeout(()=>{
+    _kpFilter.statuses.clear();
+    _bpFilter.statuses.clear();
+    if(view==='keypanels'){
+      _kpFilter.statuses.add('pending');
+      renderKeypanels();
+    } else {
+      _bpFilter.statuses.add('pending');
+      renderAllBeltpacks();
+    }
+    updateClearBtn();
+    // Highlight the pending filter pill
+    document.querySelectorAll('.kp-filter-pill[data-status="pending"], button[data-status="pending"]').forEach(b=>{
+      b.classList.add('active');
+    });
+  }, 100);
+}
 
 function tmToggleArchive(hdr, id){
   const el=document.getElementById(id); if(!el) return;
@@ -4744,11 +4785,16 @@ async function renderTMRequests(){
   const prodIds=_tmProductions.map(p=>p.id);
 
   // Pending KP + BP summary
+  // Fetch fresh KP/BP data from Supabase for accurate pending counts
   let pendingKP=0, pendingBP=0;
-  _tmProductions.forEach(prod=>{
-    pendingKP+=Object.values(loadClaimedKP(prod.id)).filter(e=>e.status==='pending').length;
-    pendingBP+=Object.values(loadClaimed(prod.id)).filter(e=>e.status==='pending').length;
-  });
+  await Promise.all(_tmProductions.map(async prod=>{
+    const [kpRes,bpRes]=await Promise.all([
+      SUPA.from('kp_assignments').select('data').eq('production_id',prod.id).single(),
+      SUPA.from('beltpack_assignments').select('data').eq('production_id',prod.id).single()
+    ]);
+    if(kpRes.data?.data) pendingKP+=Object.values(kpRes.data.data).filter(e=>e.status==='pending').length;
+    if(bpRes.data?.data) pendingBP+=Object.values(bpRes.data.data).filter(e=>e.status==='pending').length;
+  }));
 
   const [cr,kr]=await Promise.all([
     SUPA.from('change_requests').select('*').in('production_id',prodIds.length?prodIds:['__none__']).order('created_at',{ascending:false}),
@@ -4780,9 +4826,9 @@ async function renderTMRequests(){
 
   // Pending KP/BP summary banner
   if(pendingKP||pendingBP){
-    html+='<div style="background:rgba(245,158,11,.07);border-left:3px solid var(--amber);padding:10px 14px;margin-bottom:12px;display:flex;gap:20px;">';
-    if(pendingKP) html+='<span style="font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--amber);">● '+pendingKP+' KP'+(pendingKP>1?'s':'')+' PENDING</span>';
-    if(pendingBP) html+='<span style="font-family:var(--f-mono);font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--amber);">● '+pendingBP+' BP'+(pendingBP>1?'s':'')+' PENDING</span>';
+    html+='<div style="background:rgba(245,158,11,.07);border-left:3px solid var(--amber);padding:10px 14px;margin-bottom:12px;display:flex;gap:12px;align-items:center;">';
+    if(pendingKP) html+='<button data-jump="keypanels" class="tm-pending-jump">● '+pendingKP+' KP'+(pendingKP>1?'s':'')+' PENDING →</button>';
+    if(pendingBP) html+='<button data-jump="beltpacks" class="tm-pending-jump">● '+pendingBP+' BP'+(pendingBP>1?'s':'')+' PENDING →</button>';
     html+='</div>';
   }
 
