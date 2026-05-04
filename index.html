@@ -4493,9 +4493,22 @@ function setTMView(view){
   if(bpV&&body.contains(bpV)) body.removeChild(bpV);
   body.innerHTML='';
   if(view==='keypanels'){
-    if(kpV){ kpV.style.display='block'; body.appendChild(kpV); renderKeypanels(); }
+    if(kpV){
+      kpV.style.display='block'; body.appendChild(kpV);
+      if(SUPA&&_tmProductions.length){
+        Promise.all(_tmProductions.map(p=>loadClaimedKPFromDB(p.id)))
+          .then(()=>renderKeypanels());
+      } else { renderKeypanels(); }
+    }
   } else if(view==='beltpacks'){
-    if(bpV){ bpV.style.display='block'; body.appendChild(bpV); renderAllBeltpacks(); }
+    if(bpV){
+      bpV.style.display='block'; body.appendChild(bpV);
+      // Sync fresh BP data from Supabase before rendering
+      if(SUPA&&_tmProductions.length){
+        Promise.all(_tmProductions.map(p=>loadClaimedFromDB(p.id)))
+          .then(()=>renderAllBeltpacks());
+      } else { renderAllBeltpacks(); }
+    }
   } else if(view==='requests'){
     renderTMRequests();
   }
