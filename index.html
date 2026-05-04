@@ -176,7 +176,7 @@ body { background:var(--bg); color:var(--black); }
 .placeholder-logout:hover { color:var(--black); }
 
 /* ─── CREW APP ─── */
-#screen-crew { display:none; height:100vh; flex-direction:column; align-items:stretch; justify-content:flex-start; background:var(--bg); overflow:hidden; }
+#screen-crew { display:none; height:100vh; height:100dvh; flex-direction:column; align-items:stretch; justify-content:flex-start; background:var(--bg); overflow:hidden; }
 /* Topbar — matches TM/admin pattern exactly */
 .crew-topbar { display:flex; align-items:stretch; height:52px; background:var(--black); flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.08); }
 .crew-topbar-wordmark { font-family:var(--f-display); font-size:clamp(.85rem,1.2vw,1rem); font-weight:700; letter-spacing:.04em; color:#fff; padding:0 clamp(14px,1.8vw,22px); border-right:1px solid rgba(255,255,255,.08); flex-shrink:0; display:flex; align-items:center; }
@@ -277,7 +277,7 @@ body { background:var(--bg); color:var(--black); }
 .crew-key-note-input { width:100%; background:rgba(255,255,255,.9); border:none; border-bottom:2px solid rgba(0,0,0,.3); font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--black); resize:none; outline:none; padding:4px 0; line-height:1.4; box-sizing:border-box; }
 .crew-key-note-input::placeholder { color:rgba(0,0,0,.35); font-weight:400; }
 /* Submit bar */
-.crew-submit-bar { flex-shrink:0; border-top:2px solid var(--black); padding:12px 20px; padding-bottom:max(14px,env(safe-area-inset-bottom)); display:none; align-items:center; gap:12px; background:var(--surface); z-index:10; }
+.crew-submit-bar { flex-shrink:0; border-top:2px solid var(--black); padding:14px 20px; padding-bottom:max(20px,env(safe-area-inset-bottom,20px)); display:none; align-items:center; gap:12px; background:var(--surface); z-index:100; }
 .crew-submit-bar.visible { display:flex; }
 .crew-submit-count { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-secondary); flex:1; }
 .crew-submit-btn { font-family:var(--f-mono); font-size:var(--t-ui); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:var(--black); color:#fff; border:none; cursor:pointer; padding:13px 24px; white-space:nowrap; flex-shrink:0; }
@@ -293,6 +293,20 @@ body { background:var(--bg); color:var(--black); }
 .crew-req-body { flex:1; min-width:0; }
 .crew-req-summary { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-primary); margin-bottom:2px; }
 .crew-req-detail { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); line-height:1.5; }
+/* Mobile font size boosts for crew */
+@media(max-width:600px){
+  .crew-prod-name,.crew-device-id { font-size:.9rem; }
+  .crew-key-cell-name { font-size:.75rem; }
+  .crew-status-device { font-size:1.6rem; }
+  .crew-home-device { font-size:1.8rem !important; }
+  .crew-section-label { font-size:.65rem; }
+  .crew-back-btn,.crew-cancel-claim,.crew-reclaim-link { font-size:.72rem; }
+  .crew-req-summary,.crew-req-detail { font-size:.72rem; }
+  .crew-submit-count { font-size:.72rem; }
+  .crew-submit-btn { font-size:.75rem; padding:14px 20px; }
+  .crew-type-label { font-size:1.15rem; }
+  .crew-prod-card,.crew-device-item { padding:16px 14px; }
+}
 /* Denied message */
 .crew-denied-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--red); letter-spacing:var(--ls-normal); padding:10px 14px; background:rgba(239,68,68,.05); border:1px solid rgba(239,68,68,.18); margin-bottom:14px; display:none; }
 .crew-denied-msg.visible { display:block; }
@@ -1073,7 +1087,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
             <div class="crew-type-desc">Wireless unit</div>
           </div>
           <div class="crew-type-tile" onclick="crewSelectType('kp')">
-            <div class="crew-type-label">Key Panel</div>
+            <div class="crew-type-label">Keypanel</div>
             <div class="crew-type-desc">Fixed position</div>
           </div>
         </div>
@@ -3362,6 +3376,13 @@ async function renderAllBeltpacks(){
   renderClaimsStrip('bp-claims-strip','beltpack');
   const bpToProd={};
   Object.values(PRODUCTIONS).forEach(prod=>(prod.beltpacks||[]).forEach(bp=>{ const id=typeof bp==='string'?bp:bp.id; bpToProd[id]=prod; }));
+  // Preload BP claims for inline display
+  window._bpClaimsMap={};
+  if(SUPA&&!_tmMode){
+    const {data}=await SUPA.from('device_claims').select('*')
+      .eq('device_type','beltpack').in('status',['pending','confirmed']);
+    if(data) data.forEach(r=>{ window._bpClaimsMap[r.device_id]=r; });
+  }
   renderBpCards(bpToProd);
   // Load inline crew requests
   if(SUPA&&!_tmMode){
@@ -3483,7 +3504,12 @@ function renderBpCards(bpToProd){
 
     const prodText=prod?prodLabel(prod):'—';
     const _nameHtml=entry&&entry.userName?'<span class="bp-name">'+entry.userName+'</span>':'';
-    const r1='<div class="bp-num"><span>'+bp+' <span style="font-weight:400;color:rgba(0,0,0,.32);font-size:.65rem;">'+prodText+'</span></span>'+_nameHtml+'</div>';
+    const _bpClaim=(!_tmMode&&window._bpClaimsMap)?window._bpClaimsMap[bp]:null;
+    const _claimHtml=_bpClaim?`<span style="display:inline-flex;align-items:center;gap:5px;margin-left:6px;font-size:.6rem;font-family:var(--f-mono);font-weight:700;letter-spacing:.06em;">`
+      +`<span style="color:${_bpClaim.status==='confirmed'?'#10B981':'#F59E0B'};text-transform:uppercase;">${_bpClaim.crew_name||'—'}${_bpClaim.crew_position?' · '+_bpClaim.crew_position:''}</span>`
+      +`<button style="font-family:var(--f-mono);font-size:.58rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:none;border:1px solid rgba(239,68,68,.3);color:var(--red);cursor:pointer;padding:1px 5px;" onclick="event.stopPropagation();deleteClaimRequest('${_bpClaim.id}').then(()=>renderAllBeltpacks())">Release ×</button>`
+      +`</span>`:'';
+    const r1='<div class="bp-num"><span>'+bp+' <span style="font-weight:400;color:rgba(0,0,0,.32);font-size:.65rem;">'+prodText+'</span></span>'+_nameHtml+_claimHtml+'</div>';
     const r2=''; // name moved into r1
 
     // Row 3 — key slots always rendered; hidden placeholder for available cards
@@ -5645,7 +5671,7 @@ function crewSelectProd(prodId){
 
 function crewSelectType(type){
   _crewDeviceType=type;
-  document.getElementById('crew-device-label').textContent=type==='bp'?'Select your beltpack':'Select your key panel';
+  document.getElementById('crew-device-label').textContent=type==='bp'?'Select your beltpack':'Select your keypanel';
   crewLoadDevices();
   crewShowStep('device');
 }
@@ -5744,7 +5770,7 @@ function crewShowClaimState(){
 function crewShowPending(){
   const prod=PRODUCTIONS[_crewClaim.production_id]||{};
   document.getElementById('crew-pending-device').textContent=_crewClaim.device_id;
-  document.getElementById('crew-pending-type').textContent=_crewClaim.device_type==='keypanel'?'Key Panel':'Beltpack';
+  document.getElementById('crew-pending-type').textContent=_crewClaim.device_type==='keypanel'?'Keypanel':'Beltpack';
   document.getElementById('crew-pending-prod').textContent=prod.name||_crewClaim.production_id||'';
   crewShowStep('pending');
 }
@@ -5753,7 +5779,7 @@ function crewShowConfirmed(){
   const prod=PRODUCTIONS[_crewClaim.production_id]||{};
   const roomClr=crFg(prod.controlRoom)||'#0891B2';
   document.getElementById('crew-home-device').textContent=_crewClaim.device_id;
-  document.getElementById('crew-home-type').textContent=(_crewClaim.device_type==='keypanel'?'Key Panel':'Beltpack')+(prod.controlRoom?' · '+prod.controlRoom:'');
+  document.getElementById('crew-home-type').textContent=(_crewClaim.device_type==='keypanel'?'Keypanel':'Beltpack')+(prod.controlRoom?' · '+prod.controlRoom:'');
   document.getElementById('crew-home-show').textContent=prod.name||_crewClaim.production_id||'';
   const hdr=document.getElementById('crew-home-header');
   if(hdr){ hdr.style.borderLeft='5px solid '+roomClr; hdr.style.borderBottom='none'; }
