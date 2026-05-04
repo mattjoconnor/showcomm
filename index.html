@@ -1121,7 +1121,10 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
           </div>
           <div class="crew-home-badge">Confirmed</div>
         </div>
-        <div class="crew-keys-label">Tap any key to flag a change — then submit all at once</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="crew-keys-label" style="margin-bottom:0;">Tap any key to flag a change — then submit all at once</div>
+          <button onclick="crewRenderSchematic()" style="font-family:var(--f-mono);font-size:var(--t-micro);font-weight:700;letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--tx-secondary);background:none;border:1px solid var(--border-md);cursor:pointer;padding:3px 8px;">↺ Refresh</button>
+        </div>
         <div class="crew-schematic" id="crew-schematic"></div>
         <div class="crew-requests-section">
           <div class="crew-section-label">My Requests</div>
@@ -5805,8 +5808,10 @@ async function crewRenderSchematic(){
   try{
     if(_crewClaim.device_type==='beltpack'){
       if(SUPA){
-        const {data}=await SUPA.from('beltpack_assignments').select('data').eq('production_id',_crewClaim.production_id).maybeSingle();
+        const {data,error}=await SUPA.from('beltpack_assignments').select('data').eq('production_id',_crewClaim.production_id).maybeSingle();
+        console.log('[crew] beltpack_assignments — prodId:',_crewClaim.production_id,'data:',data,'error:',error);
         _crewAllKeys=data?.data?.[_crewClaim.device_id]?.keys||[];
+        console.log('[crew] BP keys for',_crewClaim.device_id,':',_crewAllKeys);
       }
       const count=Math.max(_crewAllKeys.length,4);
       while(_crewAllKeys.length<count) _crewAllKeys.push(null);
@@ -5816,7 +5821,9 @@ async function crewRenderSchematic(){
       let kpEntry=null;
       if(SUPA){
         const {data,error}=await SUPA.from('kp_assignments').select('data').eq('production_id',_crewClaim.production_id).maybeSingle();
-        if(!error) kpEntry=data?.data?.[_crewClaim.device_id];
+        console.log('[crew] kp_assignments query — prodId:',_crewClaim.production_id,'data:',data,'error:',error);
+        if(!error&&data) kpEntry=data.data?.[_crewClaim.device_id];
+        console.log('[crew] kpEntry for',_crewClaim.device_id,':',kpEntry);
       }
       _crewAllKeys=kpEntry?.keys||[];
       const panel=KP_PANELS.find(p=>p.id===_crewClaim.device_id);
