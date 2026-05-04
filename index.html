@@ -2573,7 +2573,7 @@ async function renderClaimsStrip(containerId, deviceType){
 
 async function releaseClaim(id, containerId, deviceType){
   if(!SUPA) return;
-  const {error}=await SUPA.from('device_claims').update({status:'denied'}).eq('id',id);
+  const {error}=await SUPA.from('device_claims').update({status:'cancelled'}).eq('id',id);
   if(error){ toast('Error releasing claim','danger'); return; }
   toast('Claim released','success');
   renderClaimsStrip(containerId, deviceType);
