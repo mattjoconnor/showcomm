@@ -402,7 +402,17 @@ body { background:var(--bg); color:var(--black); }
 .crew-denied-msg { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--red); letter-spacing:var(--ls-normal); padding:12px 16px; background:rgba(239,68,68,.06); border:1px solid rgba(239,68,68,.2); margin-bottom:16px; display:none; }
 .crew-denied-msg.visible { display:block; }
 
-/* ─── RIBBON ─── */
+/* ─── CLAIMS STRIP ─── */
+.claims-strip { border-bottom:1px solid var(--border-md); background:rgba(245,158,11,.04); padding:8px clamp(16px,2.2vw,28px); display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.claims-strip-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:#92600a; margin-right:4px; flex-shrink:0; }
+.claim-pill { display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid rgba(245,158,11,.35); padding:4px 10px 4px 12px; }
+.claim-pill-device { font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; color:var(--tx-primary); letter-spacing:var(--ls-tight); }
+.claim-pill-crew { font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--tx-secondary); }
+.claim-pill-status { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:1px 6px; }
+.claim-pill-status.pending { background:rgba(245,158,11,.15); color:#92600a; }
+.claim-pill-status.confirmed { background:rgba(16,185,129,.12); color:#10B981; }
+.claim-pill-release { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:none; border:none; border-left:1px solid rgba(0,0,0,.1); padding:2px 0 2px 8px; color:var(--red); cursor:pointer; }
+.claim-pill-release:hover { opacity:.7; }
 .ribbon { background:var(--black); height:clamp(42px,5.4vh,52px); display:flex; align-items:stretch; flex-shrink:0; }
 .r-brand { display:flex; align-items:center; padding:0 clamp(16px,2.2vw,26px); flex-shrink:0; border-right:1px solid #1e1e1e; }
 .wordmark { font-family:var(--f-display); font-size:clamp(.85rem,1.2vw,1rem); font-weight:700; letter-spacing:.04em; color:#fff; }
@@ -1191,11 +1201,12 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 
       <!-- KEYPANELS -->
       <div id="view-keypanels" class="view">
+        <div id="kp-claims-strip"></div>
         <div id="kp-main-content"></div>
       </div>
 
-      <!-- ALL BELTPACKS — filters now in sidebar -->
-      <div id="view-allbeltpacks" class="view">
+      <!-- ALL BELTPACKS — filters now in sidebar -->\n      <div id="view-allbeltpacks" class="view">
+        <div id="bp-claims-strip"></div>
         <div class="bp-card-grid" id="all-bp-card-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(6px,.9vw,10px);padding:clamp(10px,1.6vh,16px) clamp(16px,2.2vw,28px);"></div>
       </div>
 
@@ -2543,9 +2554,35 @@ function buildProdPills(){
   });
 }
 
+async function renderClaimsStrip(containerId, deviceType){
+  const el=document.getElementById(containerId);
+  if(!el||!SUPA) return;
+  const {data}=await SUPA.from('device_claims').select('*')
+    .eq('device_type',deviceType).in('status',['pending','confirmed'])
+    .order('claimed_at',{ascending:false});
+  if(!data||!data.length){ el.innerHTML=''; return; }
+  const pills=data.map(r=>`
+    <div class="claim-pill">
+      <span class="claim-pill-device">${r.device_id}</span>
+      <span class="claim-pill-crew">${r.crew_name||'—'}${r.crew_position?' · '+r.crew_position:''}</span>
+      <span class="claim-pill-status ${r.status}">${r.status}</span>
+      <button class="claim-pill-release" onclick="releaseClaim('${r.id}','${containerId}','${deviceType}')">Release ×</button>
+    </div>`).join('');
+  el.innerHTML=`<div class="claims-strip"><span class="claims-strip-label">Active Claims</span>${pills}</div>`;
+}
+
+async function releaseClaim(id, containerId, deviceType){
+  if(!SUPA) return;
+  const {error}=await SUPA.from('device_claims').update({status:'denied'}).eq('id',id);
+  if(error){ toast('Error releasing claim','danger'); return; }
+  toast('Claim released','success');
+  renderClaimsStrip(containerId, deviceType);
+}
+
 function renderKeypanels(){
   buildProdPills();
   rebuildRoomProdPills();
+  renderClaimsStrip('kp-claims-strip','keypanel');
   const main=$('kp-main-content');
   if(!main) return;
   main.innerHTML='';
@@ -3275,7 +3312,8 @@ function activateKP(panelId, code){
 function adminAssignKP(panelId, code){ setKpRoom(panelId, code, 'PCR1'); }
 
 function renderAllBeltpacks(){
-  rebuildRoomProdPills(); // keep production pills in sync with PRODUCTIONS data
+  rebuildRoomProdPills();
+  renderClaimsStrip('bp-claims-strip','beltpack');
   const bpToProd={};
   Object.values(PRODUCTIONS).forEach(prod=>(prod.beltpacks||[]).forEach(bp=>{ const id=typeof bp==='string'?bp:bp.id; bpToProd[id]=prod; }));
 
