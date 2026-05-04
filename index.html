@@ -641,6 +641,8 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
 
 .req-archive-hdr { padding:10px clamp(16px,2.2vw,28px); display:flex; align-items:center; background:rgba(0,0,0,.02); border-bottom:1px solid var(--border-md); cursor:pointer; }
 .req-archive-hdr:hover { background:rgba(0,0,0,.04); }
+.req-flush-btn { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:700; letter-spacing:var(--ls-normal); text-transform:uppercase; padding:4px 10px; background:transparent; border:1px solid var(--border-md); color:var(--tx-secondary); cursor:pointer; margin-left:auto; }
+.req-flush-btn:hover { border-color:var(--red); color:var(--red); }
 .req-archive-label { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-secondary); letter-spacing:var(--ls-normal); text-transform:uppercase; }
 .req-archive-body .req-resolved { opacity:.55; }
 
@@ -4198,8 +4200,9 @@ function renderReqSection(title, type, items, isPending, renderFn){
       pending.forEach(r=>{ html += renderFn(r); });
     }
     if(resolved.length){
-      html += `<div class="req-archive-hdr" onclick="reqToggleArchive('${archiveId}')">
-        <span class="req-archive-label">▶ ${resolved.length} resolved</span>
+      html += `<div class="req-archive-hdr" style="display:flex;align-items:center;">
+        <span class="req-archive-label" style="cursor:pointer;flex:1;" onclick="reqToggleArchive('${archiveId}')">▶ ${resolved.length} resolved</span>
+        <button class="req-flush-btn" onclick="flushResolved('${type}')">Clear ${resolved.length} resolved</button>
       </div>
       <div id="${archiveId}" class="req-archive-body" style="display:none;">`;
       resolved.forEach(r=>{ html += '<div class="req-resolved">'+renderFn(r)+'</div>'; });
@@ -4322,6 +4325,25 @@ function renderKeyCard(r){
   </div>`;
 }
 
+async function flushResolved(type){
+  const tableMap={change:'change_requests',key:'key_requests',claims:'device_claims'};
+  const statusMap={change:['approved','denied','modified'],key:['fulfilled','denied'],claims:['confirmed','denied']};
+  const table=tableMap[type]||type;
+  const statuses=statusMap[type]||['approved','denied','fulfilled'];
+  adminConfirm(
+    'Clear Resolved',
+    'Remove all resolved requests?',
+    'Permanently deletes approved, denied, and fulfilled entries. Pending requests are untouched.',
+    'Clear All Resolved',
+    async ()=>{
+      const {error}=await SUPA.from(table).delete().in('status',statuses);
+      if(error){ toast('Error: '+error.message,'danger'); return; }
+      toast('Resolved requests cleared','success');
+      loadRequests();
+    }
+  );
+}
+
 async function resolveRequest(table, id, status){
   if(!SUPA) return;
   const {error} = await SUPA.from(table).update({
@@ -4410,6 +4432,12 @@ async function initTMApp(){
   if(ufBar){ ufBar.style.display='flex'; tmScreen.appendChild(ufBar); }
 
   // Body
+  // Subheader — matches admin style
+  const tmSubhdr=document.createElement('div');
+  tmSubhdr.id='tm-subhdr';
+  tmSubhdr.style.cssText='flex-shrink:0;';
+  tmScreen.appendChild(tmSubhdr);
+
   const body=document.createElement('div');
   body.id='tm-body'; body.style.cssText='flex:1;overflow-y:auto;';
   tmScreen.appendChild(body);
@@ -4433,6 +4461,17 @@ function setTMView(view){
     b.classList.toggle('active', b.textContent.toLowerCase()===view);
   });
   const body=document.getElementById('tm-body'); if(!body) return;
+  // Subheader
+  const tmSH=document.getElementById('tm-subhdr');
+  if(tmSH){
+    const titles={
+      keypanels:['Keypanels','All Active Productions'],
+      beltpacks:['Beltpacks','All Active Productions'],
+      requests:['Requests','Pending Changes & Assignments']
+    };
+    const [name,sub]=titles[view]||[view,''];
+    tmSH.innerHTML='<div class="sec-head"><div><div class="sec-name">'+name+'</div><div class="sec-full">'+sub+'</div></div></div>';
+  }
   // Show/hide filter bar based on view
   const ufBar=$('unified-filters');
   if(ufBar) ufBar.style.display=view==='requests'?'none':'flex';
