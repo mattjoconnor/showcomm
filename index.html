@@ -5824,6 +5824,7 @@ async function crewRenderSchematic(){
         console.log('[crew] kp_assignments query — prodId:',_crewClaim.production_id,'data:',data,'error:',error);
         if(!error&&data) kpEntry=data.data?.[_crewClaim.device_id];
         console.log('[crew] kpEntry for',_crewClaim.device_id,':',kpEntry);
+        console.log('[crew] first 5 keys:',kpEntry?.keys?.slice(0,5));
       }
       _crewAllKeys=kpEntry?.keys||[];
       const panel=KP_PANELS.find(p=>p.id===_crewClaim.device_id);
