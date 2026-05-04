@@ -5450,8 +5450,8 @@ async function crewRenderKeys(){
         const entry=data?.data?.[_crewClaim.device_id];
         keys=entry?.keys||[];
       }
-      // BP: simple 2-column grid, up to 4 keys typical
       const count=Math.max(keys.length,4);
+      while(keys.length<count) keys.push(null);
       const mid=Math.ceil(count/2);
       const groups=[
         {title:'Left',range:'Keys 1–'+mid,keys:keys.slice(0,mid),offset:0},
@@ -5461,17 +5461,15 @@ async function crewRenderKeys(){
       grid.innerHTML=groups.map(g=>crewQuadHTML(g)).join('');
 
     }else{
-      // KP — load from kp_assignments
       let kpEntry=null;
       if(SUPA){
-        const {data}=await SUPA.from('kp_assignments').select('data').eq('production_id',_crewClaim.production_id).maybeSingle();
-        kpEntry=data?.data?.[_crewClaim.device_id];
+        const {data,error}=await SUPA.from('kp_assignments').select('data').eq('production_id',_crewClaim.production_id).maybeSingle();
+        if(!error) kpEntry=data?.data?.[_crewClaim.device_id];
       }
       keys=kpEntry?.keys||[];
       const panel=KP_PANELS.find(p=>p.id===_crewClaim.device_id);
       const model=panel?.model||'5032';
       const keyCount=model==='4016'?16:32;
-      // Ensure array is right length
       while(keys.length<keyCount) keys.push(null);
 
       if(keyCount===32){
@@ -5493,7 +5491,16 @@ async function crewRenderKeys(){
       }
     }
   }catch(e){
-    grid.innerHTML='<div class="crew-empty">Unable to load key data. Check with your TM.</div>';
+    console.error('crewRenderKeys error:',e);
+    // Still show empty slots so crew can request
+    const count=_crewClaim.device_type==='beltpack'?4:32;
+    while(keys.length<count) keys.push(null);
+    const mid=Math.ceil(count/2);
+    const groups=count<=4
+      ?[{title:'Left',range:'Keys 1–'+mid,keys:keys.slice(0,mid),offset:0},{title:'Right',range:'Keys '+(mid+1)+'–'+count,keys:keys.slice(mid),offset:mid}]
+      :[{title:'Top Left',range:'Keys 1–8',keys:keys.slice(0,8),offset:0},{title:'Top Right',range:'Keys 9–16',keys:keys.slice(8,16),offset:8},{title:'Bottom Left',range:'Keys 17–24',keys:keys.slice(16,24),offset:16},{title:'Bottom Right',range:'Keys 25–32',keys:keys.slice(24,32),offset:24}];
+    grid.className=count<=4?'crew-quad-grid grid-1x2':'crew-quad-grid grid-2x2';
+    grid.innerHTML=groups.map(g=>crewQuadHTML(g)).join('');
   }
 }
 
