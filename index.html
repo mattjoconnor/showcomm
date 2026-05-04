@@ -2737,7 +2737,28 @@ async function tmSubmitChanges(){
   if(!_tmPendingSubmit||!SUPA) return;
   const {panelId,prodId,type}=_tmPendingSubmit;
   const note=document.getElementById('tm-submit-note')?.value.trim()||'';
-  const keys=type==='kp'?loadClaimedKP(prodId)[panelId]?.keys:loadClaimed(prodId)[panelId]?.keys;
+  // Load keys — check production slot first, then draft slot
+  let keys=null;
+  if(type==='kp'){
+    const claimed=loadClaimedKP(prodId);
+    keys=claimed[panelId]?.keys;
+    if(!keys||!keys.some(k=>k)){
+      // Try draft slot
+      const draft=loadClaimedKP('__draft__');
+      if(draft[panelId]?.keys?.some(k=>k)) keys=draft[panelId].keys;
+    }
+    // Also try _tmDirty originalKeys as a cross-check
+    if(!keys||!keys.some(k=>k)) keys=_tmDirty?.originalKeys||[];
+  } else {
+    const claimed=loadClaimed(prodId);
+    keys=claimed[panelId]?.keys;
+    if(!keys||!keys.some(k=>k)){
+      const draft=loadClaimed('__bpdraft__');
+      if(draft[panelId]?.keys?.some(k=>k)) keys=draft[panelId].keys;
+    }
+  }
+  // Add debug
+  console.log('[tmSubmitChanges] panelId:',panelId,'prodId:',prodId,'type:',type,'keys found:',keys?.filter(k=>k)?.length||0);
   const {error}=await SUPA.from('change_requests').insert({
     device_id:panelId,
     device_type:type==='kp'?'keypanel':'beltpack',
