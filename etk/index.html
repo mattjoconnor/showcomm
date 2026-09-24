@@ -1115,6 +1115,17 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
         <div class="crew-section-label" id="crew-device-label">Select your device</div>
         <div id="crew-device-list"></div>
       </div>
+      <!-- Claim identity (ETK: captured after picking a beltpack, not before) -->
+      <div class="crew-step" id="crew-step-claim">
+        <button class="crew-back-btn" onclick="crewCancelClaimForm()">← Beltpacks</button>
+        <div class="crew-section-label">Claiming <span id="crew-claim-device-label"></span></div>
+        <label class="field-label" for="crew-claim-name">Your Name</label>
+        <input class="field-input" id="crew-claim-name" type="text" placeholder="John Smith" autocomplete="name">
+        <label class="field-label" for="crew-claim-position">Position</label>
+        <input class="field-input" id="crew-claim-position" type="text" placeholder="Director, AP, VO..." autocomplete="off">
+        <button class="btn-full" id="btn-crew-claim-submit" style="background:#0891B2;">Claim Device</button>
+        <div class="login-error" id="crew-claim-error" style="display:none;"></div>
+      </div>
       <!-- Pending -->
       <div class="crew-step" id="crew-step-pending">
         <div class="crew-status-card pending">
@@ -1864,15 +1875,20 @@ function doLogout(){
 document.querySelectorAll('.login-role-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     _selectedRole=btn.dataset.role;
+    if(_selectedRole==='crew'){
+      // ETK build: identity is captured after picking a beltpack, not here
+      showScreen('crew');
+      return;
+    }
     document.querySelectorAll('.login-role-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     const lb=document.getElementById('login-box');
-    if(lb){ lb.className='login-box'; if(_selectedRole!=='admin') lb.classList.add('role-'+_selectedRole); }
-    $('login-step-email-pw').style.display=_selectedRole==='crew'?'none':'block';
-    $('login-step-crew').style.display=_selectedRole==='crew'?'block':'none';
+    if(lb){ lb.className='login-box'; lb.classList.add('role-'+_selectedRole); }
+    $('login-step-email-pw').style.display='block';
+    $('login-step-crew').style.display='none';
     $('login-creds-wrap').style.display='block';
     $('login-error').style.display='none';
-    const first=_selectedRole==='crew'?$('crew-name'):$('login-username');
+    const first=$('login-username');
     if(first) setTimeout(()=>first.focus(),50);
   });
 });
@@ -5703,34 +5719,18 @@ async function tmSubmitRequest(){
 let _crewClaim=null, _crewProdId=null, _crewDeviceType=null, _crewChannel=null;
 
 async function initCrewApp(){
-  const name=_currentProfile.display_name, pos=_currentProfile.position;
-  document.getElementById('crew-topbar-name').textContent=name;
-  document.getElementById('crew-topbar-pos').textContent=pos;
+  // ETK build: identity is captured after picking a beltpack, not before
+  document.getElementById('crew-topbar-name').textContent='—';
+  document.getElementById('crew-topbar-pos').textContent='';
   crewShowStep('loading');
 
-  // Load productions first (needed for both restore and fresh flow)
+  // Load productions
   if(SUPA){
     const {data}=await SUPA.from('productions').select('*');
     if(data){ PRODUCTIONS={}; data.forEach(r=>{ PRODUCTIONS[r.id]=rowToProd(r); }); }
   }
 
-  // Check for existing active claim
-  if(SUPA){
-    const {data}=await SUPA.from('device_claims')
-      .select('*').ilike('crew_name',name)
-      .in('status',['pending','confirmed'])
-      .order('claimed_at',{ascending:false}).limit(1);
-    if(data&&data.length>0){
-      _crewClaim=data[0];
-      _crewProdId=_crewClaim.production_id;
-      _crewDeviceType=_crewClaim.device_type==='keypanel'?'kp':'bp';
-      crewSubscribe();
-      crewShowClaimState();
-      return;
-    }
-  }
-
-  // ETK build: single hardcoded production, beltpack-only — skip picker + type step
+  // ETK build: single hardcoded production, beltpack-only — straight to the beltpack grid
   _crewProdId='ETK';
   crewSelectType('bp');
 }
@@ -5786,7 +5786,7 @@ async function crewLoadDevices(){
     }
     el.innerHTML=`<div class="crew-device-grid">`+bps.map(bp=>{
       const t=taken.has(bp);
-      return `<div class="crew-device-card${t?' taken':''}"${t?'':` onclick="crewClaimDevice('${bp}')"`}>
+      return `<div class="crew-device-card${t?' taken':''}"${t?'':` onclick="crewOpenClaimForm('${bp}')"`}>
         <div class="crew-device-card-id">${bp}</div>
         ${t?'<div class="crew-device-card-status">Claimed</div>':''}
       </div>`;
@@ -5823,6 +5823,44 @@ async function crewLoadDevices(){
   }
 }
 
+let _crewPendingDeviceId=null;
+function crewOpenClaimForm(deviceId){
+  _crewPendingDeviceId=deviceId;
+  document.getElementById('crew-claim-device-label').textContent=deviceId;
+  document.getElementById('crew-claim-error').style.display='none';
+  const n=$('crew-claim-name'), p=$('crew-claim-position');
+  if(n) n.value=localStorage.getItem('sc_crew_name')||'';
+  if(p) p.value=localStorage.getItem('sc_crew_pos')||'';
+  crewShowStep('claim');
+  setTimeout(()=>{ if(n) n.focus(); },50);
+}
+function crewCancelClaimForm(){
+  _crewPendingDeviceId=null;
+  crewShowStep('device');
+}
+document.getElementById('btn-crew-claim-submit').addEventListener('click',async()=>{
+  const name=$('crew-claim-name').value.trim(), pos=$('crew-claim-position').value.trim();
+  const errEl=$('crew-claim-error');
+  if(!name||!pos){ errEl.textContent='Enter your name and position.'; errEl.style.display='block'; return; }
+  if(!_crewPendingDeviceId) return;
+  const btn=document.getElementById('btn-crew-claim-submit'); btn.textContent='Claiming…'; btn.disabled=true;
+  try{
+    let profile={display_name:name,position:pos,role:'crew'};
+    if(SUPA){
+      const {data}=await SUPA.from('profiles').select('*').ilike('display_name',name).eq('role','crew').maybeSingle();
+      if(data) profile={...data,position:pos};
+    }
+    _currentProfile=profile; _currentRole='crew';
+    localStorage.setItem('sc_crew_name',name);
+    localStorage.setItem('sc_crew_pos',pos);
+    document.getElementById('crew-topbar-name').textContent=name;
+    document.getElementById('crew-topbar-pos').textContent=pos;
+    await crewClaimDevice(_crewPendingDeviceId);
+  }catch(err){ errEl.textContent='Error connecting. Try again.'; errEl.style.display='block'; }
+  finally{ btn.textContent='Claim Device'; btn.disabled=false; }
+});
+$('crew-claim-position').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('btn-crew-claim-submit').click(); });
+
 async function crewClaimDevice(deviceId){
   const deviceType=_crewDeviceType==='bp'?'beltpack':'keypanel';
   // Guard: one device per type per crew member
@@ -5832,8 +5870,10 @@ async function crewClaimDevice(deviceId){
       .eq('device_type',deviceType)
       .in('status',['pending','confirmed']);
     if(data&&data.length>0){
-      const el=document.getElementById('crew-device-list');
-      el.innerHTML=`<div class="crew-empty" style="color:var(--red);">You already have a ${deviceType} claim (${data[0].device_id}). Release it first before claiming another.</div>`;
+      const msg=`You already have a ${deviceType} claim (${data[0].device_id}). Release it first before claiming another.`;
+      const claimErrEl=document.getElementById('crew-claim-error');
+      if(claimErrEl){ claimErrEl.textContent=msg; claimErrEl.style.display='block'; }
+      else{ const el=document.getElementById('crew-device-list'); if(el) el.innerHTML=`<div class="crew-empty" style="color:var(--red);">${msg}</div>`; }
       return;
     }
   }
@@ -5858,16 +5898,12 @@ function crewShowClaimState(){
   if(_crewClaim.status==='confirmed'||_crewClaim.status==='pending') crewShowDeviceHome();
   else if(_crewClaim.status==='denied'){
     const deniedDevice=_crewClaim.device_id;
-    const msg=document.getElementById('crew-denied-msg');
-    if(msg){ msg.textContent='Your claim for '+deniedDevice+' was denied. Please select another device.'; msg.classList.add('visible'); }
     crewShowToast('Your '+deniedDevice+' claim was denied — please select another device');
     _crewClaim=null;
-    crewRenderProdList();
-    crewShowStep('prod');
+    crewSelectType('bp');
   }else if(_crewClaim.status==='released'||_crewClaim.status==='cancelled'){
     _crewClaim=null;
-    crewRenderProdList();
-    crewShowStep('prod');
+    crewSelectType('bp');
   }else{
     crewShowDeviceHome();
   }
@@ -6299,8 +6335,7 @@ async function crewCancelClaim(){
   if(SUPA&&_crewClaim.id!=='local') await SUPA.from('device_claims').update({status:'cancelled'}).eq('id',_crewClaim.id);
   if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
   _crewClaim=null;
-  crewRenderProdList();
-  crewShowStep('prod');
+  crewSelectType('bp');
 }
 
 function crewStartOver(){
@@ -6309,8 +6344,7 @@ function crewStartOver(){
   }
   if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
   _crewClaim=null;
-  crewRenderProdList();
-  crewShowStep('prod');
+  crewSelectType('bp');
 }
 
 function crewShowStep(step){
