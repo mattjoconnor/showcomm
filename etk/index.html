@@ -290,6 +290,9 @@ body { background:var(--bg); color:var(--black); }
 .crew-picker-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:4px; margin-bottom:2px; }
 .crew-picker-opt { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:var(--ls-tight); padding:7px 4px; border:2px solid transparent; cursor:pointer; text-align:center; }
 .crew-picker-opt.active { outline:2px solid #0891B2; outline-offset:1px; }
+.crew-picker-selected { display:flex; align-items:center; justify-content:space-between; padding:9px 11px; background:rgba(8,145,178,.06); border:2px solid #0891B2; cursor:pointer; }
+.crew-picker-selected-label { font-family:var(--f-mono); font-size:11px; font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); }
+.crew-picker-selected-change { font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:#0891B2; }
 .crew-key-note-input::placeholder { color:rgba(0,0,0,.35); font-weight:400; }
 /* Submit bar */
 .crew-submit-bar { flex-shrink:0; border-top:2px solid var(--black); padding:14px 20px; padding-bottom:max(20px,env(safe-area-inset-bottom,20px)); display:none; align-items:center; gap:12px; background:var(--surface); z-index:100; }
@@ -6087,6 +6090,12 @@ const ETK_OPTIONS = {
 };
 function crewOptionPickerHTML(idx){
   const current=_crewKeyNotes[idx]||'';
+  if(current && !_crewPickerForceOpen[idx]){
+    return `<div class="crew-picker-selected" onclick="crewExpandPicker(${idx})">
+      <span class="crew-picker-selected-label">${current}</span>
+      <span class="crew-picker-selected-change">Change ›</span>
+    </div>`;
+  }
   let html='';
   Object.entries(ETK_OPTIONS).forEach(([cat,opts])=>{
     html+=`<div class="crew-picker-cat-label">${cat}</div><div class="crew-picker-grid">`;
@@ -6099,10 +6108,17 @@ function crewOptionPickerHTML(idx){
   });
   return html;
 }
+let _crewPickerForceOpen={};
+function crewExpandPicker(idx){
+  _crewPickerForceOpen[idx]=true;
+  const wrap=document.getElementById('crew-picker-'+idx);
+  if(wrap) wrap.innerHTML=crewOptionPickerHTML(idx);
+}
 function crewPickOption(idx,cat,label){
   const noteStr=label+' ('+cat.replace(/s$/,'')+')';
   if(_crewKeyNotes[idx]===noteStr) delete _crewKeyNotes[idx];
   else _crewKeyNotes[idx]=noteStr;
+  _crewPickerForceOpen[idx]=false;
   const cell=document.getElementById('crew-cell-'+idx);
   const preview=document.getElementById('crew-cell-preview-'+idx);
   const trimmed=_crewKeyNotes[idx];
