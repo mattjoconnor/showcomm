@@ -5417,8 +5417,9 @@ async function renderETKBeltpackStatus(){
 function etkParseRequestNote(noteText){
   const m=/^(.+) \((PL|IFB)\)$/.exec(noteText||'');
   if(!m) return null;
-  const opt=etkFindOption(m[2]==='PL'?'PLs':'IFBs',m[1]);
-  return opt?{label:m[1],bg:opt.bg,fg:opt.fg}:null;
+  const category=m[2]==='PL'?'PLs':'IFBs';
+  const opt=etkFindOption(category,m[1]);
+  return opt?{label:m[1],category,bg:opt.bg,fg:opt.fg}:null;
 }
 function etkToggleBpDetail(bp){
   const el=document.getElementById('bp-inline-reqs-'+bp.replace(/\s/g,'_'));
@@ -6173,7 +6174,7 @@ async function crewRenderKeys(){
 }
 
 // ── CREW KEY SCHEMATIC ──────────────────────────────────────────────────────
-let _crewAllKeys=[], _crewKeyNotes={}, _crewActiveKeyIdx=null;
+let _crewAllKeys=[], _crewKeyNotes={}, _crewOpenKeyState={}, _crewActiveKeyIdx=null;
 
 function crewKeyLabel(k){
   if(!k) return null;
@@ -6187,10 +6188,29 @@ function crewKeyLabel(k){
 async function crewRenderSchematic(silent=false){
   const container=document.getElementById('crew-schematic');
   if(!silent) container.innerHTML='<div class="crew-loading">Loading keys…</div>';
-  _crewKeyNotes={}; _crewActiveKeyIdx=null;
+  _crewKeyNotes={}; _crewOpenKeyState={}; _crewActiveKeyIdx=null;
   const zone=document.getElementById('crew-picker-zone');
   if(zone){ zone.classList.remove('visible'); zone.innerHTML=''; }
   crewUpdateSubmitBar();
+
+  // ETK build: restore any already-submitted-but-still-open requests so
+  // reopening a beltpack shows what's already been asked for, not "Empty".
+  // Kept separate from _crewKeyNotes so it isn't re-submitted as a new request.
+  if(SUPA){
+    const {data:openReqs}=await SUPA.from('key_requests').select('note')
+      .eq('device_id',_crewClaim.device_id).eq('production_id',_crewClaim.production_id).eq('status','open')
+      .order('created_at',{ascending:true});
+    (openReqs||[]).forEach(r=>{
+      let entries=[];
+      try{ entries=JSON.parse(r.note||'[]'); }catch(e){}
+      if(!Array.isArray(entries)) return;
+      entries.forEach(en=>{
+        if(en.keyIndex==null) return;
+        const parsed=etkParseRequestNote(en.note);
+        if(parsed) _crewOpenKeyState[en.keyIndex]={category:parsed.category,label:parsed.label};
+      });
+    });
+  }
 
   try{
     if(_crewClaim.device_type==='beltpack'){
@@ -6250,7 +6270,7 @@ async function crewRenderSchematic(silent=false){
 function crewCellHTML(idx,k){
   const label=crewKeyLabel(k);
   let cellStyle='', nameStyle='', displayLabel, isEmpty=false, hasColor=false;
-  const req=_crewKeyNotes[idx];
+  const req=_crewKeyNotes[idx]||_crewOpenKeyState[idx];
   const reqOpt=(req&&typeof req==='object')?etkFindOption(req.category,req.label):null;
   if(reqOpt){
     cellStyle=`background:${rgbStr(reqOpt.bg)};`;
@@ -6282,7 +6302,7 @@ function etkFindOption(cat,label){
   return (ETK_OPTIONS[cat]||[]).find(o=>o.label===label)||null;
 }
 function crewOptionPickerHTML(idx){
-  const current=_crewKeyNotes[idx];
+  const current=_crewKeyNotes[idx]||_crewOpenKeyState[idx];
   const hasCurrent=current&&typeof current==='object';
   const keyLabel='Key '+(idx+1);
   if(hasCurrent && !_crewPickerForceOpen[idx]){
@@ -6438,7 +6458,10 @@ async function crewLoadMyRequests(){
       if(Array.isArray(notes)&&notes.length){
         // Use just the key notes as the summary, not the full description with crew name prefix
         summary=notes.length+' key'+(notes.length!==1?'s':'')+' flagged';
-        detail=notes.map(n=>`Key ${n.keyIndex+1} (${n.label}): ${n.note}`).join(' · ');
+        detail=notes.map(n=>{
+          const genericLabel='Key '+(n.keyIndex+1);
+          return (n.label&&n.label!==genericLabel) ? `${genericLabel} (${n.label}): ${n.note}` : `${genericLabel}: ${n.note}`;
+        }).join(' · ');
       }
     }catch(e){ detail=r.description||r.note||''; }
     return `<div class="crew-req-item">
@@ -6457,19 +6480,23 @@ async function crewReRequest(reqId, noteJson){
   try{
     const notes=JSON.parse(noteJson||'[]');
     if(Array.isArray(notes)&&notes.length){
-      notes.forEach(n=>{ if(n.keyIndex!=null&&n.note){ _crewKeyNotes[n.keyIndex]=n.note; } });
-      crewUpdateSubmitBar();
-      // Visually mark the cells
       notes.forEach(n=>{
-        const cell=document.getElementById('crew-cell-'+n.keyIndex);
-        const preview=document.getElementById('crew-cell-preview-'+n.keyIndex);
-        if(cell){ cell.classList.add('annotated'); }
-        if(preview) preview.textContent='"'+n.note+'"';
-        const ta=document.getElementById('crew-note-'+n.keyIndex);
-        if(ta) ta.value=n.note;
+        if(n.keyIndex==null||!n.note) return;
+        const parsed=etkParseRequestNote(n.note);
+        if(parsed) _crewKeyNotes[n.keyIndex]={category:parsed.category,label:parsed.label};
+      });
+      crewUpdateSubmitBar();
+      // Rebuild the affected cells so they show the restored fill color
+      notes.forEach(n=>{
+        if(n.keyIndex==null) return;
+        const oldCell=document.getElementById('crew-cell-'+n.keyIndex);
+        if(oldCell&&oldCell.parentNode){
+          const tmp=document.createElement('div');
+          tmp.innerHTML=crewCellHTML(n.keyIndex,_crewAllKeys[n.keyIndex]);
+          oldCell.parentNode.replaceChild(tmp.firstElementChild,oldCell);
+        }
       });
       crewShowToast('Keys re-flagged — review and resubmit');
-      // Scroll to top of schematic
       document.getElementById('crew-schematic')?.scrollIntoView({behavior:'smooth',block:'start'});
     }
   }catch(e){}
