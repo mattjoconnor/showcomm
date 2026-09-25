@@ -5449,7 +5449,7 @@ let _etkKnownQueue=null; // null until first render — nothing "new" to flag on
 function etkKeyCellHTML({rec,urg},i){
   const needsAttn=urg==='orange'||urg==='red';
   const ringClr=urg==='red'?'#DC2626':'#F59E0B';
-  const ringStyle=needsAttn?`box-shadow:inset 0 0 0 3px #fff, inset 0 0 0 8px ${ringClr};`:'';
+  const ringStyle=needsAttn?`box-shadow:inset 0 0 0 5px ${ringClr}, inset 0 0 0 8px #fff;`:'';
   if(rec&&rec.parsed){
     return `<div class="crew-key-cell programmed" style="background:${rgbStr(rec.parsed.bg)};${ringStyle}">
       <div class="crew-key-cell-num" style="color:inherit;opacity:.5;">${i+1}</div>
