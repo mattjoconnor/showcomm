@@ -324,6 +324,11 @@ body { background:var(--bg); color:var(--black); }
 .etk-queue-empty.visible { display:block; }
 .etk-queue-item { border:1px solid var(--border-md); border-top:4px solid var(--border-md); background:var(--surface); transition:opacity var(--dur-med) var(--ease), transform var(--dur-med) var(--ease); }
 .etk-queue-item.leaving { opacity:0; transform:scale(.95); pointer-events:none; }
+.etk-queue-item.just-changed { animation:etk-queue-pulse 1.1s ease-in-out 3; }
+@keyframes etk-queue-pulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(0,0,0,0); }
+  50% { box-shadow:0 0 0 8px var(--glow-color,rgba(245,158,11,.4)); }
+}
 .etk-queue-item-head { display:flex; align-items:baseline; justify-content:space-between; padding:12px 14px 10px; }
 .etk-queue-item-id { font-family:var(--f-mono); font-size:clamp(15px,1.4vw,19px); font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); }
 .etk-queue-item-crew { font-family:var(--f-mono); font-size:clamp(10px,.9vw,12px); font-weight:600; color:var(--tx-secondary); }
@@ -5439,6 +5444,8 @@ async function renderETKBeltpackStatus(){
   if(chevron) chevron.textContent=_etkAllExpanded?'▾':'▸';
 }
 
+let _etkKnownQueue=null; // null until first render — nothing "new" to flag on initial load
+
 function renderETKQueue(){
   const list=document.getElementById('etk-queue-list');
   const empty=document.getElementById('etk-queue-empty');
@@ -5450,10 +5457,13 @@ function renderETKQueue(){
       const rankDiff=_etkUrgencyRank[_etkBpData[b].urgency]-_etkUrgencyRank[_etkBpData[a].urgency];
       return rankDiff!==0 ? rankDiff : a.localeCompare(b,undefined,{numeric:true});
     });
+  const knownQueue=_etkKnownQueue;
   if(countEl) countEl.textContent=queue.length;
   if(empty) empty.classList.toggle('visible',queue.length===0);
   list.innerHTML=queue.map(bp=>{
     const d=_etkBpData[bp];
+    const isNew=knownQueue&&!knownQueue.has(bp); // wasn't in the queue last time we rendered it
+    const glowClr=d.urgency==='red'?'rgba(220,38,38,.4)':'rgba(245,158,11,.4)';
     const cells=d.keys.map(({rec},i)=>{
       if(rec&&rec.parsed){
         return `<div class="crew-key-cell programmed" style="background:${rgbStr(rec.parsed.bg)};">
@@ -5463,7 +5473,7 @@ function renderETKQueue(){
       }
       return `<div class="crew-key-cell"><div class="crew-key-cell-num">${i+1}</div><div class="crew-key-cell-name empty">Empty</div></div>`;
     }).join('');
-    return `<div class="etk-queue-item" id="etk-queue-item-${bp}" style="border-top-color:${_etkUrgencyColors[d.urgency]};">
+    return `<div class="etk-queue-item${isNew?' just-changed':''}" id="etk-queue-item-${bp}" style="border-top-color:${_etkUrgencyColors[d.urgency]};--glow-color:${glowClr};">
       <div class="etk-queue-item-head">
         <div class="etk-queue-item-id">${bp}</div>
         <div class="etk-queue-item-crew">${d.claim?d.claim.crew_name:'Unclaimed'}</div>
@@ -5472,6 +5482,7 @@ function renderETKQueue(){
       <button class="etk-queue-confirm" onclick="etkConfirmProgrammed('${bp}')">Mark Programmed</button>
     </div>`;
   }).join('');
+  _etkKnownQueue=new Set(queue);
 }
 
 function renderETKGrid(){
