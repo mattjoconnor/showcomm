@@ -1189,7 +1189,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
             <div class="crew-home-show" id="crew-home-show"></div>
             <div class="crew-home-location" id="crew-home-location"></div>
           </div>
-          <div class="crew-home-badge">Confirmed</div>
+          <div class="crew-home-badge" id="crew-home-badge">Confirmed</div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
           <div class="crew-keys-label" style="margin-bottom:0;">Tap any key to flag a change — then submit all at once</div>
@@ -6639,7 +6639,7 @@ async function crewConfirmRelease(){
   if(_crewClaim&&SUPA&&_crewClaim.id!=='local'){
     const {error}=await SUPA.from('device_claims').update({status:'released'}).eq('id',_crewClaim.id);
     if(error){
-      crewShowToast('Could not release '+(deviceId||'beltpack')+' — try again');
+      crewShowToast('Release failed: '+(error.message||error.code||'unknown error'),6000);
       console.error('crewConfirmRelease:',error);
       return;
     }
