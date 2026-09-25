@@ -6293,7 +6293,7 @@ async function crewRenderKeys(){
 }
 
 // ── CREW KEY SCHEMATIC ──────────────────────────────────────────────────────
-let _crewAllKeys=[], _crewKeyNotes={}, _crewOpenKeyState={}, _crewActiveKeyIdx=null;
+let _crewAllKeys=[], _crewKeyNotes={}, _crewCurrentKeyState={}, _crewActiveKeyIdx=null;
 
 function crewKeyLabel(k){
   if(!k) return null;
@@ -6307,26 +6307,28 @@ function crewKeyLabel(k){
 async function crewRenderSchematic(silent=false){
   const container=document.getElementById('crew-schematic');
   if(!silent) container.innerHTML='<div class="crew-loading">Loading keys…</div>';
-  _crewKeyNotes={}; _crewOpenKeyState={}; _crewActiveKeyIdx=null;
+  _crewKeyNotes={}; _crewCurrentKeyState={}; _crewActiveKeyIdx=null;
   const zone=document.getElementById('crew-picker-zone');
   if(zone){ zone.classList.remove('visible'); zone.innerHTML=''; }
   crewUpdateSubmitBar();
 
-  // ETK build: restore any already-submitted-but-still-open requests so
-  // reopening a beltpack shows what's already been asked for, not "Empty".
-  // Kept separate from _crewKeyNotes so it isn't re-submitted as a new request.
+  // ETK build: always show what's currently assigned to each key — whether
+  // that's an open (unprogrammed) request or one already fulfilled — so crew
+  // can see what they already have before requesting a change. Kept separate
+  // from _crewKeyNotes so it isn't re-submitted as a new request on its own.
   if(SUPA){
-    const {data:openReqs}=await SUPA.from('key_requests').select('note')
-      .eq('device_id',_crewClaim.device_id).eq('production_id',_crewClaim.production_id).eq('status','open')
+    const {data:reqs}=await SUPA.from('key_requests').select('note,status')
+      .eq('device_id',_crewClaim.device_id).eq('production_id',_crewClaim.production_id)
+      .in('status',['open','fulfilled'])
       .order('created_at',{ascending:true});
-    (openReqs||[]).forEach(r=>{
+    (reqs||[]).forEach(r=>{
       let entries=[];
       try{ entries=JSON.parse(r.note||'[]'); }catch(e){}
       if(!Array.isArray(entries)) return;
       entries.forEach(en=>{
         if(en.keyIndex==null) return;
         const parsed=etkParseRequestNote(en.note);
-        if(parsed) _crewOpenKeyState[en.keyIndex]={category:parsed.category,label:parsed.label};
+        if(parsed) _crewCurrentKeyState[en.keyIndex]={category:parsed.category,label:parsed.label};
       });
     });
   }
@@ -6388,7 +6390,7 @@ async function crewRenderSchematic(silent=false){
 
 function crewCellState(idx,k){
   const label=crewKeyLabel(k);
-  const req=_crewKeyNotes[idx]||_crewOpenKeyState[idx];
+  const req=_crewKeyNotes[idx]||_crewCurrentKeyState[idx];
   const reqOpt=(req&&typeof req==='object')?etkFindOption(req.category,req.label):null;
   if(reqOpt){
     return {cellStyle:`background:${rgbStr(reqOpt.bg)};`, nameStyle:`color:${rgbStr(reqOpt.fg)};`, displayLabel:reqOpt.label, isEmpty:false, hasColor:true};
@@ -6443,13 +6445,13 @@ function etkFindOption(cat,label){
   return (ETK_OPTIONS[cat]||[]).find(o=>o.label===label)||null;
 }
 function crewOptionPickerHTML(idx){
-  const current=_crewKeyNotes[idx]||_crewOpenKeyState[idx];
+  const current=_crewKeyNotes[idx]||_crewCurrentKeyState[idx];
   const hasCurrent=current&&typeof current==='object';
   const keyLabel='Key '+(idx+1);
   if(hasCurrent && !_crewPickerForceOpen[idx]){
     return `<div class="crew-picker-zone-label">${keyLabel}</div>
       <div class="crew-picker-selected" onclick="crewExpandPicker(${idx})">
-        <span>Requesting: ${current.label} (${current.category.replace(/s$/,'')})</span>
+        <span>Current: ${current.label} (${current.category.replace(/s$/,'')})</span>
         <span class="crew-picker-change-btn">CHANGE</span>
       </div>`;
   }
