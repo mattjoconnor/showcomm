@@ -5446,6 +5446,18 @@ async function renderETKBeltpackStatus(){
 
 let _etkKnownQueue=null; // null until first render — nothing "new" to flag on initial load
 
+function etkKeyCellHTML({rec,urg},i){
+  const needsAttn=urg==='orange'||urg==='red';
+  const ringClr=urg==='red'?'#DC2626':'#F59E0B';
+  if(rec&&rec.parsed){
+    return `<div class="crew-key-cell programmed" style="background:${rgbStr(rec.parsed.bg)};${needsAttn?`outline:3px solid ${ringClr};outline-offset:-3px;`:''}">
+      <div class="crew-key-cell-num" style="color:inherit;opacity:.5;">${i+1}</div>
+      <div class="crew-key-cell-name" style="color:${rgbStr(rec.parsed.fg)};">${rec.parsed.label}</div>
+    </div>`;
+  }
+  return `<div class="crew-key-cell"><div class="crew-key-cell-num">${i+1}</div><div class="crew-key-cell-name empty">Empty</div></div>`;
+}
+
 function renderETKQueue(){
   const list=document.getElementById('etk-queue-list');
   const empty=document.getElementById('etk-queue-empty');
@@ -5464,15 +5476,7 @@ function renderETKQueue(){
     const d=_etkBpData[bp];
     const isNew=knownQueue&&!knownQueue.has(bp); // wasn't in the queue last time we rendered it
     const glowClr=d.urgency==='red'?'rgba(220,38,38,.4)':'rgba(245,158,11,.4)';
-    const cells=d.keys.map(({rec},i)=>{
-      if(rec&&rec.parsed){
-        return `<div class="crew-key-cell programmed" style="background:${rgbStr(rec.parsed.bg)};">
-          <div class="crew-key-cell-num" style="color:inherit;opacity:.5;">${i+1}</div>
-          <div class="crew-key-cell-name" style="color:${rgbStr(rec.parsed.fg)};">${rec.parsed.label}</div>
-        </div>`;
-      }
-      return `<div class="crew-key-cell"><div class="crew-key-cell-num">${i+1}</div><div class="crew-key-cell-name empty">Empty</div></div>`;
-    }).join('');
+    const cells=d.keys.map(etkKeyCellHTML).join('');
     return `<div class="etk-queue-item${isNew?' just-changed':''}" id="etk-queue-item-${bp}" style="border-top-color:${_etkUrgencyColors[d.urgency]};--glow-color:${glowClr};">
       <div class="etk-queue-item-head">
         <div class="etk-queue-item-id">${bp}</div>
@@ -5490,15 +5494,7 @@ function renderETKGrid(){
   const sorted=Object.keys(_etkBpData).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
   grid.innerHTML=sorted.map(bp=>{
     const d=_etkBpData[bp];
-    const cells=d.keys.map(({rec},i)=>{
-      if(rec&&rec.parsed){
-        return `<div class="crew-key-cell programmed" style="background:${rgbStr(rec.parsed.bg)};">
-          <div class="crew-key-cell-num" style="color:inherit;opacity:.5;">${i+1}</div>
-          <div class="crew-key-cell-name" style="color:${rgbStr(rec.parsed.fg)};">${rec.parsed.label}</div>
-        </div>`;
-      }
-      return `<div class="crew-key-cell"><div class="crew-key-cell-num">${i+1}</div><div class="crew-key-cell-name empty">Empty</div></div>`;
-    }).join('');
+    const cells=d.keys.map(etkKeyCellHTML).join('');
     return `<div class="etk-queue-item" style="border-top-color:${_etkUrgencyColors[d.urgency]};">
       <div class="etk-queue-item-head">
         <div class="etk-queue-item-id">${bp}</div>
