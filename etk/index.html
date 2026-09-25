@@ -1133,8 +1133,6 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
         <div class="crew-section-label">Claiming <span id="crew-claim-device-label"></span></div>
         <label class="field-label" for="crew-claim-name">Your Name</label>
         <input class="field-input" id="crew-claim-name" type="text" placeholder="John Smith" autocomplete="name">
-        <label class="field-label" for="crew-claim-position">Position</label>
-        <input class="field-input" id="crew-claim-position" type="text" placeholder="Director, AP, VO..." autocomplete="off">
         <button class="btn-full" id="btn-crew-claim-submit" style="background:#0891B2;">Claim Device</button>
         <div class="login-error" id="crew-claim-error" style="display:none;"></div>
       </div>
@@ -1904,6 +1902,18 @@ document.querySelectorAll('.login-role-btn').forEach(btn=>{
     if(first) setTimeout(()=>first.focus(),50);
   });
 });
+
+// ETK build: separate crew/TM URLs via ?role= — one shared file, no code duplication.
+// showcomm/etk/crew redirects to ?role=crew, showcomm/etk/tm redirects to ?role=tm.
+(function(){
+  const role=new URLSearchParams(location.search).get('role');
+  if(role==='crew'||role==='tm'){
+    const grid=document.querySelector('.login-role-grid'); if(grid) grid.style.display='none';
+    const backBtn=document.getElementById('login-back-btn'); if(backBtn) backBtn.style.display='none';
+  }
+  if(role==='crew'){ showScreen('crew'); }
+  else if(role==='tm'){ document.querySelector('.login-role-btn[data-role="tm"]')?.click(); }
+})();
 
 const _backBtn=document.getElementById('login-back-btn');
 if(_backBtn) _backBtn.addEventListener('click',()=>{
@@ -5098,6 +5108,7 @@ let _tmActiveProd = null;
 async function initTMApp(){
   _tmMode=true;
   if(!SUPA||!_currentUser) return;
+  loadGlobalOptions(); // real per-space PL/IFB colors, same source as crew view
 
   // ETK build: single hardcoded production — no multi-show lookup
   _tmProductions=PRODUCTIONS['ETK']?[PRODUCTIONS['ETK']]:[];
@@ -5823,6 +5834,7 @@ async function initCrewApp(){
   document.getElementById('crew-topbar-name').textContent='—';
   document.getElementById('crew-topbar-pos').textContent='';
   crewShowStep('loading');
+  loadGlobalOptions(); // real per-space PL/IFB colors from Matt's configured intercom setup
 
   // Load productions
   if(SUPA){
@@ -5928,9 +5940,8 @@ function crewOpenClaimForm(deviceId){
   _crewPendingDeviceId=deviceId;
   document.getElementById('crew-claim-device-label').textContent=deviceId;
   document.getElementById('crew-claim-error').style.display='none';
-  const n=$('crew-claim-name'), p=$('crew-claim-position');
+  const n=$('crew-claim-name');
   if(n) n.value='';
-  if(p) p.value='';
   crewShowStep('claim');
   setTimeout(()=>{ if(n) n.focus(); },50);
 }
@@ -5939,25 +5950,24 @@ function crewCancelClaimForm(){
   crewShowStep('device');
 }
 document.getElementById('btn-crew-claim-submit').addEventListener('click',async()=>{
-  const name=$('crew-claim-name').value.trim(), pos=$('crew-claim-position').value.trim();
+  const name=$('crew-claim-name').value.trim();
   const errEl=$('crew-claim-error');
-  if(!name||!pos){ errEl.textContent='Enter your name and position.'; errEl.style.display='block'; return; }
+  if(!name){ errEl.textContent='Enter your name.'; errEl.style.display='block'; return; }
   if(!_crewPendingDeviceId) return;
   const btn=document.getElementById('btn-crew-claim-submit'); btn.textContent='Claiming…'; btn.disabled=true;
   try{
-    let profile={display_name:name,position:pos,role:'crew'};
+    let profile={display_name:name,position:'',role:'crew'};
     if(SUPA){
       const {data}=await SUPA.from('profiles').select('*').ilike('display_name',name).eq('role','crew').maybeSingle();
-      if(data) profile={...data,position:pos};
+      if(data) profile={...data,position:data.position||''};
     }
     _currentProfile=profile; _currentRole='crew';
     document.getElementById('crew-topbar-name').textContent=name;
-    document.getElementById('crew-topbar-pos').textContent=pos;
     await crewClaimDevice(_crewPendingDeviceId);
   }catch(err){ errEl.textContent='Error connecting. Try again.'; errEl.style.display='block'; }
   finally{ btn.textContent='Claim Device'; btn.disabled=false; }
 });
-$('crew-claim-position').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('btn-crew-claim-submit').click(); });
+$('crew-claim-name').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('btn-crew-claim-submit').click(); });
 
 async function crewClaimDevice(deviceId){
   const deviceType=_crewDeviceType==='bp'?'beltpack':'keypanel';
@@ -6225,7 +6235,11 @@ const ETK_OPTIONS = {
   PLs:  ['CAMS','TECH','CUL','LITE','AUD','AD','PROD'].map(l=>({label:l, fg:[0,0,0], bg:[240,14,206]})),
   IFBs: ['HOST','JUDGE','CHEF 1','CHEF 2','CHEF 3','PGM MIX'].map(l=>({label:l, fg:[169,212,152], bg:[0,0,0]}))
 };
-function etkFindOption(cat,label){ return (ETK_OPTIONS[cat]||[]).find(o=>o.label===label); }
+function etkFindOption(cat,label){
+  const real=findOpt(cat,label); // Matt's actual configured intercom color, if set
+  if(real) return {label, bg:real.bg, fg:real.fg};
+  return (ETK_OPTIONS[cat]||[]).find(o=>o.label===label)||null;
+}
 function crewOptionPickerHTML(idx){
   const current=_crewKeyNotes[idx];
   const hasCurrent=current&&typeof current==='object';
@@ -6237,7 +6251,8 @@ function crewOptionPickerHTML(idx){
     html+=`<div class="crew-picker-cat-label">${cat}</div><div class="crew-picker-grid">`;
     opts.forEach(o=>{
       const active=hasCurrent&&current.category===cat&&current.label===o.label;
-      html+=`<button type="button" class="crew-picker-opt${active?' active':''}" style="background:${rgbStr(o.bg)};color:${rgbStr(o.fg)};" onclick="crewPickOption(${idx},'${cat}','${o.label.replace(/'/g,"\\'")}')">${o.label}</button>`;
+      const resolved=etkFindOption(cat,o.label)||o;
+      html+=`<button type="button" class="crew-picker-opt${active?' active':''}" style="background:${rgbStr(resolved.bg)};color:${rgbStr(resolved.fg)};" onclick="crewPickOption(${idx},'${cat}','${o.label.replace(/'/g,"\\'")}')">${o.label}</button>`;
     });
     html+='</div>';
   });
