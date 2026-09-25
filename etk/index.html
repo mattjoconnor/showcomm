@@ -57,6 +57,13 @@
   --f-ui:'Cabinet Grotesk','Helvetica Neue',sans-serif;
   --f-mono:'Manrope','Azeret Mono','DM Mono',sans-serif;
 
+  /* ── MOTION (ETK) ── */
+  --ease:cubic-bezier(.22,1,.36,1);
+  --ease-snap:cubic-bezier(.34,1.56,.64,1);
+  --dur-fast:.14s;
+  --dur-med:.24s;
+  --dur-slow:.36s;
+
   /* ── TYPE SCALE ── */
   --t-micro:clamp(.52rem,.62vw,.6rem);
   --t-small:clamp(.58rem,.68vw,.65rem);
@@ -219,9 +226,9 @@ body { background:var(--bg); color:var(--black); }
 .crew-device-status { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-tertiary); }
 /* Device grid — card layout (ETK) */
 .crew-device-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:10px; }
-.crew-device-card { background:var(--surface); border:1px solid var(--border-md); border-bottom:3px solid var(--border-md); aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; transition:border-color .15s, background .1s; }
+.crew-device-card { background:var(--surface); border:1px solid var(--border-md); border-bottom:3px solid var(--border-md); aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; transition:border-color var(--dur-med) var(--ease), background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
 .crew-device-card:hover { border-color:#0891B2; border-bottom-color:#0891B2; background:rgba(8,145,178,.03); }
-.crew-device-card:active { background:rgba(8,145,178,.1); }
+.crew-device-card:active { background:rgba(8,145,178,.1); transform:scale(.96); }
 .crew-device-card.taken { background:rgba(8,145,178,.04); border-color:#0891B2; }
 .crew-device-card.taken:hover { background:rgba(8,145,178,.1); }
 .crew-device-card-id { font-family:var(--f-mono); font-size:clamp(.85rem,3.2vw,1.05rem); font-weight:800; color:var(--tx-primary); letter-spacing:var(--ls-tight); }
@@ -268,7 +275,7 @@ body { background:var(--bg); color:var(--black); }
 .crew-schematic-section-label { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:var(--tx-secondary); padding:6px 12px; background:rgba(0,0,0,.03); border:1px solid var(--border-md); border-bottom:none; }
 .crew-bp-column { border:1px solid var(--border-md); overflow:hidden; display:grid; grid-template-columns:repeat(4,1fr); }
 .crew-kp-grid { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--border-md); overflow:hidden; }
-.crew-key-cell { padding:10px 12px; cursor:pointer; border-bottom:1px solid var(--border-md); border-right:1px solid var(--border-md); position:relative; transition:background .08s; box-sizing:border-box; min-height:clamp(52px,8vw,64px); }
+.crew-key-cell { padding:10px 12px; cursor:pointer; border-bottom:1px solid var(--border-md); border-right:1px solid var(--border-md); position:relative; transition:background var(--dur-med) var(--ease), color var(--dur-med) var(--ease), outline-color var(--dur-fast) var(--ease); box-sizing:border-box; min-height:clamp(52px,8vw,64px); }
 .crew-bp-column .crew-key-cell { border-bottom:none; border-right:1px solid var(--border-md); min-height:clamp(70px,15vw,90px); }
 .crew-bp-column .crew-key-cell:last-child { border-right:none; }
 .crew-kp-grid .crew-key-cell:nth-child(4n) { border-right:none; }
@@ -282,32 +289,38 @@ body { background:var(--bg); color:var(--black); }
 .crew-key-cell.annotated .crew-key-cell-preview { display:block; }
 .crew-key-cell.active .crew-key-cell-preview { display:none; }
 /* Curated pick-list (ETK) — full-width zone below the fixed 4-key row */
-.crew-picker-zone { display:none; border:3px solid #0891B2; background:#fff; padding:18px; margin-top:10px; }
-.crew-picker-zone.visible { display:block; }
+.crew-picker-zone { max-height:0; overflow:hidden; opacity:0; border:0 solid #0891B2; background:#fff; padding:0 18px; margin-top:0; transition:max-height var(--dur-slow) var(--ease), opacity var(--dur-fast) var(--ease), padding var(--dur-slow) var(--ease), margin-top var(--dur-slow) var(--ease), border-width var(--dur-slow) var(--ease); }
+.crew-picker-zone.visible { max-height:640px; opacity:1; padding:18px; margin-top:10px; border-width:3px; }
 .crew-picker-zone-label { font-family:var(--f-mono); font-size:12px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:12px; }
 .crew-picker-cat-label { font-family:var(--f-mono); font-size:11px; font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:rgba(0,0,0,.45); margin:14px 0 8px; }
 .crew-picker-cat-label:first-child { margin-top:0; }
 .crew-picker-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
-.crew-picker-opt { font-family:var(--f-mono); font-size:15px; font-weight:800; letter-spacing:var(--ls-tight); padding:18px 10px; min-height:56px; border:3px solid transparent; cursor:pointer; text-align:center; box-sizing:border-box; }
+.crew-picker-opt { font-family:var(--f-mono); font-size:15px; font-weight:800; letter-spacing:var(--ls-tight); padding:18px 10px; min-height:56px; border:3px solid transparent; cursor:pointer; text-align:center; box-sizing:border-box; transition:transform var(--dur-fast) var(--ease), outline-offset var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); }
+.crew-picker-opt:active { transform:scale(.94); }
 .crew-picker-opt.active { outline:3px solid #0891B2; outline-offset:2px; }
-.crew-picker-selected { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; background:rgba(0,0,0,.05); cursor:pointer; font-family:var(--f-mono); font-size:13px; font-weight:800; letter-spacing:var(--ls-tight); text-transform:uppercase; color:var(--tx-secondary); min-height:56px; box-sizing:border-box; }
+.crew-picker-selected { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; background:rgba(0,0,0,.05); cursor:pointer; font-family:var(--f-mono); font-size:13px; font-weight:800; letter-spacing:var(--ls-tight); text-transform:uppercase; color:var(--tx-secondary); min-height:56px; box-sizing:border-box; transition:background var(--dur-fast) var(--ease); }
+.crew-picker-selected:active { background:rgba(0,0,0,.1); }
 .crew-picker-change-btn { background:#0891B2; color:#fff; padding:8px 14px; letter-spacing:var(--ls-wide); white-space:nowrap; }
 /* Release beltpack (ETK) */
-.crew-release-btn { font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--red); background:none; border:2px solid var(--red); cursor:pointer; padding:14px; margin-top:20px; display:block; width:100%; box-sizing:border-box; }
+.crew-release-btn { font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--red); background:none; border:2px solid var(--red); cursor:pointer; padding:14px; margin-top:20px; display:block; width:100%; box-sizing:border-box; transition:background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
 .crew-release-btn:hover { background:rgba(220,38,38,.06); }
-.crew-confirm-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:400; align-items:center; justify-content:center; padding:20px; }
-.crew-confirm-overlay.visible { display:flex; }
-.crew-confirm-box { background:#fff; max-width:400px; width:100%; padding:24px; border-top:4px solid var(--red); }
+.crew-release-btn:active { transform:scale(.97); }
+.crew-confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:400; display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity var(--dur-med) var(--ease); }
+.crew-confirm-overlay.visible { opacity:1; pointer-events:auto; }
+.crew-confirm-box { background:#fff; max-width:400px; width:100%; padding:24px; border-top:4px solid var(--red); transform:scale(.9) translateY(8px); transition:transform var(--dur-med) var(--ease-snap); }
+.crew-confirm-overlay.visible .crew-confirm-box { transform:scale(1) translateY(0); }
 .crew-confirm-title { font-family:var(--f-mono); font-size:16px; font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); margin-bottom:10px; }
 .crew-confirm-sub { font-family:var(--f-mono); font-size:12px; font-weight:500; color:var(--tx-secondary); line-height:1.5; margin-bottom:20px; }
 .crew-confirm-btns { display:flex; flex-direction:column; gap:8px; }
-.crew-confirm-btn { font-family:var(--f-mono); font-size:14px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:16px; border:none; cursor:pointer; min-height:52px; }
+.crew-confirm-btn { font-family:var(--f-mono); font-size:14px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:16px; border:none; cursor:pointer; min-height:52px; transition:transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease); }
+.crew-confirm-btn:active { transform:scale(.96); opacity:.9; }
 .crew-confirm-btn.release { background:var(--red); color:#fff; }
 .crew-confirm-btn.cancel { background:rgba(0,0,0,.06); color:var(--tx-primary); }
 /* TM Beltpack status grid (ETK) */
 .etk-bp-status-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; padding:clamp(16px,2.2vw,28px); box-sizing:border-box; }
-.etk-bp-status-card { background:var(--surface); border:1px solid var(--border); border-top:4px solid var(--border-md); padding:10px; cursor:pointer; transition:transform .1s; box-sizing:border-box; overflow:hidden; }
-.etk-bp-status-card:hover { transform:translateY(-1px); }
+.etk-bp-status-card { background:var(--surface); border:1px solid var(--border); border-top:4px solid var(--border-md); padding:10px; cursor:pointer; transition:transform var(--dur-med) var(--ease), box-shadow var(--dur-med) var(--ease); box-sizing:border-box; overflow:hidden; }
+.etk-bp-status-card:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.08); }
+.etk-bp-status-card:active { transform:translateY(0) scale(.98); }
 .etk-bp-status-head { display:flex; align-items:baseline; justify-content:space-between; gap:6px; margin-bottom:8px; }
 .etk-bp-status-id { font-family:var(--f-mono); font-size:.85rem; font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); white-space:nowrap; }
 .etk-bp-status-crew { font-family:var(--f-mono); font-size:10px; font-weight:600; color:var(--tx-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; }
@@ -320,11 +333,13 @@ body { background:var(--bg); color:var(--black); }
 .etk-bp-inline-detail .kp-inline-reqs { padding:8px; }
 .crew-key-note-input::placeholder { color:rgba(0,0,0,.35); font-weight:400; }
 /* Submit bar */
-.crew-submit-bar { flex-shrink:0; border-top:2px solid var(--black); padding:14px 20px; padding-bottom:max(20px,env(safe-area-inset-bottom,20px)); display:none; align-items:center; gap:12px; background:var(--surface); z-index:100; }
+.crew-submit-bar { flex-shrink:0; border-top:2px solid var(--black); padding:16px 20px; padding-bottom:max(20px,env(safe-area-inset-bottom,20px)); display:none; align-items:center; justify-content:center; gap:20px; background:var(--surface); z-index:100; transform:translateY(100%); opacity:0; transition:transform var(--dur-med) var(--ease), opacity var(--dur-med) var(--ease); }
 .crew-submit-bar.visible { display:flex; }
-.crew-submit-count { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-secondary); flex:1; }
-.crew-submit-btn { font-family:var(--f-mono); font-size:var(--t-ui); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:var(--black); color:#fff; border:none; cursor:pointer; padding:13px 24px; white-space:nowrap; flex-shrink:0; }
+.crew-submit-bar.visible.enter { transform:translateY(0); opacity:1; }
+.crew-submit-count { font-family:var(--f-mono); font-size:var(--t-small); font-weight:700; color:var(--tx-secondary); }
+.crew-submit-btn { font-family:var(--f-mono); font-size:var(--t-ui); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:var(--black); color:#fff; border:none; cursor:pointer; padding:16px 40px; min-height:52px; white-space:nowrap; flex-shrink:0; transition:background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
 .crew-submit-btn:hover { background:#333; }
+.crew-submit-btn:active:not(:disabled) { transform:scale(.96); }
 .crew-submit-btn:disabled { background:rgba(0,0,0,.2); cursor:not-allowed; }
 /* Request history */
 .crew-requests-section { margin-top:20px; }
@@ -4780,8 +4795,7 @@ function renderClaimCard(r){
   const isActive = r.status==='confirmed';
   const accentClr = isPending?'#F59E0B':isActive?'#10B981':'#aaa';
   const actions = isPending
-    ? `<button class="req-btn-approve" onclick="resolveRequest('device_claims','${r.id}','confirmed')">Confirm</button>
-       <button class="req-btn-deny" onclick="openDeny('device_claims','${r.id}')">Deny</button>`
+    ? `<button class="req-btn-approve" onclick="resolveRequest('device_claims','${r.id}','confirmed')">Confirm</button>`
     : isActive
     ? `<button class="req-btn-deny" onclick="deleteClaimRequest('${r.id}')">Release</button>`
     : r.status==='denied'||r.status==='cancelled'
@@ -4840,8 +4854,7 @@ function renderChangeCard(r){
   const req = fmtState(r.requested_state);
   const actions = isPending
     ? `<button class="req-btn-approve" onclick="resolveRequest('change_requests','${r.id}','approved')">Approve</button>
-       <button class="req-btn-modify" onclick="openModify('${r.id}')">Modify</button>
-       <button class="req-btn-deny" onclick="openDeny('change_requests','${r.id}')">Deny</button>`
+       <button class="req-btn-modify" onclick="openModify('${r.id}')">Modify</button>`
     : `<span class="req-status-pill ${r.status}">${r.status.toUpperCase()}</span>`;
   return `<div class="req-card">
     <div class="req-card-accent" style="background:${accentClr}"></div>
@@ -4901,9 +4914,8 @@ async function loadInlineBPRequests(bp){
         <span style="font-family:var(--f-mono);font-size:.55rem;color:var(--tx-tertiary);white-space:nowrap;">${relTime(row.time)}</span>
       </div>
       <div style="font-family:var(--f-mono);font-size:var(--t-micro);font-weight:500;color:var(--tx-secondary);line-height:1.4;">${row.note}</div>
-      <div style="display:flex;gap:4px;margin-top:3px;">
-        <button class="req-btn-approve" style="padding:2px 7px;font-size:.55rem;" onclick="resolveRequest('key_requests','${row.reqId}','fulfilled');loadInlineBPRequests('${bp.replace(/'/g,"\\'")}')">Fulfill</button>
-        <button class="req-btn-deny" style="padding:2px 7px;font-size:.55rem;" onclick="openDeny('key_requests','${row.reqId}')">Deny</button>
+      <div style="display:flex;gap:4px;margin-top:6px;">
+        <button class="req-btn-approve" style="padding:8px 16px;font-size:.7rem;flex:1;" onclick="resolveRequest('key_requests','${row.reqId}','fulfilled');loadInlineBPRequests('${bp.replace(/'/g,"\\'")}')">Fulfill</button>
       </div>
     </div>`).join('');
 
@@ -4965,9 +4977,8 @@ async function loadInlinePanelRequests(panelId){
         <span style="font-family:var(--f-mono);font-size:.55rem;color:var(--tx-tertiary);white-space:nowrap;">${relTime(row.time)}</span>
       </div>
       <div style="font-family:var(--f-mono);font-size:var(--t-micro);font-weight:500;color:var(--tx-secondary);line-height:1.4;">${row.note}</div>
-      <div style="display:flex;gap:4px;margin-top:3px;">
-        <button class="req-btn-approve" style="padding:2px 7px;font-size:.55rem;" onclick="resolveRequest('key_requests','${row.reqId}','fulfilled');loadInlinePanelRequests('${panelId.replace(/'/g,"\\'")}')">Fulfill</button>
-        <button class="req-btn-deny" style="padding:2px 7px;font-size:.55rem;" onclick="openDeny('key_requests','${row.reqId}')">Deny</button>
+      <div style="display:flex;gap:4px;margin-top:6px;">
+        <button class="req-btn-approve" style="padding:8px 16px;font-size:.7rem;flex:1;" onclick="resolveRequest('key_requests','${row.reqId}','fulfilled');loadInlinePanelRequests('${panelId.replace(/'/g,"\\'")}')">Fulfill</button>
       </div>
     </div>`).join('');
 
@@ -5003,8 +5014,7 @@ function renderKeyCard(r){
   const actions = isOpen
     ? `${isKP?`<button class="req-btn-outline" onclick="jumpToPanel('${r.device_id.replace(/'/g,"\\'")}')">Open Panel →</button>`:''}
        ${isBP?`<button class="req-btn-outline" onclick="jumpToBP('${r.device_id.replace(/'/g,"\\'")}')">Open BP →</button>`:''}
-       <button class="req-btn-approve" onclick="resolveRequest('key_requests','${r.id}','fulfilled')">Fulfill</button>
-       <button class="req-btn-deny" onclick="openDeny('key_requests','${r.id}')">Deny</button>`
+       <button class="req-btn-approve" onclick="resolveRequest('key_requests','${r.id}','fulfilled')">Fulfill</button>`
     : `<span class="req-status-pill ${r.status}">${r.status.toUpperCase()}</span>`;
   // Parse bundled notes from crew
   let notesHTML='';
@@ -6267,28 +6277,50 @@ async function crewRenderSchematic(silent=false){
   }
 }
 
-function crewCellHTML(idx,k){
+function crewCellState(idx,k){
   const label=crewKeyLabel(k);
-  let cellStyle='', nameStyle='', displayLabel, isEmpty=false, hasColor=false;
   const req=_crewKeyNotes[idx]||_crewOpenKeyState[idx];
   const reqOpt=(req&&typeof req==='object')?etkFindOption(req.category,req.label):null;
   if(reqOpt){
-    cellStyle=`background:${rgbStr(reqOpt.bg)};`;
-    nameStyle=`color:${rgbStr(reqOpt.fg)};`;
-    displayLabel=reqOpt.label; hasColor=true;
-  } else if(k&&label){
+    return {cellStyle:`background:${rgbStr(reqOpt.bg)};`, nameStyle:`color:${rgbStr(reqOpt.fg)};`, displayLabel:reqOpt.label, isEmpty:false, hasColor:true};
+  }
+  if(k&&label){
     const cat=k.c||k.category||'';
     const opt=cat?findOpt(cat,label):null;
-    if(opt){ cellStyle=`background:${rgbStr(optBgRgb(opt))};`; nameStyle=`color:${rgbStr(optFgRgb(opt))};`; hasColor=true; }
-    displayLabel=label.slice(0,4)+(label.slice(4)?'<br>'+label.slice(4,8):'');
-  } else {
-    displayLabel='Empty'; isEmpty=true;
+    return {
+      cellStyle: opt?`background:${rgbStr(optBgRgb(opt))};`:'',
+      nameStyle: opt?`color:${rgbStr(optFgRgb(opt))};`:'',
+      displayLabel: label.slice(0,4)+(label.slice(4)?'<br>'+label.slice(4,8):''),
+      isEmpty:false, hasColor:!!opt
+    };
   }
-  return `<div class="crew-key-cell${hasColor?' programmed':''}" id="crew-cell-${idx}" style="${cellStyle}" onclick="crewToggleKey(${idx})">
-    <div class="crew-key-cell-num" style="${hasColor?'color:inherit;opacity:.5;':''}">${idx+1}</div>
-    <div class="crew-key-cell-name${isEmpty?' empty':''}" style="${nameStyle}">${displayLabel}</div>
+  return {cellStyle:'', nameStyle:'', displayLabel:'Empty', isEmpty:true, hasColor:false};
+}
+function crewCellHTML(idx,k){
+  const s=crewCellState(idx,k);
+  return `<div class="crew-key-cell${s.hasColor?' programmed':''}" id="crew-cell-${idx}" style="${s.cellStyle}" onclick="crewToggleKey(${idx})">
+    <div class="crew-key-cell-num" style="${s.hasColor?'color:inherit;opacity:.5;':''}">${idx+1}</div>
+    <div class="crew-key-cell-name${s.isEmpty?' empty':''}" style="${s.nameStyle}">${s.displayLabel}</div>
     <div class="crew-key-cell-preview" id="crew-cell-preview-${idx}"></div>
   </div>`;
+}
+// Update an existing cell's fill/label in place (rather than swapping the DOM
+// node) so its background/color CSS transition actually has something to
+// animate from — a fresh node has no "before" state to interpolate.
+function crewUpdateCellDisplay(idx){
+  const cell=document.getElementById('crew-cell-'+idx);
+  if(!cell) return;
+  const s=crewCellState(idx,_crewAllKeys[idx]);
+  cell.setAttribute('style',s.cellStyle);
+  cell.classList.toggle('programmed',s.hasColor);
+  const numEl=cell.querySelector('.crew-key-cell-num');
+  const nameEl=cell.querySelector('.crew-key-cell-name');
+  if(numEl) numEl.setAttribute('style',s.hasColor?'color:inherit;opacity:.5;':'');
+  if(nameEl){
+    nameEl.innerHTML=s.displayLabel;
+    nameEl.classList.toggle('empty',s.isEmpty);
+    nameEl.setAttribute('style',s.nameStyle);
+  }
 }
 
 // ETK build: curated PL/IFB pick-list, separate from the shared global options pool
@@ -6336,15 +6368,7 @@ function crewPickOption(idx,cat,label){
   if(isSame) delete _crewKeyNotes[idx];
   else _crewKeyNotes[idx]={category:cat,label:label};
   _crewPickerForceOpen[idx]=false;
-  // Rebuild the cell — fixed size, just its fill color/label changes
-  const oldCell=document.getElementById('crew-cell-'+idx);
-  if(oldCell&&oldCell.parentNode){
-    const tmp=document.createElement('div');
-    tmp.innerHTML=crewCellHTML(idx,_crewAllKeys[idx]);
-    const newCell=tmp.firstElementChild;
-    newCell.classList.add('active');
-    oldCell.parentNode.replaceChild(newCell,oldCell);
-  }
+  crewUpdateCellDisplay(idx);
   const zone=document.getElementById('crew-picker-zone');
   if(zone) zone.innerHTML=crewOptionPickerHTML(idx);
   crewUpdateSubmitBar();
@@ -6382,10 +6406,15 @@ function crewNoteInput(idx,val){
 
 function crewShowToast(msg,duration=3000){
   let t=document.getElementById('crew-toast');
-  if(!t){ t=document.createElement('div'); t.id='crew-toast'; t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--black);color:#fff;font-family:var(--f-mono);font-size:var(--t-small);font-weight:700;letter-spacing:var(--ls-normal);padding:10px 18px;z-index:9999;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none;'; document.getElementById('screen-crew').appendChild(t); }
-  t.textContent=msg; t.style.opacity='1';
+  if(!t){
+    t=document.createElement('div'); t.id='crew-toast';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;background:var(--black);color:#fff;font-family:var(--f-mono);font-size:var(--t-small);font-weight:700;letter-spacing:var(--ls-normal);padding:12px 20px;z-index:9999;white-space:nowrap;opacity:0;transform:translate(-50%,10px);transition:opacity var(--dur-med) var(--ease), transform var(--dur-med) var(--ease-snap);pointer-events:none;';
+    document.getElementById('screen-crew').appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.opacity='1'; t.style.transform='translate(-50%,0)';
   clearTimeout(t._timer);
-  t._timer=setTimeout(()=>{ t.style.opacity='0'; },duration);
+  t._timer=setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translate(-50%,10px)'; },duration);
 }
 
 function crewUpdateSubmitBar(){
@@ -6394,8 +6423,15 @@ function crewUpdateSubmitBar(){
   const btn=document.getElementById('crew-submit-btn');
   if(!bar) return;
   const n=Object.keys(_crewKeyNotes).length;
-  if(n===0){ bar.classList.remove('visible'); return; }
-  bar.classList.add('visible');
+  if(n===0){
+    bar.classList.remove('enter');
+    setTimeout(()=>{ if(!bar.classList.contains('enter')) bar.classList.remove('visible'); },240);
+    return;
+  }
+  if(!bar.classList.contains('visible')){
+    bar.classList.add('visible');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>bar.classList.add('enter')));
+  }
   if(count) count.textContent=n+' key'+(n!==1?'s':'')+' flagged';
   if(btn){ btn.disabled=false; btn.textContent='Submit Request'; }
 }
@@ -6486,16 +6522,7 @@ async function crewReRequest(reqId, noteJson){
         if(parsed) _crewKeyNotes[n.keyIndex]={category:parsed.category,label:parsed.label};
       });
       crewUpdateSubmitBar();
-      // Rebuild the affected cells so they show the restored fill color
-      notes.forEach(n=>{
-        if(n.keyIndex==null) return;
-        const oldCell=document.getElementById('crew-cell-'+n.keyIndex);
-        if(oldCell&&oldCell.parentNode){
-          const tmp=document.createElement('div');
-          tmp.innerHTML=crewCellHTML(n.keyIndex,_crewAllKeys[n.keyIndex]);
-          oldCell.parentNode.replaceChild(tmp.firstElementChild,oldCell);
-        }
-      });
+      notes.forEach(n=>{ if(n.keyIndex!=null) crewUpdateCellDisplay(n.keyIndex); });
       crewShowToast('Keys re-flagged — review and resubmit');
       document.getElementById('crew-schematic')?.scrollIntoView({behavior:'smooth',block:'start'});
     }
@@ -6537,7 +6564,12 @@ async function crewConfirmRelease(){
   document.getElementById('crew-release-confirm-overlay').classList.remove('visible');
   const deviceId=_crewClaim?.device_id;
   if(_crewClaim&&SUPA&&_crewClaim.id!=='local'){
-    await SUPA.from('device_claims').update({status:'released'}).eq('id',_crewClaim.id);
+    const {error}=await SUPA.from('device_claims').update({status:'released'}).eq('id',_crewClaim.id);
+    if(error){
+      crewShowToast('Could not release '+(deviceId||'beltpack')+' — try again');
+      console.error('crewConfirmRelease:',error);
+      return;
+    }
   }
   if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
   _crewClaim=null; _currentProfile=null;
