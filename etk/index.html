@@ -282,6 +282,7 @@ body { background:var(--bg); color:var(--black); }
 .crew-key-cell:hover { opacity:.88; }
 .crew-key-cell.annotated { outline:3px solid #F59E0B; outline-offset:-1px; }
 .crew-key-cell.active { outline:2px solid #0891B2; outline-offset:-1px; }
+.crew-key-cell.key-done { opacity:.4; }
 .crew-key-cell-num { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:var(--tx-tertiary); line-height:1; margin-bottom:3px; }
 .crew-key-cell-name { font-family:var(--f-mono); font-size:clamp(.68rem,2.2vw,.75rem); font-weight:800; color:var(--tx-primary); letter-spacing:var(--ls-tight); line-height:1.2; text-align:center; }
 .crew-key-cell-name.empty { color:var(--tx-ghost); font-weight:400; font-style:italic; }
@@ -5447,11 +5448,9 @@ async function renderETKBeltpackStatus(){
 let _etkKnownQueue=null; // null until first render — nothing "new" to flag on initial load
 
 function etkKeyCellHTML({rec,urg},i){
-  const needsAttn=urg==='orange'||urg==='red';
-  const ringClr=urg==='red'?'#DC2626':'#F59E0B';
-  const ringStyle=needsAttn?`box-shadow:inset 0 0 0 5px ${ringClr}, inset 0 0 0 8px #fff;`:'';
+  const isDone=urg==='green';
   if(rec&&rec.parsed){
-    return `<div class="crew-key-cell programmed" style="background:${rgbStr(rec.parsed.bg)};${ringStyle}">
+    return `<div class="crew-key-cell programmed${isDone?' key-done':''}" style="background:${rgbStr(rec.parsed.bg)};">
       <div class="crew-key-cell-num" style="color:inherit;opacity:.5;">${i+1}</div>
       <div class="crew-key-cell-name" style="color:${rgbStr(rec.parsed.fg)};">${rec.parsed.label}</div>
     </div>`;
