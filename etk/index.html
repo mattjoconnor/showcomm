@@ -290,18 +290,21 @@ body { background:var(--bg); color:var(--black); }
 .crew-picker-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:4px; margin-bottom:2px; }
 .crew-picker-opt { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:var(--ls-tight); padding:7px 4px; border:2px solid transparent; cursor:pointer; text-align:center; }
 .crew-picker-opt.active { outline:2px solid #0891B2; outline-offset:1px; }
-.crew-picker-selected { display:flex; align-items:center; justify-content:space-between; padding:9px 11px; background:rgba(8,145,178,.06); border:2px solid #0891B2; cursor:pointer; }
-.crew-picker-selected-label { font-family:var(--f-mono); font-size:11px; font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); }
-.crew-picker-selected-change { font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:#0891B2; }
+.crew-picker-selected { display:block; text-align:center; padding:6px 8px; background:rgba(0,0,0,.06); cursor:pointer; font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); }
 /* TM Beltpack status grid (ETK) */
-.etk-bp-status-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; padding:clamp(16px,2.2vw,28px); box-sizing:border-box; }
-.etk-bp-status-card { background:var(--surface); border:2px solid var(--border); border-bottom:4px solid var(--border); padding:12px 10px; cursor:pointer; transition:transform .1s; }
+.etk-bp-status-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; padding:clamp(16px,2.2vw,28px); box-sizing:border-box; }
+.etk-bp-status-card { background:var(--surface); border:1px solid var(--border); border-top:4px solid var(--border-md); padding:10px; cursor:pointer; transition:transform .1s; box-sizing:border-box; overflow:hidden; }
 .etk-bp-status-card:hover { transform:translateY(-1px); }
-.etk-bp-status-id { font-family:var(--f-mono); font-size:1rem; font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); }
-.etk-bp-status-crew { font-family:var(--f-mono); font-size:11px; font-weight:600; color:var(--tx-secondary); margin-top:4px; min-height:14px; }
-.etk-bp-status-tag { font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; margin-top:8px; padding:2px 6px; border:1px solid var(--border-md); display:inline-block; }
+.etk-bp-status-head { display:flex; align-items:baseline; justify-content:space-between; gap:6px; margin-bottom:8px; }
+.etk-bp-status-id { font-family:var(--f-mono); font-size:.85rem; font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); white-space:nowrap; }
+.etk-bp-status-crew { font-family:var(--f-mono); font-size:10px; font-weight:600; color:var(--tx-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; }
+.etk-bp-mini-row { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; }
+.etk-bp-mini-key { position:relative; aspect-ratio:1; background:var(--bg,rgba(0,0,0,.04)); border:1px solid var(--border-md); display:flex; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:8px; font-weight:800; text-align:center; box-sizing:border-box; }
+.etk-bp-mini-dot { position:absolute; top:2px; right:2px; width:5px; height:5px; border-radius:50%; }
 .etk-bp-inline-detail:empty { display:none; }
-.etk-bp-inline-detail { margin-top:10px; cursor:default; }
+.etk-bp-inline-detail { margin-top:10px; cursor:default; max-width:100%; overflow:hidden; }
+.etk-bp-inline-detail .kp-inline-reqs-grid { grid-template-columns:1fr; }
+.etk-bp-inline-detail .kp-inline-reqs { padding:8px; }
 .crew-key-note-input::placeholder { color:rgba(0,0,0,.35); font-weight:400; }
 /* Submit bar */
 .crew-submit-bar { flex-shrink:0; border-top:2px solid var(--black); padding:14px 20px; padding-bottom:max(20px,env(safe-area-inset-bottom,20px)); display:none; align-items:center; gap:12px; background:var(--surface); z-index:100; }
@@ -5311,41 +5314,77 @@ async function renderETKBeltpackStatus(){
   const bps=(prod.beltpacks||[]).slice();
   if(!SUPA){ body.innerHTML='<div class="empty-state"><div class="empty-text">No connection</div></div>'; return; }
   body.innerHTML='<div class="empty-state"><div class="empty-text">Loading…</div></div>';
+  // Hide the shared filter bar — not meaningful for this single-production board
+  const ufBar=document.getElementById('unified-filters'); if(ufBar) ufBar.style.display='none';
 
   const [claimsRes,reqRes]=await Promise.all([
     SUPA.from('device_claims').select('device_id,crew_name,crew_position,status')
-      .eq('production_id','ETK').eq('device_type','beltpack').eq('status','confirmed'),
-    SUPA.from('key_requests').select('device_id,status').eq('production_id','ETK')
+      .eq('production_id','ETK').eq('device_type','beltpack')
+      .not('status','in','(cancelled,denied,released)'),
+    SUPA.from('key_requests').select('device_id,status,note,created_at').eq('production_id','ETK')
+      .order('created_at',{ascending:true})
   ]);
   const claimsByDevice={};
   (claimsRes.data||[]).forEach(c=>{ claimsByDevice[c.device_id]=c; });
-  const reqsByDevice={};
-  (reqRes.data||[]).forEach(r=>{ (reqsByDevice[r.device_id]=reqsByDevice[r.device_id]||[]).push(r.status); });
 
-  function stateFor(bp){
-    const statuses=reqsByDevice[bp]||[];
-    const hasOpen=statuses.includes('open');
-    const hasFulfilled=statuses.includes('fulfilled');
-    if(hasOpen&&hasFulfilled) return 'red';
-    if(hasOpen) return 'orange';
-    if(hasFulfilled) return 'green';
+  // Per device, per key index: has it ever been fulfilled, and what's the latest request
+  const keyHistoryByDevice={};
+  (reqRes.data||[]).forEach(r=>{
+    let entries=[];
+    try{ entries=JSON.parse(r.note||'[]'); }catch(e){}
+    if(!Array.isArray(entries)) return;
+    const dev=keyHistoryByDevice[r.device_id]=keyHistoryByDevice[r.device_id]||{};
+    entries.forEach(en=>{
+      if(en.keyIndex==null) return;
+      const rec=dev[en.keyIndex]=dev[en.keyIndex]||{hasFulfilled:false};
+      if(r.status==='fulfilled') rec.hasFulfilled=true;
+      rec.latestStatus=r.status;
+      rec.parsed=etkParseRequestNote(en.note);
+    });
+  });
+
+  function keyUrgency(rec){
+    if(!rec) return 'neutral';
+    if(rec.latestStatus==='open'&&rec.hasFulfilled) return 'red';
+    if(rec.latestStatus==='open') return 'orange';
+    if(rec.latestStatus==='fulfilled') return 'green';
     return 'neutral';
   }
-  const stateColors={orange:'#F59E0B',green:'#10B981',red:'#DC2626',neutral:null};
-  const stateLabels={orange:'Needs Programming',green:'Programmed',red:'Change Requested',neutral:''};
+  const urgencyColors={orange:'#F59E0B',green:'#10B981',red:'#DC2626',neutral:'transparent'};
+  const urgencyRank={red:3,orange:2,green:1,neutral:0};
 
-  const el=document.getElementById('tm-body');
-  el.innerHTML=`<div class="etk-bp-status-grid" id="etk-bp-status-grid"></div>`;
+  document.getElementById('tm-body').innerHTML=`<div class="etk-bp-status-grid" id="etk-bp-status-grid"></div>`;
   document.getElementById('etk-bp-status-grid').innerHTML=bps.map(bp=>{
-    const st=stateFor(bp), clr=stateColors[st], claim=claimsByDevice[bp];
+    const claim=claimsByDevice[bp];
+    const keys=keyHistoryByDevice[bp]||{};
+    let cardUrgency='neutral';
+    const miniKeys=[0,1,2,3].map(ki=>{
+      const rec=keys[ki];
+      const urg=keyUrgency(rec);
+      if(urgencyRank[urg]>urgencyRank[cardUrgency]) cardUrgency=urg;
+      if(!rec||!rec.parsed) return `<div class="etk-bp-mini-key"></div>`;
+      return `<div class="etk-bp-mini-key" style="background:${rgbStr(rec.parsed.bg)};color:${rgbStr(rec.parsed.fg)};">
+        ${rec.parsed.label.slice(0,4)}
+        <span class="etk-bp-mini-dot" style="background:${urgencyColors[urg]};"></span>
+      </div>`;
+    }).join('');
     const bpSafe=bp.replace(/\s/g,'_');
-    return `<div class="etk-bp-status-card" style="${clr?`background:${clr};border-color:${clr};`:''}" onclick="etkToggleBpDetail('${bp}')">
-      <div class="etk-bp-status-id" style="${clr?'color:#fff;':''}">${bp}</div>
-      <div class="etk-bp-status-crew" style="${clr?'color:rgba(255,255,255,.85);':''}">${claim?(claim.crew_name+(claim.crew_position?' · '+claim.crew_position:'')):'Unclaimed'}</div>
-      ${st!=='neutral'?`<div class="etk-bp-status-tag" style="${clr?'color:#fff;border-color:rgba(255,255,255,.5);':''}">${stateLabels[st]}</div>`:''}
+    const borderClr=urgencyColors[cardUrgency];
+    return `<div class="etk-bp-status-card" style="${cardUrgency!=='neutral'?`border-top-color:${borderClr};`:''}" onclick="etkToggleBpDetail('${bp}')">
+      <div class="etk-bp-status-head">
+        <div class="etk-bp-status-id">${bp}</div>
+        <div class="etk-bp-status-crew">${claim?claim.crew_name:'Unclaimed'}</div>
+      </div>
+      <div class="etk-bp-mini-row">${miniKeys}</div>
       <div class="etk-bp-inline-detail" id="bp-inline-reqs-${bpSafe}" onclick="event.stopPropagation()"></div>
     </div>`;
   }).join('');
+}
+function etkParseRequestNote(noteText){
+  const m=/^(.+) \((PL|IFB)\)$/.exec(noteText||'');
+  if(!m) return null;
+  const opt=etkFindOption(m[2]==='PL'?'PLs':'IFBs',m[1]);
+  return opt?{label:m[1],bg:opt.bg,fg:opt.fg}:null;
 }
 function etkToggleBpDetail(bp){
   const el=document.getElementById('bp-inline-reqs-'+bp.replace(/\s/g,'_'));
@@ -5890,8 +5929,8 @@ function crewOpenClaimForm(deviceId){
   document.getElementById('crew-claim-device-label').textContent=deviceId;
   document.getElementById('crew-claim-error').style.display='none';
   const n=$('crew-claim-name'), p=$('crew-claim-position');
-  if(n) n.value=localStorage.getItem('sc_crew_name')||'';
-  if(p) p.value=localStorage.getItem('sc_crew_pos')||'';
+  if(n) n.value='';
+  if(p) p.value='';
   crewShowStep('claim');
   setTimeout(()=>{ if(n) n.focus(); },50);
 }
@@ -5912,8 +5951,6 @@ document.getElementById('btn-crew-claim-submit').addEventListener('click',async(
       if(data) profile={...data,position:pos};
     }
     _currentProfile=profile; _currentRole='crew';
-    localStorage.setItem('sc_crew_name',name);
-    localStorage.setItem('sc_crew_pos',pos);
     document.getElementById('crew-topbar-name').textContent=name;
     document.getElementById('crew-topbar-pos').textContent=pos;
     await crewClaimDevice(_crewPendingDeviceId);
@@ -6160,21 +6197,24 @@ async function crewRenderSchematic(silent=false){
 
 function crewCellHTML(idx,k){
   const label=crewKeyLabel(k);
-  // Apply same color coding as admin key grid
-  let cellStyle='', nameStyle='';
-  if(k&&label){
+  let cellStyle='', nameStyle='', displayLabel, isEmpty=false, hasColor=false;
+  const req=_crewKeyNotes[idx];
+  const reqOpt=(req&&typeof req==='object')?etkFindOption(req.category,req.label):null;
+  if(reqOpt){
+    cellStyle=`background:${rgbStr(reqOpt.bg)};`;
+    nameStyle=`color:${rgbStr(reqOpt.fg)};`;
+    displayLabel=reqOpt.label; hasColor=true;
+  } else if(k&&label){
     const cat=k.c||k.category||'';
     const opt=cat?findOpt(cat,label):null;
-    if(opt){
-      const bg=rgbStr(optBgRgb(opt));
-      const fg=rgbStr(optFgRgb(opt));
-      cellStyle=`background:${bg};`;
-      nameStyle=`color:${fg};`;
-    }
+    if(opt){ cellStyle=`background:${rgbStr(optBgRgb(opt))};`; nameStyle=`color:${rgbStr(optFgRgb(opt))};`; hasColor=true; }
+    displayLabel=label.slice(0,4)+(label.slice(4)?'<br>'+label.slice(4,8):'');
+  } else {
+    displayLabel='Empty'; isEmpty=true;
   }
-  return `<div class="crew-key-cell${label?' programmed':''}" id="crew-cell-${idx}" style="${cellStyle}" onclick="crewToggleKey(${idx})">
-    <div class="crew-key-cell-num" style="${label?'color:inherit;opacity:.5;':''}">${idx+1}</div>
-    <div class="crew-key-cell-name${label?'':' empty'}" style="${nameStyle}">${label?(label.slice(0,4)+(label.slice(4)?'<br>'+label.slice(4,8):'')):'Empty'}</div>
+  return `<div class="crew-key-cell${hasColor?' programmed':''}" id="crew-cell-${idx}" style="${cellStyle}" onclick="crewToggleKey(${idx})">
+    <div class="crew-key-cell-num" style="${hasColor?'color:inherit;opacity:.5;':''}">${idx+1}</div>
+    <div class="crew-key-cell-name${isEmpty?' empty':''}" style="${nameStyle}">${displayLabel}</div>
     <div class="crew-key-cell-preview" id="crew-cell-preview-${idx}"></div>
     <div class="crew-key-note-wrap" onclick="event.stopPropagation()" id="crew-picker-${idx}">${crewOptionPickerHTML(idx)}</div>
   </div>`;
@@ -6185,20 +6225,18 @@ const ETK_OPTIONS = {
   PLs:  ['CAMS','TECH','CUL','LITE','AUD','AD','PROD'].map(l=>({label:l, fg:[0,0,0], bg:[240,14,206]})),
   IFBs: ['HOST','JUDGE','CHEF 1','CHEF 2','CHEF 3','PGM MIX'].map(l=>({label:l, fg:[169,212,152], bg:[0,0,0]}))
 };
+function etkFindOption(cat,label){ return (ETK_OPTIONS[cat]||[]).find(o=>o.label===label); }
 function crewOptionPickerHTML(idx){
-  const current=_crewKeyNotes[idx]||'';
-  if(current && !_crewPickerForceOpen[idx]){
-    return `<div class="crew-picker-selected" onclick="crewExpandPicker(${idx})">
-      <span class="crew-picker-selected-label">${current}</span>
-      <span class="crew-picker-selected-change">Change ›</span>
-    </div>`;
+  const current=_crewKeyNotes[idx];
+  const hasCurrent=current&&typeof current==='object';
+  if(hasCurrent && !_crewPickerForceOpen[idx]){
+    return `<div class="crew-picker-selected" onclick="crewExpandPicker(${idx})">Change selection ›</div>`;
   }
   let html='';
   Object.entries(ETK_OPTIONS).forEach(([cat,opts])=>{
     html+=`<div class="crew-picker-cat-label">${cat}</div><div class="crew-picker-grid">`;
     opts.forEach(o=>{
-      const noteStr=o.label+' ('+cat.replace(/s$/,'')+')';
-      const active=current===noteStr;
+      const active=hasCurrent&&current.category===cat&&current.label===o.label;
       html+=`<button type="button" class="crew-picker-opt${active?' active':''}" style="background:${rgbStr(o.bg)};color:${rgbStr(o.fg)};" onclick="crewPickOption(${idx},'${cat}','${o.label.replace(/'/g,"\\'")}')">${o.label}</button>`;
     });
     html+='</div>';
@@ -6212,15 +6250,21 @@ function crewExpandPicker(idx){
   if(wrap) wrap.innerHTML=crewOptionPickerHTML(idx);
 }
 function crewPickOption(idx,cat,label){
-  const noteStr=label+' ('+cat.replace(/s$/,'')+')';
-  if(_crewKeyNotes[idx]===noteStr) delete _crewKeyNotes[idx];
-  else _crewKeyNotes[idx]=noteStr;
+  const cur=_crewKeyNotes[idx];
+  const isSame=cur&&typeof cur==='object'&&cur.category===cat&&cur.label===label;
+  if(isSame) delete _crewKeyNotes[idx];
+  else _crewKeyNotes[idx]={category:cat,label:label};
   _crewPickerForceOpen[idx]=false;
-  const cell=document.getElementById('crew-cell-'+idx);
-  const preview=document.getElementById('crew-cell-preview-'+idx);
-  const trimmed=_crewKeyNotes[idx];
-  if(cell) cell.classList.toggle('annotated',!!trimmed);
-  if(preview) preview.textContent=trimmed?'Requested: '+trimmed:'';
+  // Rebuild the whole cell so its fill color reflects the new pick
+  const oldCell=document.getElementById('crew-cell-'+idx);
+  if(oldCell&&oldCell.parentNode){
+    const tmp=document.createElement('div');
+    tmp.innerHTML=crewCellHTML(idx,_crewAllKeys[idx]);
+    const newCell=tmp.firstElementChild;
+    newCell.classList.add('active');
+    oldCell.parentNode.replaceChild(newCell,oldCell);
+  }
+  crewUpdateSubmitBar();
   const wrap=document.getElementById('crew-picker-'+idx);
   if(wrap) wrap.innerHTML=crewOptionPickerHTML(idx);
   crewUpdateSubmitBar();
@@ -6286,7 +6330,8 @@ async function crewSubmitBundle(){
 
   const annotated=Object.entries(notes).map(([idx,note])=>{
     const label=crewKeyLabel(_crewAllKeys[+idx])||('Key '+(+idx+1));
-    return {keyIndex:+idx, label, note};
+    const noteText=(note&&typeof note==='object')?(note.label+' ('+note.category.replace(/s$/,'')+')'):note;
+    return {keyIndex:+idx, label, note:noteText};
   });
   const summary=(_currentProfile.display_name||'Crew')+' · '+_crewClaim.device_id+' — '+n+' key'+(n!==1?'s':'')+' flagged: '+annotated.map(a=>a.label).join(', ');
 
@@ -6303,20 +6348,15 @@ async function crewSubmitBundle(){
       });
       if(error) throw error;
     }
-    // Clear notes + UI
-    _crewKeyNotes={};
-    document.querySelectorAll('.crew-key-cell.annotated').forEach(c=>c.classList.remove('annotated'));
-    document.querySelectorAll('.crew-key-cell-preview').forEach(p=>p.textContent='');
-    if(_crewActiveKeyIdx!==null){
-      const cell=document.getElementById('crew-cell-'+_crewActiveKeyIdx);
-      if(cell) cell.classList.remove('active');
-      _crewActiveKeyIdx=null;
-    }
     btn.textContent='✓ Submitted';
-    setTimeout(()=>{ btn.textContent='Submit Request'; crewUpdateSubmitBar(); },2000);
-    document.getElementById('crew-submit-bar').classList.remove('visible');
-    crewLoadMyRequests();
     crewShowToast('Request submitted — your TM has been notified');
+    // ETK build: shared-cart iPad — reset to the beltpack grid for the next crew member
+    setTimeout(()=>{
+      _crewKeyNotes={};
+      if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
+      _crewClaim=null; _currentProfile=null;
+      crewSelectType('bp');
+    },1200);
   }catch(e){
     btn.disabled=false; btn.textContent='Submit Request';
     alert('Error submitting. Please try again.');
