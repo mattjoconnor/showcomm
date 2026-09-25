@@ -5411,14 +5411,15 @@ async function renderETKBeltpackStatus(){
 
   _etkBpData={};
   bps.forEach(bp=>{
-    const keys=keyHistoryByDevice[bp]||{};
+    const claim=claimsByDevice[bp];
+    const keys=claim?(keyHistoryByDevice[bp]||{}):{}; // unclaimed = no active requests, regardless of history
     let urgency='neutral';
     const keyList=[0,1,2,3].map(ki=>{
       const rec=keys[ki], urg=keyUrgency(rec);
       if(urgencyRank[urg]>urgencyRank[urgency]) urgency=urg;
       return {rec,urg};
     });
-    _etkBpData[bp]={urgency, keys:keyList, claim:claimsByDevice[bp]};
+    _etkBpData[bp]={urgency, keys:keyList, claim};
   });
 
   body.innerHTML=`<div class="etk-tm-focus" id="etk-tm-focus"></div><div class="etk-bp-status-grid" id="etk-bp-status-grid"></div>`;
