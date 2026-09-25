@@ -5220,6 +5220,11 @@ async function initTMApp(){
 
   // Real-time subscription for live TM updates
   if(SUPA){
+    // Guard against a double-init race (e.g. auto-resumed session + manual
+    // sign-in both completing) leaving two subscriptions on the same topic
+    (SUPA.getChannels()||[]).filter(ch=>ch.topic&&ch.topic.includes('showcomm-tm-rt')).forEach(ch=>{
+      try{ SUPA.removeChannel(ch); }catch(e){}
+    });
     SUPA.channel('showcomm-tm-rt')
       .on('postgres_changes',{event:'*',schema:'public',table:'beltpack_assignments'},function(p){
         if(p.new&&p.new.production_id) localStorage.setItem('sc_bp_'+p.new.production_id,JSON.stringify(p.new.data));
