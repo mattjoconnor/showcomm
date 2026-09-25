@@ -316,27 +316,32 @@ body { background:var(--bg); color:var(--black); }
 .crew-confirm-btn:active { transform:scale(.96); opacity:.9; }
 .crew-confirm-btn.release { background:var(--red); color:#fff; }
 .crew-confirm-btn.cancel { background:rgba(0,0,0,.06); color:var(--tx-primary); }
-/* TM Beltpack status board (ETK) — focus panel + grid */
-.etk-tm-focus { padding:clamp(16px,2.2vw,28px) clamp(16px,2.2vw,28px) 0; }
-.etk-tm-focus-empty { font-family:var(--f-mono); font-size:clamp(11px,1vw,13px); font-weight:600; color:var(--tx-tertiary); text-align:center; padding:32px; border:2px dashed var(--border-md); }
-.etk-tm-focus-card { border:1px solid var(--border-md); }
-.etk-tm-focus-row .crew-key-cell { min-height:110px; cursor:default; }
-.etk-tm-focus-row .crew-key-cell-name { font-size:clamp(.85rem,1.6vw,1.15rem); }
-.etk-tm-focus-confirm { display:block; width:100%; font-family:var(--f-mono); font-size:clamp(12px,1vw,14px); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:18px; border:none; background:var(--black); color:#fff; cursor:pointer; transition:background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
-.etk-tm-focus-confirm:hover { background:#333; }
-.etk-tm-focus-confirm:active { transform:scale(.98); }
-.etk-tm-focus-done { font-family:var(--f-mono); font-size:clamp(11px,1vw,13px); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:#10B981; text-align:center; padding:16px; background:rgba(16,185,129,.06); }
-.etk-bp-status-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; padding:clamp(16px,2.2vw,28px); box-sizing:border-box; }
-.etk-bp-status-card { background:var(--surface); border:1px solid var(--border); border-top:4px solid var(--border-md); padding:10px; cursor:pointer; transition:transform var(--dur-med) var(--ease), box-shadow var(--dur-med) var(--ease); box-sizing:border-box; overflow:hidden; }
-.etk-bp-status-card:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.08); }
-.etk-bp-status-card:active { transform:translateY(0) scale(.98); }
-.etk-bp-status-card.focused { outline:3px solid #0891B2; outline-offset:-1px; }
+/* TM Beltpack status board (ETK) — work queue + collapsed reference grid */
+.etk-queue-section { padding:clamp(16px,2.2vw,28px) clamp(16px,2.2vw,28px) 0; }
+.etk-queue-header { font-family:var(--f-mono); font-size:clamp(14px,1.3vw,18px); font-weight:800; letter-spacing:var(--ls-tight); text-transform:uppercase; color:var(--tx-primary); margin-bottom:14px; }
+.etk-queue-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+.etk-queue-empty { display:none; font-family:var(--f-mono); font-size:clamp(11px,1vw,13px); font-weight:600; color:var(--tx-tertiary); text-align:center; padding:32px; border:2px dashed var(--border-md); }
+.etk-queue-empty.visible { display:block; }
+.etk-queue-item { border:1px solid var(--border-md); border-top:4px solid var(--border-md); background:var(--surface); transition:opacity var(--dur-med) var(--ease), transform var(--dur-med) var(--ease); }
+.etk-queue-item.leaving { opacity:0; transform:scale(.95); pointer-events:none; }
+.etk-queue-item-head { display:flex; align-items:baseline; justify-content:space-between; padding:12px 14px 10px; }
+.etk-queue-item-id { font-family:var(--f-mono); font-size:clamp(15px,1.4vw,19px); font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); }
+.etk-queue-item-crew { font-family:var(--f-mono); font-size:clamp(10px,.9vw,12px); font-weight:600; color:var(--tx-secondary); }
+.etk-queue-keys .crew-key-cell { min-height:64px; cursor:default; }
+.etk-queue-keys .crew-key-cell-name { font-size:clamp(.68rem,1.2vw,.85rem); }
+.etk-queue-confirm { display:block; width:100%; font-family:var(--f-mono); font-size:clamp(11px,1vw,13px); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:13px; border:none; background:var(--black); color:#fff; cursor:pointer; transition:background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
+.etk-queue-confirm:hover { background:#333; }
+.etk-queue-confirm:active { transform:scale(.97); }
+.etk-all-section { padding:16px clamp(16px,2.2vw,28px) clamp(16px,2.2vw,28px); }
+.etk-all-toggle { display:flex; align-items:center; gap:8px; font-family:var(--f-mono); font-size:clamp(11px,1vw,13px); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); background:none; border:none; border-top:1px solid var(--border-md); padding:16px 0; cursor:pointer; width:100%; text-align:left; }
+.etk-all-toggle:hover { color:var(--tx-primary); }
+.etk-bp-status-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; padding-top:14px; box-sizing:border-box; }
+.etk-bp-status-card { background:var(--surface); border:1px solid var(--border); padding:10px; box-sizing:border-box; overflow:hidden; }
 .etk-bp-status-head { display:flex; align-items:baseline; justify-content:space-between; gap:6px; margin-bottom:8px; }
 .etk-bp-status-id { font-family:var(--f-mono); font-size:clamp(12px,1vw,14px); font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); white-space:nowrap; }
 .etk-bp-status-crew { font-family:var(--f-mono); font-size:clamp(10px,.85vw,11px); font-weight:600; color:var(--tx-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; }
 .etk-bp-mini-row { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; }
-.etk-bp-mini-key { position:relative; aspect-ratio:1; background:var(--bg,rgba(0,0,0,.04)); border:1px solid var(--border-md); display:flex; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:clamp(10px,.85vw,11px); font-weight:800; text-align:center; box-sizing:border-box; }
-.etk-bp-mini-dot { position:absolute; top:2px; right:2px; width:5px; height:5px; border-radius:50%; }
+.etk-bp-mini-key { aspect-ratio:1; background:var(--bg,rgba(0,0,0,.04)); border:1px solid var(--border-md); display:flex; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:clamp(10px,.85vw,11px); font-weight:800; text-align:center; box-sizing:border-box; }
 .crew-key-note-input::placeholder { color:rgba(0,0,0,.35); font-weight:400; }
 /* Submit bar */
 .crew-submit-bar { flex-shrink:0; border-top:2px solid var(--black); padding:16px 20px; padding-bottom:max(20px,env(safe-area-inset-bottom,20px)); display:none; align-items:center; justify-content:center; gap:20px; background:var(--surface); z-index:100; transform:translateY(100%); opacity:0; transition:transform var(--dur-med) var(--ease), opacity var(--dur-med) var(--ease); }
@@ -5360,10 +5365,11 @@ function renderTMBeltpacks(){
 // ETK build: live beltpack status board — orange (needs programming),
 // green (programmed/fulfilled), red (change requested after programming).
 // Sourced from device_claims + key_requests, not the legacy assignment blob.
-let _etkFocusedBp=null, _etkBpData={};
+let _etkBpData={};
 const _etkUrgencyColors={orange:'#F59E0B',green:'#10B981',red:'#DC2626',neutral:'#aaa'};
-const _etkUrgencyLabels={orange:'Needs Programming',green:'Programmed',red:'Change Requested',neutral:'No Requests'};
 const _etkUrgencyRank={red:3,orange:2,green:1,neutral:0};
+
+let _etkAllExpanded=false;
 
 async function renderETKBeltpackStatus(){
   const body=document.getElementById('tm-body'); if(!body) return;
@@ -5407,7 +5413,6 @@ async function renderETKBeltpackStatus(){
     if(rec.latestStatus==='fulfilled') return 'green';
     return 'neutral';
   }
-  const urgencyRank=_etkUrgencyRank;
 
   _etkBpData={};
   bps.forEach(bp=>{
@@ -5416,37 +5421,75 @@ async function renderETKBeltpackStatus(){
     let urgency='neutral';
     const keyList=[0,1,2,3].map(ki=>{
       const rec=keys[ki], urg=keyUrgency(rec);
-      if(urgencyRank[urg]>urgencyRank[urgency]) urgency=urg;
+      if(_etkUrgencyRank[urg]>_etkUrgencyRank[urgency]) urgency=urg;
       return {rec,urg};
     });
     _etkBpData[bp]={urgency, keys:keyList, claim};
   });
 
-  body.innerHTML=`<div class="etk-tm-focus" id="etk-tm-focus"></div><div class="etk-bp-status-grid" id="etk-bp-status-grid"></div>`;
-  if(_etkFocusedBp&&_etkBpData[_etkFocusedBp]) etkFocusDevice(_etkFocusedBp);
-  else{
-    document.getElementById('etk-tm-focus').innerHTML='<div class="etk-tm-focus-empty">Tap a beltpack below to review and program it</div>';
-    renderETKGrid();
-  }
+  body.innerHTML=`
+    <div class="etk-queue-section">
+      <div class="etk-queue-header">Needs Programming (<span id="etk-queue-count">0</span>)</div>
+      <div class="etk-queue-list" id="etk-queue-list"></div>
+      <div class="etk-queue-empty" id="etk-queue-empty">All caught up — nothing waiting on you.</div>
+    </div>
+    <div class="etk-all-section">
+      <button class="etk-all-toggle" onclick="etkToggleAllSection()"><span id="etk-all-chevron">▸</span> All Beltpacks (${bps.length})</button>
+      <div class="etk-bp-status-grid" id="etk-bp-status-grid" style="display:none;"></div>
+    </div>`;
+  renderETKQueue();
+  renderETKGrid();
+  const grid=document.getElementById('etk-bp-status-grid');
+  const chevron=document.getElementById('etk-all-chevron');
+  if(grid) grid.style.display=_etkAllExpanded?'grid':'none';
+  if(chevron) chevron.textContent=_etkAllExpanded?'▾':'▸';
+}
+
+function renderETKQueue(){
+  const list=document.getElementById('etk-queue-list');
+  const empty=document.getElementById('etk-queue-empty');
+  const countEl=document.getElementById('etk-queue-count');
+  if(!list) return;
+  const queue=Object.keys(_etkBpData)
+    .filter(bp=>_etkBpData[bp].urgency==='orange'||_etkBpData[bp].urgency==='red')
+    .sort((a,b)=>{
+      const rankDiff=_etkUrgencyRank[_etkBpData[b].urgency]-_etkUrgencyRank[_etkBpData[a].urgency];
+      return rankDiff!==0 ? rankDiff : a.localeCompare(b,undefined,{numeric:true});
+    });
+  if(countEl) countEl.textContent=queue.length;
+  if(empty) empty.classList.toggle('visible',queue.length===0);
+  list.innerHTML=queue.map(bp=>{
+    const d=_etkBpData[bp];
+    const cells=d.keys.map(({rec},i)=>{
+      if(rec&&rec.parsed){
+        return `<div class="crew-key-cell programmed" style="background:${rgbStr(rec.parsed.bg)};">
+          <div class="crew-key-cell-num" style="color:inherit;opacity:.5;">${i+1}</div>
+          <div class="crew-key-cell-name" style="color:${rgbStr(rec.parsed.fg)};">${rec.parsed.label}</div>
+        </div>`;
+      }
+      return `<div class="crew-key-cell"><div class="crew-key-cell-num">${i+1}</div><div class="crew-key-cell-name empty">Empty</div></div>`;
+    }).join('');
+    return `<div class="etk-queue-item" id="etk-queue-item-${bp}" style="border-top-color:${_etkUrgencyColors[d.urgency]};">
+      <div class="etk-queue-item-head">
+        <div class="etk-queue-item-id">${bp}</div>
+        <div class="etk-queue-item-crew">${d.claim?d.claim.crew_name:'Unclaimed'}</div>
+      </div>
+      <div class="crew-bp-column etk-queue-keys">${cells}</div>
+      <button class="etk-queue-confirm" onclick="etkConfirmProgrammed('${bp}')">Mark Programmed</button>
+    </div>`;
+  }).join('');
 }
 
 function renderETKGrid(){
   const grid=document.getElementById('etk-bp-status-grid'); if(!grid) return;
-  const sorted=Object.keys(_etkBpData).sort((a,b)=>{
-    const rankDiff=_etkUrgencyRank[_etkBpData[b].urgency]-_etkUrgencyRank[_etkBpData[a].urgency];
-    return rankDiff!==0 ? rankDiff : a.localeCompare(b,undefined,{numeric:true});
-  });
+  const sorted=Object.keys(_etkBpData).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
   grid.innerHTML=sorted.map(bp=>{
     const d=_etkBpData[bp];
-    const borderClr=_etkUrgencyColors[d.urgency];
-    const miniKeys=d.keys.map(({rec,urg})=>{
+    const miniKeys=d.keys.map(({rec})=>{
       if(!rec||!rec.parsed) return `<div class="etk-bp-mini-key"></div>`;
-      return `<div class="etk-bp-mini-key" style="background:${rgbStr(rec.parsed.bg)};color:${rgbStr(rec.parsed.fg)};">
-        ${rec.parsed.label.slice(0,4)}
-        <span class="etk-bp-mini-dot" style="background:${_etkUrgencyColors[urg]};"></span>
-      </div>`;
+      return `<div class="etk-bp-mini-key" style="background:${rgbStr(rec.parsed.bg)};color:${rgbStr(rec.parsed.fg)};">${rec.parsed.label.slice(0,4)}</div>`;
     }).join('');
-    return `<div class="etk-bp-status-card${bp===_etkFocusedBp?' focused':''}" style="${d.urgency!=='neutral'?`border-top-color:${borderClr};`:''}" onclick="etkFocusDevice('${bp}')">
+    return `<div class="etk-bp-status-card">
       <div class="etk-bp-status-head">
         <div class="etk-bp-status-id">${bp}</div>
         <div class="etk-bp-status-crew">${d.claim?d.claim.crew_name:'Unclaimed'}</div>
@@ -5456,52 +5499,27 @@ function renderETKGrid(){
   }).join('');
 }
 
-function etkFocusDevice(bp){
-  _etkFocusedBp=bp;
-  const d=_etkBpData[bp];
-  const focus=document.getElementById('etk-tm-focus');
-  if(!d||!focus) return;
-  const cells=d.keys.map(({rec,urg},i)=>{
-    const dot=rec&&rec.parsed?`<span class="etk-bp-mini-dot" style="top:6px;right:6px;width:8px;height:8px;background:${_etkUrgencyColors[urg]};"></span>`:'';
-    if(rec&&rec.parsed){
-      return `<div class="crew-key-cell programmed" style="background:${rgbStr(rec.parsed.bg)};position:relative;">
-        <div class="crew-key-cell-num" style="color:inherit;opacity:.5;">${i+1}</div>
-        <div class="crew-key-cell-name" style="color:${rgbStr(rec.parsed.fg)};">${rec.parsed.label}</div>
-        ${dot}
-      </div>`;
-    }
-    return `<div class="crew-key-cell">
-      <div class="crew-key-cell-num">${i+1}</div>
-      <div class="crew-key-cell-name empty">Empty</div>
-    </div>`;
-  }).join('');
-  const actionHTML = (d.urgency==='orange'||d.urgency==='red')
-    ? `<button class="etk-tm-focus-confirm" onclick="etkConfirmProgrammed('${bp}')">Mark All Programmed</button>`
-    : d.urgency==='green' ? `<div class="etk-tm-focus-done">✓ All requests programmed</div>` : '';
-  focus.innerHTML=`<div class="etk-tm-focus-card">
-    <div class="crew-home-header">
-      <div class="crew-home-left">
-        <div class="crew-home-type">Beltpack · ${d.claim?d.claim.crew_name:'Unclaimed'}</div>
-        <div class="crew-home-device">${bp}</div>
-      </div>
-      <div class="crew-home-badge" style="background:${_etkUrgencyColors[d.urgency]};">${_etkUrgencyLabels[d.urgency]}</div>
-    </div>
-    <div class="crew-bp-column etk-tm-focus-row">${cells}</div>
-    ${actionHTML}
-  </div>`;
-  renderETKGrid();
+function etkToggleAllSection(){
+  _etkAllExpanded=!_etkAllExpanded;
+  const grid=document.getElementById('etk-bp-status-grid');
+  const chevron=document.getElementById('etk-all-chevron');
+  if(grid) grid.style.display=_etkAllExpanded?'grid':'none';
+  if(chevron) chevron.textContent=_etkAllExpanded?'▾':'▸';
 }
 
 async function etkConfirmProgrammed(bp){
   if(!SUPA) return;
+  const item=document.getElementById('etk-queue-item-'+bp);
+  if(item) item.classList.add('leaving');
   const {error}=await SUPA.from('key_requests').update({status:'fulfilled'})
     .eq('device_id',bp).eq('production_id','ETK').eq('status','open');
-  if(error){ toast('Could not mark '+bp+' programmed — try again','danger'); return; }
+  if(error){
+    if(item) item.classList.remove('leaving');
+    toast('Could not mark '+bp+' programmed — try again','danger');
+    return;
+  }
   toast(bp+' marked programmed','success');
   await renderETKBeltpackStatus();
-  // Auto-advance to the next beltpack that still needs attention
-  const next=Object.keys(_etkBpData).find(id=>id!==bp&&(_etkBpData[id].urgency==='orange'||_etkBpData[id].urgency==='red'));
-  if(next) etkFocusDevice(next);
 }
 
 function etkParseRequestNote(noteText){
