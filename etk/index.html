@@ -1928,6 +1928,7 @@ function doLogout(){
     _tmMode=false;
   }
   if((_currentRole==='admin'||_currentRole==='tm') && SUPA) SUPA.auth.signOut();
+  etkStopPolling();
   // Cleanup crew state
   if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
   _crewClaim=null; _crewProdId=null; _crewDeviceType=null;
@@ -5167,6 +5168,7 @@ async function initTMApp(){
   if(!SUPA||!_currentUser) return;
   loadGlobalOptions(); // real per-space PL/IFB colors, same source as crew view
   loadETKOptions(); // TM-editable PL/IFB list for this production
+  etkStartPolling(); // safety net in case the realtime connection silently drops
 
   // ETK build: single hardcoded production — no multi-show lookup
   _tmProductions=PRODUCTIONS['ETK']?[PRODUCTIONS['ETK']]:[];
@@ -5386,6 +5388,16 @@ function renderTMBeltpacks(){
 // green (programmed/fulfilled), red (change requested after programming).
 // Sourced from device_claims + key_requests, not the legacy assignment blob.
 let _etkBpData={};
+let _etkPollInterval=null;
+function etkStartPolling(){
+  if(_etkPollInterval) return;
+  _etkPollInterval=setInterval(()=>{
+    if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
+  },20000);
+}
+function etkStopPolling(){
+  if(_etkPollInterval){ clearInterval(_etkPollInterval); _etkPollInterval=null; }
+}
 const _etkUrgencyColors={orange:'#F59E0B',green:'#10B981',red:'#DC2626',neutral:'#aaa'};
 const _etkUrgencyRank={red:3,orange:2,green:1,neutral:0};
 
