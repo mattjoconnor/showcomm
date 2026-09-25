@@ -293,6 +293,15 @@ body { background:var(--bg); color:var(--black); }
 .crew-picker-selected { display:flex; align-items:center; justify-content:space-between; padding:9px 11px; background:rgba(8,145,178,.06); border:2px solid #0891B2; cursor:pointer; }
 .crew-picker-selected-label { font-family:var(--f-mono); font-size:11px; font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); }
 .crew-picker-selected-change { font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:#0891B2; }
+/* TM Beltpack status grid (ETK) */
+.etk-bp-status-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; padding:clamp(16px,2.2vw,28px); box-sizing:border-box; }
+.etk-bp-status-card { background:var(--surface); border:2px solid var(--border); border-bottom:4px solid var(--border); padding:12px 10px; cursor:pointer; transition:transform .1s; }
+.etk-bp-status-card:hover { transform:translateY(-1px); }
+.etk-bp-status-id { font-family:var(--f-mono); font-size:1rem; font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); }
+.etk-bp-status-crew { font-family:var(--f-mono); font-size:11px; font-weight:600; color:var(--tx-secondary); margin-top:4px; min-height:14px; }
+.etk-bp-status-tag { font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; margin-top:8px; padding:2px 6px; border:1px solid var(--border-md); display:inline-block; }
+.etk-bp-inline-detail:empty { display:none; }
+.etk-bp-inline-detail { margin-top:10px; cursor:default; }
 .crew-key-note-input::placeholder { color:rgba(0,0,0,.35); font-weight:400; }
 /* Submit bar */
 .crew-submit-bar { flex-shrink:0; border-top:2px solid var(--black); padding:14px 20px; padding-bottom:max(20px,env(safe-area-inset-bottom,20px)); display:none; align-items:center; gap:12px; background:var(--surface); z-index:100; }
@@ -5151,6 +5160,13 @@ async function initTMApp(){
       .on('postgres_changes',{event:'*',schema:'public',table:'change_requests'},function(){
         if(_tmActiveView==='requests') renderTMRequests();
       })
+      .on('postgres_changes',{event:'*',schema:'public',table:'device_claims'},function(){
+        if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
+      })
+      .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'},function(){
+        if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
+        if(_tmActiveView==='requests') renderTMRequests();
+      })
       .subscribe();
   }
 }
@@ -5201,14 +5217,7 @@ function setTMView(view){
       } else { renderKeypanels(); }
     }
   } else if(view==='beltpacks'){
-    if(bpV){
-      bpV.style.display='block'; body.appendChild(bpV);
-      // Sync fresh BP data from Supabase before rendering
-      if(SUPA&&_tmProductions.length){
-        Promise.all(_tmProductions.map(p=>loadClaimedFromDB(p.id)))
-          .then(()=>renderAllBeltpacks());
-      } else { renderAllBeltpacks(); }
-    }
+    renderETKBeltpackStatus();
   } else if(view==='requests'){
     renderTMRequests();
   }
@@ -5291,6 +5300,58 @@ function renderTMBeltpacks(){
     ? allBps.filter(bp=>bpToProd[bp]&&bpToProd[bp].id===_tmActiveProd)
     : allBps;
   renderBpCards(Object.fromEntries(filtered.map(bp=>[bp,bpToProd[bp]])));
+}
+
+// ETK build: live beltpack status board — orange (needs programming),
+// green (programmed/fulfilled), red (change requested after programming).
+// Sourced from device_claims + key_requests, not the legacy assignment blob.
+async function renderETKBeltpackStatus(){
+  const body=document.getElementById('tm-body'); if(!body) return;
+  const prod=PRODUCTIONS['ETK']; if(!prod){ body.innerHTML='<div class="empty-state"><div class="empty-text">ETK production not loaded</div></div>'; return; }
+  const bps=(prod.beltpacks||[]).slice();
+  if(!SUPA){ body.innerHTML='<div class="empty-state"><div class="empty-text">No connection</div></div>'; return; }
+  body.innerHTML='<div class="empty-state"><div class="empty-text">Loading…</div></div>';
+
+  const [claimsRes,reqRes]=await Promise.all([
+    SUPA.from('device_claims').select('device_id,crew_name,crew_position,status')
+      .eq('production_id','ETK').eq('device_type','beltpack').eq('status','confirmed'),
+    SUPA.from('key_requests').select('device_id,status').eq('production_id','ETK')
+  ]);
+  const claimsByDevice={};
+  (claimsRes.data||[]).forEach(c=>{ claimsByDevice[c.device_id]=c; });
+  const reqsByDevice={};
+  (reqRes.data||[]).forEach(r=>{ (reqsByDevice[r.device_id]=reqsByDevice[r.device_id]||[]).push(r.status); });
+
+  function stateFor(bp){
+    const statuses=reqsByDevice[bp]||[];
+    const hasOpen=statuses.includes('open');
+    const hasFulfilled=statuses.includes('fulfilled');
+    if(hasOpen&&hasFulfilled) return 'red';
+    if(hasOpen) return 'orange';
+    if(hasFulfilled) return 'green';
+    return 'neutral';
+  }
+  const stateColors={orange:'#F59E0B',green:'#10B981',red:'#DC2626',neutral:null};
+  const stateLabels={orange:'Needs Programming',green:'Programmed',red:'Change Requested',neutral:''};
+
+  const el=document.getElementById('tm-body');
+  el.innerHTML=`<div class="etk-bp-status-grid" id="etk-bp-status-grid"></div>`;
+  document.getElementById('etk-bp-status-grid').innerHTML=bps.map(bp=>{
+    const st=stateFor(bp), clr=stateColors[st], claim=claimsByDevice[bp];
+    const bpSafe=bp.replace(/\s/g,'_');
+    return `<div class="etk-bp-status-card" style="${clr?`background:${clr};border-color:${clr};`:''}" onclick="etkToggleBpDetail('${bp}')">
+      <div class="etk-bp-status-id" style="${clr?'color:#fff;':''}">${bp}</div>
+      <div class="etk-bp-status-crew" style="${clr?'color:rgba(255,255,255,.85);':''}">${claim?(claim.crew_name+(claim.crew_position?' · '+claim.crew_position:'')):'Unclaimed'}</div>
+      ${st!=='neutral'?`<div class="etk-bp-status-tag" style="${clr?'color:#fff;border-color:rgba(255,255,255,.5);':''}">${stateLabels[st]}</div>`:''}
+      <div class="etk-bp-inline-detail" id="bp-inline-reqs-${bpSafe}" onclick="event.stopPropagation()"></div>
+    </div>`;
+  }).join('');
+}
+function etkToggleBpDetail(bp){
+  const el=document.getElementById('bp-inline-reqs-'+bp.replace(/\s/g,'_'));
+  if(!el) return;
+  if(el.innerHTML.trim()){ el.innerHTML=''; return; }
+  loadInlineBPRequests(bp);
 }
 
 function openTMKpRequestModal(panelId, currentProd){
@@ -5880,7 +5941,7 @@ async function crewClaimDevice(deviceId){
   const claimData={
     device_id:deviceId, device_type:deviceType,
     crew_name:_currentProfile.display_name, crew_position:_currentProfile.position,
-    claimed_at:new Date().toISOString(), production_id:_crewProdId, status:'pending'
+    claimed_at:new Date().toISOString(), production_id:_crewProdId, status:'confirmed'
   };
   if(SUPA){
     const {data,error}=await SUPA.from('device_claims').insert(claimData).select().single();
