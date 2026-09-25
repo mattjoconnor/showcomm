@@ -5376,7 +5376,7 @@ async function renderETKBeltpackStatus(){
   const ufBar=document.getElementById('unified-filters'); if(ufBar) ufBar.style.display='none';
 
   const [claimsRes,reqRes]=await Promise.all([
-    SUPA.from('device_claims').select('device_id,crew_name,crew_position,status')
+    SUPA.from('device_claims').select('device_id,crew_name,crew_position,status,claimed_at')
       .eq('production_id','ETK').eq('device_type','beltpack')
       .not('status','in','(cancelled,denied,released)'),
     SUPA.from('key_requests').select('device_id,status,note,created_at').eq('production_id','ETK')
@@ -5385,9 +5385,13 @@ async function renderETKBeltpackStatus(){
   const claimsByDevice={};
   (claimsRes.data||[]).forEach(c=>{ claimsByDevice[c.device_id]=c; });
 
-  // Per device, per key index: has it ever been fulfilled, and what's the latest request
+  // Per device, per key index: has it ever been fulfilled, and what's the latest request.
+  // Scoped to requests made since the CURRENT claim started — a released-then-reclaimed
+  // pack shouldn't carry over the previous holder's keys.
   const keyHistoryByDevice={};
   (reqRes.data||[]).forEach(r=>{
+    const claim=claimsByDevice[r.device_id];
+    if(!claim||r.created_at<claim.claimed_at) return;
     let entries=[];
     try{ entries=JSON.parse(r.note||'[]'); }catch(e){}
     if(!Array.isArray(entries)) return;
@@ -5412,7 +5416,7 @@ async function renderETKBeltpackStatus(){
   _etkBpData={};
   bps.forEach(bp=>{
     const claim=claimsByDevice[bp];
-    const keys=claim?(keyHistoryByDevice[bp]||{}):{}; // unclaimed = no active requests, regardless of history
+    const keys=keyHistoryByDevice[bp]||{};
     let urgency='neutral';
     const keyList=[0,1,2,3].map(ki=>{
       const rec=keys[ki], urg=keyUrgency(rec);
@@ -6309,12 +6313,15 @@ async function crewRenderSchematic(silent=false){
 
   // ETK build: always show what's currently assigned to each key — whether
   // that's an open (unprogrammed) request or one already fulfilled — so crew
-  // can see what they already have before requesting a change. Kept separate
-  // from _crewKeyNotes so it isn't re-submitted as a new request on its own.
+  // can see what they already have before requesting a change. Scoped to
+  // this claim's start time so a released-then-reclaimed pack doesn't show
+  // the previous holder's keys. Kept separate from _crewKeyNotes so it
+  // isn't re-submitted as a new request on its own.
   if(SUPA){
     const {data:reqs}=await SUPA.from('key_requests').select('note,status')
       .eq('device_id',_crewClaim.device_id).eq('production_id',_crewClaim.production_id)
       .in('status',['open','fulfilled'])
+      .gte('created_at',_crewClaim.claimed_at)
       .order('created_at',{ascending:true});
     (reqs||[]).forEach(r=>{
       let entries=[];
