@@ -1924,6 +1924,7 @@ function doLogout(){
   document.getElementById('screen-crew').style.display='none';
   $('app').classList.remove('active');
   $('screen-login').style.display='';
+  etkApplyRoleLock();
 }
 
 document.querySelectorAll('.login-role-btn').forEach(btn=>{
@@ -1949,15 +1950,16 @@ document.querySelectorAll('.login-role-btn').forEach(btn=>{
 
 // ETK build: separate crew/TM URLs via ?role= — one shared file, no code duplication.
 // showcomm/etk/crew redirects to ?role=crew, showcomm/etk/tm redirects to ?role=tm.
-(function(){
+// Re-applied after logout too (see doLogout) since it isn't otherwise re-triggered.
+function etkApplyRoleLock(){
   const role=new URLSearchParams(location.search).get('role');
-  if(role==='crew'||role==='tm'){
-    const grid=document.querySelector('.login-role-grid'); if(grid) grid.style.display='none';
-    const backBtn=document.getElementById('login-back-btn'); if(backBtn) backBtn.style.display='none';
-  }
+  if(role!=='crew'&&role!=='tm') return;
+  const grid=document.querySelector('.login-role-grid'); if(grid) grid.style.display='none';
+  const backBtn=document.getElementById('login-back-btn'); if(backBtn) backBtn.style.display='none';
   if(role==='crew'){ showScreen('crew'); }
   else if(role==='tm'){ document.querySelector('.login-role-btn[data-role="tm"]')?.click(); }
-})();
+}
+etkApplyRoleLock();
 
 const _backBtn=document.getElementById('login-back-btn');
 if(_backBtn) _backBtn.addEventListener('click',()=>{
@@ -5361,6 +5363,7 @@ function renderTMBeltpacks(){
 let _etkFocusedBp=null, _etkBpData={};
 const _etkUrgencyColors={orange:'#F59E0B',green:'#10B981',red:'#DC2626',neutral:'#aaa'};
 const _etkUrgencyLabels={orange:'Needs Programming',green:'Programmed',red:'Change Requested',neutral:'No Requests'};
+const _etkUrgencyRank={red:3,orange:2,green:1,neutral:0};
 
 async function renderETKBeltpackStatus(){
   const body=document.getElementById('tm-body'); if(!body) return;
@@ -5404,7 +5407,7 @@ async function renderETKBeltpackStatus(){
     if(rec.latestStatus==='fulfilled') return 'green';
     return 'neutral';
   }
-  const urgencyRank={red:3,orange:2,green:1,neutral:0};
+  const urgencyRank=_etkUrgencyRank;
 
   _etkBpData={};
   bps.forEach(bp=>{
@@ -5428,7 +5431,11 @@ async function renderETKBeltpackStatus(){
 
 function renderETKGrid(){
   const grid=document.getElementById('etk-bp-status-grid'); if(!grid) return;
-  grid.innerHTML=Object.keys(_etkBpData).map(bp=>{
+  const sorted=Object.keys(_etkBpData).sort((a,b)=>{
+    const rankDiff=_etkUrgencyRank[_etkBpData[b].urgency]-_etkUrgencyRank[_etkBpData[a].urgency];
+    return rankDiff!==0 ? rankDiff : a.localeCompare(b,undefined,{numeric:true});
+  });
+  grid.innerHTML=sorted.map(bp=>{
     const d=_etkBpData[bp];
     const borderClr=_etkUrgencyColors[d.urgency];
     const miniKeys=d.keys.map(({rec,urg})=>{
@@ -5453,11 +5460,13 @@ function etkFocusDevice(bp){
   const d=_etkBpData[bp];
   const focus=document.getElementById('etk-tm-focus');
   if(!d||!focus) return;
-  const cells=d.keys.map(({rec},i)=>{
+  const cells=d.keys.map(({rec,urg},i)=>{
+    const dot=rec&&rec.parsed?`<span class="etk-bp-mini-dot" style="top:6px;right:6px;width:8px;height:8px;background:${_etkUrgencyColors[urg]};"></span>`:'';
     if(rec&&rec.parsed){
-      return `<div class="crew-key-cell programmed" style="background:${rgbStr(rec.parsed.bg)};">
+      return `<div class="crew-key-cell programmed" style="background:${rgbStr(rec.parsed.bg)};position:relative;">
         <div class="crew-key-cell-num" style="color:inherit;opacity:.5;">${i+1}</div>
         <div class="crew-key-cell-name" style="color:${rgbStr(rec.parsed.fg)};">${rec.parsed.label}</div>
+        ${dot}
       </div>`;
     }
     return `<div class="crew-key-cell">
@@ -5489,6 +5498,9 @@ async function etkConfirmProgrammed(bp){
   if(error){ toast('Could not mark '+bp+' programmed — try again','danger'); return; }
   toast(bp+' marked programmed','success');
   await renderETKBeltpackStatus();
+  // Auto-advance to the next beltpack that still needs attention
+  const next=Object.keys(_etkBpData).find(id=>id!==bp&&(_etkBpData[id].urgency==='orange'||_etkBpData[id].urgency==='red'));
+  if(next) etkFocusDevice(next);
 }
 
 function etkParseRequestNote(noteText){
