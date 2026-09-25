@@ -5192,7 +5192,9 @@ async function initTMApp(){
   ribbon.appendChild(rnav);
   const rright=document.createElement('div'); rright.className='r-right';
   rright.style.cssText='display:flex;align-items:center;gap:12px;';
-  rright.innerHTML='<span style="font-family:var(--f-mono);font-size:clamp(10px,.85vw,11.5px);font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;background:#7C3AED;color:#fff;">TM</span>'
+  rright.innerHTML='<span id="tm-live-indicator" style="font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:5px;">'
+    +'<span id="tm-live-dot" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);"></span><span id="tm-live-text">Connecting…</span></span>'
+    +'<span style="font-family:var(--f-mono);font-size:clamp(10px,.85vw,11.5px);font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;background:#7C3AED;color:#fff;">TM</span>'
     +'<span id="tm-user-label" style="font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.4);">'+(_currentProfile?.display_name||'')+'</span>';
   const logoutBtn=document.createElement('button'); logoutBtn.className='r-logout'; logoutBtn.id='btn-tm-logout'; logoutBtn.textContent='Sign Out';
   logoutBtn.addEventListener('click',doLogout);
@@ -5251,7 +5253,10 @@ async function initTMApp(){
         if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
         if(_tmActiveView==='settings') renderETKSettings();
       })
-      .subscribe();
+      .subscribe((status,err)=>{
+        console.log('[TM realtime] status:',status,err||'');
+        etkSetLiveIndicator(status);
+      });
   }
 }
 
@@ -5402,6 +5407,20 @@ function etkStartPolling(){
 }
 function etkStopPolling(){
   if(_etkPollInterval){ clearInterval(_etkPollInterval); _etkPollInterval=null; }
+}
+function etkSetLiveIndicator(status){
+  const dot=document.getElementById('tm-live-dot');
+  const text=document.getElementById('tm-live-text');
+  if(!dot||!text) return;
+  const map={
+    SUBSCRIBED:{color:'#10B981',text:'Live'},
+    CHANNEL_ERROR:{color:'#DC2626',text:'Reconnecting…'},
+    TIMED_OUT:{color:'#DC2626',text:'Reconnecting…'},
+    CLOSED:{color:'#F59E0B',text:'Disconnected'}
+  };
+  const s=map[status]||{color:'rgba(255,255,255,.25)',text:'Connecting…'};
+  dot.style.background=s.color;
+  text.textContent=s.text;
 }
 const _etkUrgencyColors={orange:'#F59E0B',green:'#10B981',red:'#DC2626',neutral:'#aaa'};
 const _etkUrgencyRank={red:3,orange:2,green:1,neutral:0};
