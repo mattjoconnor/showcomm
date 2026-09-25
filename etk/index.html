@@ -222,8 +222,8 @@ body { background:var(--bg); color:var(--black); }
 .crew-device-card { background:var(--surface); border:1px solid var(--border-md); border-bottom:3px solid var(--border-md); aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; transition:border-color .15s, background .1s; }
 .crew-device-card:hover { border-color:#0891B2; border-bottom-color:#0891B2; background:rgba(8,145,178,.03); }
 .crew-device-card:active { background:rgba(8,145,178,.1); }
-.crew-device-card.taken { opacity:.35; cursor:not-allowed; }
-.crew-device-card.taken:hover { border-color:var(--border-md); border-bottom-color:var(--border-md); background:transparent; }
+.crew-device-card.taken { background:rgba(8,145,178,.04); border-color:#0891B2; }
+.crew-device-card.taken:hover { background:rgba(8,145,178,.1); }
 .crew-device-card-id { font-family:var(--f-mono); font-size:clamp(.85rem,3.2vw,1.05rem); font-weight:800; color:var(--tx-primary); letter-spacing:var(--ls-tight); }
 .crew-device-card-status { font-family:var(--f-mono); font-size:8px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-tertiary); }
 /* Empty/loading */
@@ -281,16 +281,29 @@ body { background:var(--bg); color:var(--black); }
 .crew-key-cell-preview { font-family:var(--f-mono); font-size:var(--t-micro); font-weight:500; color:#92600a; margin-top:4px; line-height:1.3; display:none; background:rgba(245,158,11,.08); padding:2px 4px; }
 .crew-key-cell.annotated .crew-key-cell-preview { display:block; }
 .crew-key-cell.active .crew-key-cell-preview { display:none; }
-.crew-key-note-wrap { display:none; margin-top:8px; }
-.crew-key-cell.active .crew-key-note-wrap { display:block; }
-.crew-key-note-input { width:100%; background:rgba(255,255,255,.9); border:none; border-bottom:2px solid rgba(0,0,0,.3); font-family:var(--f-mono); font-size:var(--t-small); font-weight:500; color:var(--black); resize:none; outline:none; padding:4px 0; line-height:1.4; box-sizing:border-box; }
-/* Curated pick-list (ETK) */
-.crew-picker-cat-label { font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:rgba(0,0,0,.45); margin:6px 0 4px; }
+/* Curated pick-list (ETK) — full-width zone below the fixed 4-key row */
+.crew-picker-zone { display:none; border:3px solid #0891B2; background:#fff; padding:18px; margin-top:10px; }
+.crew-picker-zone.visible { display:block; }
+.crew-picker-zone-label { font-family:var(--f-mono); font-size:12px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); margin-bottom:12px; }
+.crew-picker-cat-label { font-family:var(--f-mono); font-size:11px; font-weight:800; letter-spacing:var(--ls-xwide); text-transform:uppercase; color:rgba(0,0,0,.45); margin:14px 0 8px; }
 .crew-picker-cat-label:first-child { margin-top:0; }
-.crew-picker-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:4px; margin-bottom:2px; }
-.crew-picker-opt { font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:var(--ls-tight); padding:7px 4px; border:2px solid transparent; cursor:pointer; text-align:center; }
-.crew-picker-opt.active { outline:2px solid #0891B2; outline-offset:1px; }
-.crew-picker-selected { display:block; text-align:center; padding:6px 8px; background:rgba(0,0,0,.06); cursor:pointer; font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); }
+.crew-picker-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
+.crew-picker-opt { font-family:var(--f-mono); font-size:15px; font-weight:800; letter-spacing:var(--ls-tight); padding:18px 10px; min-height:56px; border:3px solid transparent; cursor:pointer; text-align:center; box-sizing:border-box; }
+.crew-picker-opt.active { outline:3px solid #0891B2; outline-offset:2px; }
+.crew-picker-selected { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; background:rgba(0,0,0,.05); cursor:pointer; font-family:var(--f-mono); font-size:13px; font-weight:800; letter-spacing:var(--ls-tight); text-transform:uppercase; color:var(--tx-secondary); min-height:56px; box-sizing:border-box; }
+.crew-picker-change-btn { background:#0891B2; color:#fff; padding:8px 14px; letter-spacing:var(--ls-wide); white-space:nowrap; }
+/* Release beltpack (ETK) */
+.crew-release-btn { font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--red); background:none; border:2px solid var(--red); cursor:pointer; padding:14px; margin-top:20px; display:block; width:100%; box-sizing:border-box; }
+.crew-release-btn:hover { background:rgba(220,38,38,.06); }
+.crew-confirm-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:400; align-items:center; justify-content:center; padding:20px; }
+.crew-confirm-overlay.visible { display:flex; }
+.crew-confirm-box { background:#fff; max-width:400px; width:100%; padding:24px; border-top:4px solid var(--red); }
+.crew-confirm-title { font-family:var(--f-mono); font-size:16px; font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); margin-bottom:10px; }
+.crew-confirm-sub { font-family:var(--f-mono); font-size:12px; font-weight:500; color:var(--tx-secondary); line-height:1.5; margin-bottom:20px; }
+.crew-confirm-btns { display:flex; flex-direction:column; gap:8px; }
+.crew-confirm-btn { font-family:var(--f-mono); font-size:14px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:16px; border:none; cursor:pointer; min-height:52px; }
+.crew-confirm-btn.release { background:var(--red); color:#fff; }
+.crew-confirm-btn.cancel { background:rgba(0,0,0,.06); color:var(--tx-primary); }
 /* TM Beltpack status grid (ETK) */
 .etk-bp-status-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; padding:clamp(16px,2.2vw,28px); box-sizing:border-box; }
 .etk-bp-status-card { background:var(--surface); border:1px solid var(--border); border-top:4px solid var(--border-md); padding:10px; cursor:pointer; transition:transform .1s; box-sizing:border-box; overflow:hidden; }
@@ -1123,7 +1136,6 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
       </div>
       <!-- Select device -->
       <div class="crew-step" id="crew-step-device">
-        <button class="crew-back-btn" id="crew-back-to-type">← Device type</button>
         <div class="crew-section-label" id="crew-device-label">Select your device</div>
         <div id="crew-device-list"></div>
       </div>
@@ -1163,11 +1175,22 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
           <button onclick="crewRenderSchematic()" style="font-family:var(--f-mono);font-size:var(--t-micro);font-weight:700;letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--tx-secondary);background:none;border:1px solid var(--border-md);cursor:pointer;padding:3px 8px;">↺ Refresh</button>
         </div>
         <div class="crew-schematic" id="crew-schematic"></div>
+        <div class="crew-picker-zone" id="crew-picker-zone"></div>
         <div class="crew-requests-section">
           <div class="crew-section-label">My Requests</div>
           <div id="crew-req-list"><div class="crew-empty" style="padding:16px 0;">No requests submitted yet.</div></div>
         </div>
-        <button class="crew-reclaim-link" onclick="crewStartOver()">← Claim a different device</button>
+        <button class="crew-release-btn" onclick="crewShowReleaseConfirm()">Release Beltpack</button>
+      </div>
+    </div>
+  </div>
+  <div class="crew-confirm-overlay" id="crew-release-confirm-overlay">
+    <div class="crew-confirm-box">
+      <div class="crew-confirm-title">Release <span id="crew-release-confirm-device"></span>?</div>
+      <div class="crew-confirm-sub">This frees it up for someone else to claim. Any keys you've already requested stay on file.</div>
+      <div class="crew-confirm-btns">
+        <button class="crew-confirm-btn release" onclick="crewConfirmRelease()">Release</button>
+        <button class="crew-confirm-btn cancel" onclick="crewCancelReleaseConfirm()">Cancel</button>
       </div>
     </div>
   </div>
@@ -5890,17 +5913,17 @@ async function crewLoadDevices(){
     if(!bps.length){
       el.innerHTML='<div class="crew-empty">No beltpacks configured for this show yet.<br>Check with your TM.</div>'; return;
     }
-    let taken=new Set();
+    let takenBy={};
     if(SUPA){
-      const {data}=await SUPA.from('device_claims').select('device_id')
+      const {data}=await SUPA.from('device_claims').select('device_id,crew_name')
         .eq('production_id',_crewProdId).eq('device_type','beltpack').in('status',['pending','confirmed']);
-      if(data) data.forEach(r=>taken.add(r.device_id));
+      if(data) data.forEach(r=>{ takenBy[r.device_id]=r.crew_name; });
     }
     el.innerHTML=`<div class="crew-device-grid">`+bps.map(bp=>{
-      const t=taken.has(bp);
-      return `<div class="crew-device-card${t?' taken':''}"${t?'':` onclick="crewOpenClaimForm('${bp}')"`}>
+      const t=takenBy[bp];
+      return `<div class="crew-device-card${t?' taken':''}" onclick="${t?`crewReopenDevice('${bp}')`:`crewOpenClaimForm('${bp}')`}">
         <div class="crew-device-card-id">${bp}</div>
-        ${t?'<div class="crew-device-card-status">Claimed</div>':''}
+        ${t?`<div class="crew-device-card-status">${t}</div>`:''}
       </div>`;
     }).join('')+`</div>`;
 
@@ -5936,6 +5959,23 @@ async function crewLoadDevices(){
 }
 
 let _crewPendingDeviceId=null;
+async function crewReopenDevice(deviceId){
+  if(!SUPA) return;
+  const {data,error}=await SUPA.from('device_claims').select('*')
+    .eq('production_id','ETK').eq('device_id',deviceId).eq('device_type','beltpack')
+    .in('status',['pending','confirmed']).order('claimed_at',{ascending:false}).limit(1);
+  if(error||!data||!data.length){
+    crewShowToast('That beltpack is no longer claimed — refreshing…');
+    crewSelectType('bp');
+    return;
+  }
+  _crewClaim=data[0];
+  _currentProfile={display_name:_crewClaim.crew_name,position:_crewClaim.crew_position||'',role:'crew'};
+  _currentRole='crew';
+  document.getElementById('crew-topbar-name').textContent=_crewClaim.crew_name;
+  crewSubscribe();
+  crewShowClaimState();
+}
 function crewOpenClaimForm(deviceId){
   _crewPendingDeviceId=deviceId;
   document.getElementById('crew-claim-device-label').textContent=deviceId;
@@ -6148,6 +6188,8 @@ async function crewRenderSchematic(silent=false){
   const container=document.getElementById('crew-schematic');
   if(!silent) container.innerHTML='<div class="crew-loading">Loading keys…</div>';
   _crewKeyNotes={}; _crewActiveKeyIdx=null;
+  const zone=document.getElementById('crew-picker-zone');
+  if(zone){ zone.classList.remove('visible'); zone.innerHTML=''; }
   crewUpdateSubmitBar();
 
   try{
@@ -6226,7 +6268,6 @@ function crewCellHTML(idx,k){
     <div class="crew-key-cell-num" style="${hasColor?'color:inherit;opacity:.5;':''}">${idx+1}</div>
     <div class="crew-key-cell-name${isEmpty?' empty':''}" style="${nameStyle}">${displayLabel}</div>
     <div class="crew-key-cell-preview" id="crew-cell-preview-${idx}"></div>
-    <div class="crew-key-note-wrap" onclick="event.stopPropagation()" id="crew-picker-${idx}">${crewOptionPickerHTML(idx)}</div>
   </div>`;
 }
 
@@ -6243,10 +6284,15 @@ function etkFindOption(cat,label){
 function crewOptionPickerHTML(idx){
   const current=_crewKeyNotes[idx];
   const hasCurrent=current&&typeof current==='object';
+  const keyLabel='Key '+(idx+1);
   if(hasCurrent && !_crewPickerForceOpen[idx]){
-    return `<div class="crew-picker-selected" onclick="crewExpandPicker(${idx})">Change selection ›</div>`;
+    return `<div class="crew-picker-zone-label">${keyLabel}</div>
+      <div class="crew-picker-selected" onclick="crewExpandPicker(${idx})">
+        <span>Requesting: ${current.label} (${current.category.replace(/s$/,'')})</span>
+        <span class="crew-picker-change-btn">CHANGE</span>
+      </div>`;
   }
-  let html='';
+  let html=`<div class="crew-picker-zone-label">${keyLabel} — pick one</div>`;
   Object.entries(ETK_OPTIONS).forEach(([cat,opts])=>{
     html+=`<div class="crew-picker-cat-label">${cat}</div><div class="crew-picker-grid">`;
     opts.forEach(o=>{
@@ -6261,8 +6307,8 @@ function crewOptionPickerHTML(idx){
 let _crewPickerForceOpen={};
 function crewExpandPicker(idx){
   _crewPickerForceOpen[idx]=true;
-  const wrap=document.getElementById('crew-picker-'+idx);
-  if(wrap) wrap.innerHTML=crewOptionPickerHTML(idx);
+  const zone=document.getElementById('crew-picker-zone');
+  if(zone) zone.innerHTML=crewOptionPickerHTML(idx);
 }
 function crewPickOption(idx,cat,label){
   const cur=_crewKeyNotes[idx];
@@ -6270,7 +6316,7 @@ function crewPickOption(idx,cat,label){
   if(isSame) delete _crewKeyNotes[idx];
   else _crewKeyNotes[idx]={category:cat,label:label};
   _crewPickerForceOpen[idx]=false;
-  // Rebuild the whole cell so its fill color reflects the new pick
+  // Rebuild the cell — fixed size, just its fill color/label changes
   const oldCell=document.getElementById('crew-cell-'+idx);
   if(oldCell&&oldCell.parentNode){
     const tmp=document.createElement('div');
@@ -6279,21 +6325,20 @@ function crewPickOption(idx,cat,label){
     newCell.classList.add('active');
     oldCell.parentNode.replaceChild(newCell,oldCell);
   }
-  crewUpdateSubmitBar();
-  const wrap=document.getElementById('crew-picker-'+idx);
-  if(wrap) wrap.innerHTML=crewOptionPickerHTML(idx);
+  const zone=document.getElementById('crew-picker-zone');
+  if(zone) zone.innerHTML=crewOptionPickerHTML(idx);
   crewUpdateSubmitBar();
 }
 
 function crewToggleKey(idx){
+  const zone=document.getElementById('crew-picker-zone');
   if(_crewActiveKeyIdx===idx){
-    // collapse current
     const cell=document.getElementById('crew-cell-'+idx);
     if(cell) cell.classList.remove('active');
     _crewActiveKeyIdx=null;
+    if(zone){ zone.classList.remove('visible'); zone.innerHTML=''; }
     return;
   }
-  // collapse previous
   if(_crewActiveKeyIdx!==null){
     const prev=document.getElementById('crew-cell-'+_crewActiveKeyIdx);
     if(prev) prev.classList.remove('active');
@@ -6301,8 +6346,7 @@ function crewToggleKey(idx){
   _crewActiveKeyIdx=idx;
   const cell=document.getElementById('crew-cell-'+idx);
   if(cell) cell.classList.add('active');
-  const ta=document.getElementById('crew-note-'+idx);
-  if(ta){ ta.value=_crewKeyNotes[idx]||''; setTimeout(()=>ta.focus(),50); }
+  if(zone){ zone.classList.add('visible'); zone.innerHTML=crewOptionPickerHTML(idx); }
 }
 
 function crewNoteInput(idx,val){
@@ -6454,13 +6498,24 @@ async function crewCancelClaim(){
   crewSelectType('bp');
 }
 
-function crewStartOver(){
+function crewShowReleaseConfirm(){
+  if(!_crewClaim) return;
+  document.getElementById('crew-release-confirm-device').textContent=_crewClaim.device_id;
+  document.getElementById('crew-release-confirm-overlay').classList.add('visible');
+}
+function crewCancelReleaseConfirm(){
+  document.getElementById('crew-release-confirm-overlay').classList.remove('visible');
+}
+async function crewConfirmRelease(){
+  document.getElementById('crew-release-confirm-overlay').classList.remove('visible');
+  const deviceId=_crewClaim?.device_id;
   if(_crewClaim&&SUPA&&_crewClaim.id!=='local'){
-    SUPA.from('device_claims').update({status:'cancelled'}).eq('id',_crewClaim.id).then(()=>{});
+    await SUPA.from('device_claims').update({status:'released'}).eq('id',_crewClaim.id);
   }
   if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
-  _crewClaim=null;
+  _crewClaim=null; _currentProfile=null;
   crewSelectType('bp');
+  crewShowToast((deviceId||'Beltpack')+' released');
 }
 
 function crewShowStep(step){
@@ -6473,7 +6528,6 @@ function crewShowStep(step){
 
 // Crew back button wiring
 document.getElementById('crew-back-to-prod').addEventListener('click',()=>{ crewRenderProdList(); crewShowStep('prod'); });
-document.getElementById('crew-back-to-type').addEventListener('click',()=>crewShowStep('type'));
 </script>
 </body>
 </html>
