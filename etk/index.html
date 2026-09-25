@@ -335,13 +335,7 @@ body { background:var(--bg); color:var(--black); }
 .etk-all-section { padding:16px clamp(16px,2.2vw,28px) clamp(16px,2.2vw,28px); }
 .etk-all-toggle { display:flex; align-items:center; gap:8px; font-family:var(--f-mono); font-size:clamp(11px,1vw,13px); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); background:none; border:none; border-top:1px solid var(--border-md); padding:16px 0; cursor:pointer; width:100%; text-align:left; }
 .etk-all-toggle:hover { color:var(--tx-primary); }
-.etk-bp-status-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; padding-top:14px; box-sizing:border-box; }
-.etk-bp-status-card { background:var(--surface); border:1px solid var(--border); padding:10px; box-sizing:border-box; overflow:hidden; }
-.etk-bp-status-head { display:flex; align-items:baseline; justify-content:space-between; gap:6px; margin-bottom:8px; }
-.etk-bp-status-id { font-family:var(--f-mono); font-size:clamp(12px,1vw,14px); font-weight:800; letter-spacing:var(--ls-tight); color:var(--tx-primary); white-space:nowrap; }
-.etk-bp-status-crew { font-family:var(--f-mono); font-size:clamp(10px,.85vw,11px); font-weight:600; color:var(--tx-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; }
-.etk-bp-mini-row { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; }
-.etk-bp-mini-key { aspect-ratio:1; background:var(--bg,rgba(0,0,0,.04)); border:1px solid var(--border-md); display:flex; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:clamp(10px,.85vw,11px); font-weight:800; text-align:center; box-sizing:border-box; }
+.etk-bp-status-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; padding-top:14px; box-sizing:border-box; }
 .crew-key-note-input::placeholder { color:rgba(0,0,0,.35); font-weight:400; }
 /* Submit bar */
 .crew-submit-bar { flex-shrink:0; border-top:2px solid var(--black); padding:16px 20px; padding-bottom:max(20px,env(safe-area-inset-bottom,20px)); display:none; align-items:center; justify-content:center; gap:20px; background:var(--surface); z-index:100; transform:translateY(100%); opacity:0; transition:transform var(--dur-med) var(--ease), opacity var(--dur-med) var(--ease); }
@@ -5485,16 +5479,21 @@ function renderETKGrid(){
   const sorted=Object.keys(_etkBpData).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
   grid.innerHTML=sorted.map(bp=>{
     const d=_etkBpData[bp];
-    const miniKeys=d.keys.map(({rec})=>{
-      if(!rec||!rec.parsed) return `<div class="etk-bp-mini-key"></div>`;
-      return `<div class="etk-bp-mini-key" style="background:${rgbStr(rec.parsed.bg)};color:${rgbStr(rec.parsed.fg)};">${rec.parsed.label.slice(0,4)}</div>`;
+    const cells=d.keys.map(({rec},i)=>{
+      if(rec&&rec.parsed){
+        return `<div class="crew-key-cell programmed" style="background:${rgbStr(rec.parsed.bg)};">
+          <div class="crew-key-cell-num" style="color:inherit;opacity:.5;">${i+1}</div>
+          <div class="crew-key-cell-name" style="color:${rgbStr(rec.parsed.fg)};">${rec.parsed.label}</div>
+        </div>`;
+      }
+      return `<div class="crew-key-cell"><div class="crew-key-cell-num">${i+1}</div><div class="crew-key-cell-name empty">Empty</div></div>`;
     }).join('');
-    return `<div class="etk-bp-status-card">
-      <div class="etk-bp-status-head">
-        <div class="etk-bp-status-id">${bp}</div>
-        <div class="etk-bp-status-crew">${d.claim?d.claim.crew_name:'Unclaimed'}</div>
+    return `<div class="etk-queue-item" style="border-top-color:${_etkUrgencyColors[d.urgency]};">
+      <div class="etk-queue-item-head">
+        <div class="etk-queue-item-id">${bp}</div>
+        <div class="etk-queue-item-crew">${d.claim?d.claim.crew_name:'Unclaimed'}</div>
       </div>
-      <div class="etk-bp-mini-row">${miniKeys}</div>
+      <div class="crew-bp-column etk-queue-keys">${cells}</div>
     </div>`;
   }).join('');
 }
@@ -5511,11 +5510,18 @@ async function etkConfirmProgrammed(bp){
   if(!SUPA) return;
   const item=document.getElementById('etk-queue-item-'+bp);
   if(item) item.classList.add('leaving');
-  const {error}=await SUPA.from('key_requests').update({status:'fulfilled'})
-    .eq('device_id',bp).eq('production_id','ETK').eq('status','open');
+  const {data,error}=await SUPA.from('key_requests').update({status:'fulfilled'})
+    .eq('device_id',bp).eq('production_id','ETK').eq('status','open')
+    .select('id');
   if(error){
     if(item) item.classList.remove('leaving');
     toast('Could not mark '+bp+' programmed — try again','danger');
+    return;
+  }
+  if(!data||!data.length){
+    if(item) item.classList.remove('leaving');
+    toast(bp+': no open requests found — refreshing','danger');
+    await renderETKBeltpackStatus();
     return;
   }
   toast(bp+' marked programmed','success');
