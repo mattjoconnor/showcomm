@@ -1201,10 +1201,6 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
         </div>
         <div class="crew-schematic" id="crew-schematic"></div>
         <div class="crew-picker-zone" id="crew-picker-zone"></div>
-        <div class="crew-requests-section">
-          <div class="crew-section-label">My Requests</div>
-          <div id="crew-req-list"><div class="crew-empty" style="padding:16px 0;">No requests submitted yet.</div></div>
-        </div>
         <button class="crew-release-btn" onclick="crewShowReleaseConfirm()">Release Beltpack</button>
       </div>
     </div>
@@ -6223,7 +6219,6 @@ function crewShowDeviceHome(){
   }
   crewShowStep('confirmed');
   crewRenderSchematic();
-  crewLoadMyRequests();
 }
 async function crewRenderKeys(){
   const grid=document.getElementById('crew-quad-grid');
@@ -6371,14 +6366,6 @@ async function crewRenderSchematic(silent=false){
           <div class="crew-schematic-section-label">Bottom — Keys ${half+1}–${keyCount}</div>
           <div class="crew-kp-grid">${botCells}</div>
         </div>`;
-    }
-    // Show contextual note if all keys are empty
-    const allEmpty=_crewAllKeys.every(k=>!crewKeyLabel(k));
-    if(allEmpty){
-      const note=document.createElement('div');
-      note.style.cssText='font-family:var(--f-mono);font-size:var(--t-small);font-weight:500;color:var(--tx-secondary);padding:10px 0 4px;letter-spacing:var(--ls-normal);';
-      note.textContent='Keys not yet programmed — check with your TM. You can still submit requests below.';
-      container.appendChild(note);
     }
   }catch(e){
     console.error('crewRenderSchematic:',e);
