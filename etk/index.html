@@ -316,6 +316,10 @@ body { background:var(--bg); color:var(--black); }
 .crew-confirm-btn { font-family:var(--f-mono); font-size:14px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:16px; border:none; cursor:pointer; min-height:52px; transition:transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease); }
 .crew-confirm-btn:active { transform:scale(.96); opacity:.9; }
 .crew-confirm-btn.release { background:var(--red); color:#fff; }
+.crew-confirm-btn.primary { background:#0891B2; color:#fff; }
+.crew-confirm-box.move { border-top-color:#0891B2; }
+.crew-picker-opt.taken { filter:grayscale(1); opacity:.4; }
+.crew-picker-opt-sub { display:block; font-size:10px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; margin-top:4px; }
 .crew-confirm-btn.cancel { background:rgba(0,0,0,.06); color:var(--tx-primary); }
 /* TM Beltpack status board (ETK) — work queue + collapsed reference grid */
 .etk-queue-section { padding:clamp(16px,2.2vw,28px) clamp(16px,2.2vw,28px) 0; }
@@ -5651,6 +5655,13 @@ let _etkKnownQueue=null; // null until first render — nothing "new" to flag on
 function etkKeyCellHTML({rec,urg},i){
   const needsAttn=urg==='orange'||urg==='red';
   const stripeStyle=needsAttn?`background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0px, rgba(255,255,255,.35) 8px, transparent 8px, transparent 16px);`:'';
+  if(rec&&rec.parsed&&rec.parsed.clear){
+    if(!needsAttn) return `<div class="crew-key-cell"><div class="crew-key-cell-num">${i+1}</div><div class="crew-key-cell-name empty">Empty</div></div>`;
+    return `<div class="crew-key-cell programmed" style="background-color:rgb(225,225,225);background-image:repeating-linear-gradient(45deg, rgba(0,0,0,.1) 0px, rgba(0,0,0,.1) 8px, transparent 8px, transparent 16px);">
+      <div class="crew-key-cell-num" style="opacity:.5;">${i+1}</div>
+      <div class="crew-key-cell-name" style="color:rgb(40,40,40);">CLEAR</div>
+    </div>`;
+  }
   if(rec&&rec.parsed){
     return `<div class="crew-key-cell programmed" style="background-color:${rgbStr(rec.parsed.bg)};${stripeStyle}">
       <div class="crew-key-cell-num" style="color:inherit;opacity:.5;">${i+1}</div>
@@ -5853,6 +5864,7 @@ async function etkSaveSettings(){
 }
 
 function etkParseRequestNote(noteText){
+  if(noteText==='CLEAR') return {label:'CLEAR',category:null,clear:true,bg:[225,225,225],fg:[40,40,40]};
   const m=/^(.+) \((PL|IFB)\)$/.exec(noteText||'');
   if(!m) return null;
   const category=m[2]==='PL'?'PLs':'IFBs';
@@ -6653,7 +6665,8 @@ async function crewRenderSchematic(silent=false){
       entries.forEach(en=>{
         if(en.keyIndex==null) return;
         const parsed=etkParseRequestNote(en.note);
-        if(parsed) _crewCurrentKeyState[en.keyIndex]={category:parsed.category,label:parsed.label};
+        if(parsed&&parsed.clear) delete _crewCurrentKeyState[en.keyIndex];
+        else if(parsed) _crewCurrentKeyState[en.keyIndex]={category:parsed.category,label:parsed.label};
       });
     });
   }
@@ -6705,8 +6718,25 @@ async function crewRenderSchematic(silent=false){
   }
 }
 
+// What a key will hold after this person's picks: a pending pick wins, a pending
+// clear means empty, otherwise whatever is already on the beltpack.
+function crewEffectiveKey(j){
+  const n=_crewKeyNotes[j];
+  if(n) return n.clear?null:n;
+  return _crewCurrentKeyState[j]||null;
+}
+// Which other key (if any) already holds this option — prevents doubling a PL/IFB
+function crewFindKeyHolding(cat,label,exceptIdx){
+  for(let j=0;j<_crewAllKeys.length;j++){
+    if(j===exceptIdx) continue;
+    const e=crewEffectiveKey(j);
+    if(e&&e.category===cat&&e.label===label) return j;
+  }
+  return -1;
+}
 function crewCellState(idx,k){
   const label=crewKeyLabel(k);
+  if(_crewKeyNotes[idx]&&_crewKeyNotes[idx].clear) return {cellStyle:'', nameStyle:'', displayLabel:'Empty', isEmpty:true, hasColor:false};
   const req=_crewKeyNotes[idx]||_crewCurrentKeyState[idx];
   const reqOpt=(req&&typeof req==='object')?(etkFindOption(req.category,req.label)||{label:req.label,bg:[120,120,120],fg:[255,255,255]}):null;
   if(reqOpt){
@@ -6771,7 +6801,7 @@ function etkFindOption(cat,label){
   return (ETK_OPTIONS[cat]||[]).find(o=>o.label===label)||null;
 }
 function crewOptionPickerHTML(idx){
-  const current=_crewKeyNotes[idx]||_crewCurrentKeyState[idx];
+  const current=crewEffectiveKey(idx);
   const hasCurrent=current&&typeof current==='object';
   const keyLabel='Key '+(idx+1);
   if(hasCurrent && !_crewPickerForceOpen[idx]){
@@ -6787,7 +6817,10 @@ function crewOptionPickerHTML(idx){
     opts.forEach(o=>{
       const active=hasCurrent&&current.category===cat&&current.label===o.label;
       const resolved=etkFindOption(cat,o.label)||o;
-      html+=`<button type="button" class="crew-picker-opt${active?' active':''}" style="background:${rgbStr(resolved.bg)};color:${rgbStr(resolved.fg)};" onclick="crewPickOption(${idx},'${cat}','${o.label.replace(/'/g,"\\'")}')">${o.label}</button>`;
+      const heldBy=active?-1:crewFindKeyHolding(cat,o.label,idx);
+      const safe=o.label.replace(/'/g,"\\'");
+      const click=heldBy>=0?`crewPromptMove(${idx},'${cat}','${safe}',${heldBy})`:`crewPickOption(${idx},'${cat}','${safe}')`;
+      html+=`<button type="button" class="crew-picker-opt${active?' active':''}${heldBy>=0?' taken':''}" style="background:${rgbStr(resolved.bg)};color:${rgbStr(resolved.fg)};" onclick="${click}">${etkEsc(o.label)}${heldBy>=0?`<span class="crew-picker-opt-sub">On Key ${heldBy+1}</span>`:''}</button>`;
     });
     html+='</div>';
   });
@@ -6798,6 +6831,38 @@ function crewExpandPicker(idx){
   _crewPickerForceOpen[idx]=true;
   const zone=document.getElementById('crew-picker-zone');
   if(zone) zone.innerHTML=crewOptionPickerHTML(idx);
+}
+function crewPromptMove(idx,cat,label,fromIdx){
+  const ov=document.createElement('div');
+  ov.className='crew-confirm-overlay';
+  ov.innerHTML=`<div class="crew-confirm-box move">
+    <div class="crew-confirm-title">${etkEsc(label)} is already on Key ${fromIdx+1}</div>
+    <div class="crew-confirm-sub">Move it to Key ${idx+1}? Key ${fromIdx+1} will be cleared.</div>
+    <div class="crew-confirm-btns">
+      <button type="button" class="crew-confirm-btn primary">Move to Key ${idx+1}</button>
+      <button type="button" class="crew-confirm-btn cancel">Dismiss</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('visible'));
+  const close=()=>{ ov.classList.remove('visible'); setTimeout(()=>ov.remove(),250); };
+  ov.querySelector('.cancel').onclick=close;
+  ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
+  ov.querySelector('.primary').onclick=()=>{ close(); crewMoveOption(idx,cat,label,fromIdx); };
+}
+function crewMoveOption(idx,cat,label,fromIdx){
+  _crewKeyNotes[idx]={category:cat,label:label};
+  // If the source only held it as an unsent pick, undo that pick (key reverts to what's on the pack).
+  // If it's actually on the beltpack, the TM needs to clear that key.
+  delete _crewKeyNotes[fromIdx];
+  const cur=_crewCurrentKeyState[fromIdx];
+  if(cur&&cur.category===cat&&cur.label===label) _crewKeyNotes[fromIdx]={clear:true};
+  _crewPickerForceOpen[idx]=false;
+  crewUpdateCellDisplay(idx); crewUpdateCellDisplay(fromIdx);
+  const zone=document.getElementById('crew-picker-zone');
+  if(zone) zone.innerHTML=crewOptionPickerHTML(idx);
+  crewUpdateSubmitBar();
+  crewShowToast(label+' moved to Key '+(idx+1));
 }
 function crewPickOption(idx,cat,label){
   const cur=_crewKeyNotes[idx];
@@ -6882,7 +6947,7 @@ async function crewSubmitBundle(){
 
   const annotated=Object.entries(notes).map(([idx,note])=>{
     const label=crewKeyLabel(_crewAllKeys[+idx])||('Key '+(+idx+1));
-    const noteText=(note&&typeof note==='object')?(note.label+' ('+note.category.replace(/s$/,'')+')'):note;
+    const noteText=(note&&note.clear)?'CLEAR':(note&&typeof note==='object')?(note.label+' ('+note.category.replace(/s$/,'')+')'):note;
     return {keyIndex:+idx, label, note:noteText};
   });
   const summary=(_currentProfile.display_name||'Crew')+' · '+_crewClaim.device_id+' — '+n+' key'+(n!==1?'s':'')+' flagged: '+annotated.map(a=>a.label).join(', ');
