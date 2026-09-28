@@ -342,6 +342,27 @@ body { background:var(--bg); color:var(--black); }
 .etk-all-toggle { display:flex; align-items:center; gap:8px; font-family:var(--f-mono); font-size:clamp(11px,1vw,13px); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); background:none; border:none; border-top:1px solid var(--border-md); padding:16px 0; cursor:pointer; width:100%; text-align:left; }
 .etk-all-toggle:hover { color:var(--tx-primary); }
 .etk-bp-status-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; padding-top:14px; box-sizing:border-box; }
+/* TM custody counts + Deploy tab (ETK) */
+.etk-counts-wrap { padding:clamp(16px,2.2vw,28px) clamp(16px,2.2vw,28px) 0; }
+.etk-custody-counts { display:flex; gap:10px; }
+.etk-count { flex:1; max-width:180px; background:var(--surface); border:1px solid var(--border-md); padding:12px 16px; display:flex; align-items:baseline; gap:10px; }
+.etk-count.out { border-top:4px solid #0891B2; }
+.etk-count.in { border-top:4px solid var(--border-md); }
+.etk-count-num { font-family:var(--f-mono); font-size:clamp(24px,2.4vw,32px); font-weight:800; color:var(--tx-primary); line-height:1; }
+.etk-count-lbl { font-family:var(--f-mono); font-size:clamp(11px,1vw,13px); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); }
+.etk-deploy-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; padding:clamp(16px,2.2vw,28px); }
+.etk-deploy-tile { display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-height:112px; padding:14px; background:var(--surface); border:2px solid var(--border-md); color:var(--tx-primary); font-family:var(--f-mono); text-align:left; cursor:pointer; transition:background var(--dur-med) var(--ease), border-color var(--dur-med) var(--ease), color var(--dur-med) var(--ease), transform var(--dur-fast) var(--ease); }
+.etk-deploy-tile:active { transform:scale(.96); }
+.etk-deploy-tile.out { background:#0891B2; border-color:#0891B2; color:#fff; }
+.etk-deploy-tile.pending { opacity:.6; pointer-events:none; }
+.etk-deploy-id { font-size:clamp(18px,1.8vw,22px); font-weight:800; letter-spacing:var(--ls-tight); }
+.etk-deploy-who { font-size:clamp(11px,1vw,13px); font-weight:600; opacity:.75; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.etk-deploy-state { margin-top:auto; font-size:clamp(10px,.9vw,12px); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; padding:3px 8px; border:1px solid currentColor; }
+.etk-out-badge { font-family:var(--f-mono); font-size:clamp(10px,.85vw,11px); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:#0891B2; color:#fff; padding:2px 7px; margin-left:8px; vertical-align:middle; }
+.etk-undo { position:fixed; left:50%; bottom:24px; transform:translate(-50%,20px); opacity:0; pointer-events:none; z-index:500; background:var(--black); color:#fff; font-family:var(--f-mono); font-size:13px; font-weight:700; display:flex; align-items:center; gap:18px; padding:12px 14px 12px 20px; transition:opacity var(--dur-med) var(--ease), transform var(--dur-med) var(--ease-snap); }
+.etk-undo.visible { opacity:1; transform:translate(-50%,0); pointer-events:auto; }
+.etk-undo-btn { font-family:var(--f-mono); font-size:12px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:#fff; color:var(--black); border:none; padding:8px 14px; min-height:36px; cursor:pointer; }
+.etk-settings-note { font-family:var(--f-mono); font-size:clamp(11px,1vw,12.5px); font-weight:600; color:var(--tx-secondary); background:rgba(245,158,11,.08); border-left:3px solid #F59E0B; padding:10px 12px; margin-bottom:22px; line-height:1.5; }
 /* TM Settings tab (ETK) — editable PL/IFB names and colors */
 .etk-settings { padding:clamp(16px,2.2vw,28px); max-width:600px; }
 .etk-settings-section { margin-bottom:28px; }
@@ -1146,7 +1167,7 @@ select.prod-edit-input:focus { border-color:var(--black); border-bottom-color:va
       <span class="crew-topbar-name" id="crew-topbar-name">—</span>
       <span class="crew-topbar-pos" id="crew-topbar-pos"></span>
     </div>
-    <button class="crew-topbar-logout" id="btn-crew-logout">Sign out</button>
+    <button class="crew-topbar-logout" id="btn-crew-logout" style="display:none;">Sign out</button>
   </div>
   <div class="crew-content">
     <div class="crew-inner">
@@ -1929,6 +1950,7 @@ function doLogout(){
   }
   if((_currentRole==='admin'||_currentRole==='tm') && SUPA) SUPA.auth.signOut();
   etkStopPolling();
+  document.getElementById('etk-undo')?.remove();
   // Cleanup crew state
   if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
   _crewClaim=null; _crewProdId=null; _crewDeviceType=null;
@@ -5169,6 +5191,7 @@ async function initTMApp(){
   loadGlobalOptions(); // real per-space PL/IFB colors, same source as crew view
   loadETKOptions(); // TM-editable PL/IFB list for this production
   etkStartPolling(); // safety net in case the realtime connection silently drops
+  etkRequestWakeLock(); // TM deploy station is a kiosk too
 
   // ETK build: single hardcoded production — no multi-show lookup
   _tmProductions=PRODUCTIONS['ETK']?[PRODUCTIONS['ETK']]:[];
@@ -5183,7 +5206,7 @@ async function initTMApp(){
   ribbon.className='ribbon'; ribbon.id='tm-ribbon';
   ribbon.innerHTML='<div class="r-brand"><span class="wordmark">ShowComm<span class="wm-dot"></span></span></div>';
   const rnav=document.createElement('nav'); rnav.className='r-nav'; rnav.id='tm-prod-tabs';
-  ['Beltpacks','Settings'].forEach(label=>{
+  ['Beltpacks','Deploy','Settings'].forEach(label=>{
     const btn=document.createElement('button');
     btn.className='ribbon-tab'; btn.textContent=label;
     btn.addEventListener('click',()=>setTMView(label.toLowerCase()));
@@ -5251,7 +5274,11 @@ async function initTMApp(){
       .on('postgres_changes',{event:'*',schema:'public',table:'etk_options'},async function(){
         await loadETKOptions();
         if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
-        if(_tmActiveView==='settings') renderETKSettings();
+        if(_tmActiveView==='settings'&&!_etkSettingsDirty) renderETKSettings();
+      })
+      .on('postgres_changes',{event:'*',schema:'public',table:'bp_custody'},function(){
+        if(_tmActiveView==='deploy'&&!_etkCustodyPending.size) renderETKDeploy();
+        if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
       })
       .subscribe((status,err)=>{
         console.log('[TM realtime] status:',status,err||'');
@@ -5261,6 +5288,8 @@ async function initTMApp(){
 }
 
 function setTMView(view){
+  // ETK build: unsaved Settings edits get a discard prompt before leaving the tab
+  if(_tmActiveView==='settings'&&_etkSettingsDirty&&view!=='settings'){ etkConfirmDiscardSettings(view); return; }
   // If navigating away with unsaved changes, prompt first
   if(_tmDirty && view!==_tmActiveView){
     _tmPendingNav=view;
@@ -5278,16 +5307,17 @@ function setTMView(view){
   if(tmSH){
     const titles={
       keypanels:['Keypanels','All Active Productions'],
-      beltpacks:['Beltpacks','All Active Productions'],
+      beltpacks:['Beltpacks','ETK · Oct 1–16'],
+      deploy:['Deploy','Tap to check beltpacks out and in'],
       requests:['Requests','Pending Changes & Assignments'],
-      settings:['Settings','PL & IFB Names and Colors']
+      settings:['Settings','ETK · PL & IFB names and colors']
     };
     const [name,sub]=titles[view]||[view,''];
     tmSH.innerHTML='<div class="sec-head"><div><div class="sec-name">'+name+'</div><div class="sec-full">'+sub+'</div></div></div>';
   }
   // Show/hide filter bar based on view
   const ufBar=$('unified-filters');
-  if(ufBar) ufBar.style.display=(view==='requests'||view==='settings')?'none':'flex';
+  if(ufBar) ufBar.style.display=(view==='requests'||view==='settings'||view==='deploy')?'none':'flex';
   // Restore any previously moved views back to main-body first
   const mb=document.querySelector('.main-body');
   ['view-keypanels','view-allbeltpacks'].forEach(id=>{
@@ -5310,6 +5340,8 @@ function setTMView(view){
     renderETKBeltpackStatus();
   } else if(view==='requests'){
     renderTMRequests();
+  } else if(view==='deploy'){
+    renderETKDeploy();
   } else if(view==='settings'){
     renderETKSettings();
   }
@@ -5399,10 +5431,114 @@ function renderTMBeltpacks(){
 // Sourced from device_claims + key_requests, not the legacy assignment blob.
 let _etkBpData={};
 let _etkPollInterval=null;
+
+// ETK build: daily beltpack custody (Deploy tab). Separate from claims — deploying or
+// returning never touches who holds a pack or its keys. Current state = latest log row.
+let _etkCustody={}, _etkCustodyPending=new Set(), _etkDeployClaims={}, _etkDeployBps=[], _etkUndoTimer=null;
+function etkEsc(v){ return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function etkComputeCustody(rows){
+  const latest={};
+  (rows||[]).forEach(r=>{ if(!latest[r.device_id]) latest[r.device_id]=r; }); // rows arrive newest-first
+  return latest;
+}
+function etkIsOut(bp){ return !!(_etkCustody[bp]&&_etkCustody[bp].action==='deployed'); }
+function etkCountsHTML(bps){
+  const out=bps.filter(etkIsOut).length;
+  return `<div class="etk-custody-counts">
+    <div class="etk-count out"><span class="etk-count-num" id="etk-count-out">${out}</span><span class="etk-count-lbl">Out</span></div>
+    <div class="etk-count in"><span class="etk-count-num" id="etk-count-in">${bps.length-out}</span><span class="etk-count-lbl">In</span></div>
+  </div>`;
+}
+function etkUpdateCounts(bps){
+  const out=bps.filter(etkIsOut).length;
+  const o=document.getElementById('etk-count-out'), i=document.getElementById('etk-count-in');
+  if(o) o.textContent=out; if(i) i.textContent=bps.length-out;
+}
+
+async function renderETKDeploy(){
+  const body=document.getElementById('tm-body'); if(!body) return;
+  const prod=PRODUCTIONS['ETK'];
+  if(!prod){ body.innerHTML='<div class="empty-state"><div class="empty-text">ETK production not loaded</div></div>'; return; }
+  if(!SUPA){ body.innerHTML='<div class="empty-state"><div class="empty-text">No connection</div></div>'; return; }
+  const bps=(prod.beltpacks||[]).slice();
+  if(!document.getElementById('etk-deploy-grid')) body.innerHTML='<div class="empty-state"><div class="empty-text">Loading…</div></div>';
+  const [claimsRes,custRes]=await Promise.all([
+    SUPA.from('device_claims').select('device_id,crew_name').eq('production_id','ETK').eq('device_type','beltpack')
+      .in('status',['pending','confirmed']),
+    SUPA.from('bp_custody').select('id,device_id,action,created_at').eq('production_id','ETK')
+      .order('created_at',{ascending:false})
+  ]);
+  if(_tmActiveView!=='deploy') return; // navigated away mid-fetch
+  if(custRes.error){
+    console.error('renderETKDeploy:',custRes.error);
+    body.innerHTML='<div class="empty-state"><div class="empty-text">Deploy tracking isn’t set up yet — run the bp_custody SQL in Supabase.</div></div>';
+    return;
+  }
+  _etkDeployClaims={}; (claimsRes.data||[]).forEach(c=>{ _etkDeployClaims[c.device_id]=c; });
+  _etkCustody=etkComputeCustody(custRes.data);
+  _etkDeployBps=bps;
+  if(!document.getElementById('etk-deploy-grid')){
+    body.innerHTML=`<div class="etk-counts-wrap">${etkCountsHTML(bps)}</div><div class="etk-deploy-grid" id="etk-deploy-grid"></div>`;
+  }
+  etkRenderDeployGrid();
+}
+function etkRenderDeployGrid(){
+  const grid=document.getElementById('etk-deploy-grid'); if(!grid) return;
+  grid.innerHTML=_etkDeployBps.map(bp=>{
+    const out=etkIsOut(bp), claim=_etkDeployClaims[bp], pending=_etkCustodyPending.has(bp);
+    return `<button type="button" class="etk-deploy-tile${out?' out':''}${pending?' pending':''}" onclick="etkToggleCustody('${bp}')">
+      <span class="etk-deploy-id">${bp}</span>
+      <span class="etk-deploy-who">${claim?etkEsc(claim.crew_name):'Spare'}</span>
+      <span class="etk-deploy-state">${out?'Out':'In'}</span>
+    </button>`;
+  }).join('');
+  etkUpdateCounts(_etkDeployBps);
+}
+async function etkToggleCustody(bp){
+  if(!SUPA||_etkCustodyPending.has(bp)) return;
+  const prev=_etkCustody[bp]||null;
+  const action=etkIsOut(bp)?'returned':'deployed';
+  const claim=_etkDeployClaims[bp];
+  _etkCustody[bp]={device_id:bp,action,created_at:new Date().toISOString(),id:null}; // optimistic
+  _etkCustodyPending.add(bp); etkRenderDeployGrid();
+  const {data,error}=await SUPA.from('bp_custody').insert({
+    device_id:bp, production_id:'ETK', action,
+    crew_name:claim?claim.crew_name:null, by_user:_currentUser?.id||null
+  }).select('id,created_at').single();
+  _etkCustodyPending.delete(bp);
+  if(error){
+    console.error('etkToggleCustody:',error);
+    if(prev) _etkCustody[bp]=prev; else delete _etkCustody[bp];
+    etkRenderDeployGrid();
+    toast('Couldn’t update '+bp+' — try again','danger');
+    return;
+  }
+  _etkCustody[bp]={device_id:bp,action,created_at:data.created_at,id:data.id};
+  etkRenderDeployGrid();
+  etkShowUndo(bp,action,data.id,prev);
+}
+function etkShowUndo(bp,action,rowId,prev){
+  let el=document.getElementById('etk-undo');
+  if(!el){ el=document.createElement('div'); el.id='etk-undo'; el.className='etk-undo'; document.body.appendChild(el); }
+  el.innerHTML=`<span>${bp} ${action==='deployed'?'checked out':'checked in'}</span><button type="button" class="etk-undo-btn">Undo</button>`;
+  el.querySelector('button').onclick=()=>etkUndoCustody(bp,rowId,prev);
+  requestAnimationFrame(()=>el.classList.add('visible'));
+  clearTimeout(_etkUndoTimer);
+  _etkUndoTimer=setTimeout(()=>el.classList.remove('visible'),5000);
+}
+async function etkUndoCustody(bp,rowId,prev){
+  const el=document.getElementById('etk-undo'); if(el) el.classList.remove('visible');
+  clearTimeout(_etkUndoTimer);
+  const {data,error}=await SUPA.from('bp_custody').delete().eq('id',rowId).select('id');
+  if(error||!data||!data.length){ console.error('etkUndoCustody:',error); toast('Couldn’t undo '+bp,'danger'); return; }
+  if(prev) _etkCustody[bp]=prev; else delete _etkCustody[bp];
+  etkRenderDeployGrid();
+}
 function etkStartPolling(){
   if(_etkPollInterval) return;
   _etkPollInterval=setInterval(()=>{
     if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
+    else if(_tmActiveView==='deploy'&&!_etkCustodyPending.size) renderETKDeploy();
   },20000);
 }
 function etkStopPolling(){
@@ -5436,13 +5572,16 @@ async function renderETKBeltpackStatus(){
   // Hide the shared filter bar — not meaningful for this single-production board
   const ufBar=document.getElementById('unified-filters'); if(ufBar) ufBar.style.display='none';
 
-  const [claimsRes,reqRes]=await Promise.all([
+  const [claimsRes,reqRes,custRes]=await Promise.all([
     SUPA.from('device_claims').select('device_id,crew_name,crew_position,status,claimed_at')
       .eq('production_id','ETK').eq('device_type','beltpack')
       .not('status','in','(cancelled,denied,released)'),
     SUPA.from('key_requests').select('device_id,status,note,created_at').eq('production_id','ETK')
-      .order('created_at',{ascending:true})
+      .order('created_at',{ascending:true}),
+    SUPA.from('bp_custody').select('id,device_id,action,created_at').eq('production_id','ETK')
+      .order('created_at',{ascending:false})
   ]);
+  _etkCustody=etkComputeCustody(custRes.error?[]:custRes.data);
   const claimsByDevice={};
   (claimsRes.data||[]).forEach(c=>{ claimsByDevice[c.device_id]=c; });
 
@@ -5488,6 +5627,7 @@ async function renderETKBeltpackStatus(){
   });
 
   body.innerHTML=`
+    <div class="etk-counts-wrap">${etkCountsHTML(bps)}</div>
     <div class="etk-queue-section">
       <div class="etk-queue-header">Needs Programming (<span id="etk-queue-count">0</span>)</div>
       <div class="etk-queue-list" id="etk-queue-list"></div>
@@ -5544,7 +5684,7 @@ function renderETKQueue(){
         <div class="etk-queue-item-crew">${d.claim?d.claim.crew_name:'Unclaimed'}</div>
       </div>
       <div class="crew-bp-column etk-queue-keys">${cells}</div>
-      <button class="etk-queue-confirm" onclick="etkConfirmProgrammed('${bp}')">Mark Programmed</button>
+      <button class="etk-queue-confirm" onclick="etkConfirmProgrammed('${bp}')">Confirm Programmed</button>
     </div>`;
   }).join('');
   _etkKnownQueue=new Set(queue);
@@ -5558,7 +5698,7 @@ function renderETKGrid(){
     const cells=d.keys.map(etkKeyCellHTML).join('');
     return `<div class="etk-queue-item" style="border-top-color:${_etkUrgencyColors[d.urgency]};">
       <div class="etk-queue-item-head">
-        <div class="etk-queue-item-id">${bp}</div>
+        <div class="etk-queue-item-id">${bp}${etkIsOut(bp)?'<span class="etk-out-badge">Out</span>':''}</div>
         <div class="etk-queue-item-crew">${d.claim?d.claim.crew_name:'Unclaimed'}</div>
       </div>
       <div class="crew-bp-column etk-queue-keys">${cells}</div>
@@ -5583,7 +5723,7 @@ async function etkConfirmProgrammed(bp){
     .select('id');
   if(error){
     if(item) item.classList.remove('leaving');
-    toast('Could not mark '+bp+' programmed — try again','danger');
+    toast('Could not confirm '+bp+' — try again','danger');
     return;
   }
   if(!data||!data.length){
@@ -5592,20 +5732,41 @@ async function etkConfirmProgrammed(bp){
     await renderETKBeltpackStatus();
     return;
   }
-  toast(bp+' marked programmed','success');
+  toast(bp+' confirmed programmed','success');
   await renderETKBeltpackStatus();
 }
 
 // ETK build: TM-editable PL/IFB names and colors, replacing the Requests tab
-let _etkSettingsDraft=null;
+let _etkSettingsDraft=null, _etkSettingsDirty=false;
+window.addEventListener('beforeunload',e=>{ if(_etkSettingsDirty){ e.preventDefault(); e.returnValue=''; } });
+
+function etkConfirmDiscardSettings(nextView){
+  const ov=document.createElement('div');
+  ov.className='crew-confirm-overlay';
+  ov.innerHTML=`<div class="crew-confirm-box">
+    <div class="crew-confirm-title">Discard unsaved changes?</div>
+    <div class="crew-confirm-sub">Your PL and IFB edits haven't been saved yet.</div>
+    <div class="crew-confirm-btns">
+      <button class="crew-confirm-btn release" id="etk-discard-yes">Discard</button>
+      <button class="crew-confirm-btn cancel" id="etk-discard-no">Keep Editing</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add('visible'));
+  const close=()=>{ ov.classList.remove('visible'); setTimeout(()=>ov.remove(),250); };
+  ov.querySelector('#etk-discard-no').onclick=close;
+  ov.querySelector('#etk-discard-yes').onclick=()=>{ close(); _etkSettingsDirty=false; setTMView(nextView); };
+}
 
 function renderETKSettings(){
   const body=document.getElementById('tm-body'); if(!body) return;
+  _etkSettingsDirty=false;
   _etkSettingsDraft={
     PLs: ETK_OPTIONS.PLs.map(o=>({...o})),
     IFBs: ETK_OPTIONS.IFBs.map(o=>({...o}))
   };
   body.innerHTML=`<div class="etk-settings">
+    <div class="etk-settings-note">Renaming or removing an option doesn't change keys already assigned. Those keep their old name in gray until the crew member requests a new one.</div>
     <div class="etk-settings-section">
       <div class="etk-settings-label">Party Lines (PLs)</div>
       <div class="etk-settings-list" id="etk-settings-pls"></div>
@@ -5628,7 +5789,7 @@ function etkRenderSettingsList(cat){
   el.innerHTML=_etkSettingsDraft[cat].map((o,i)=>`
     <div class="etk-settings-row">
       <input type="color" value="${rgbHex(o.bg)}" class="etk-settings-color" onchange="etkUpdateOptionColor('${cat}',${i},this.value)">
-      <input type="text" value="${(o.label||'').replace(/"/g,'&quot;')}" class="etk-settings-name" onchange="etkUpdateOptionLabel('${cat}',${i},this.value)">
+      <input type="text" value="${(o.label||'').replace(/"/g,'&quot;')}" class="etk-settings-name" oninput="_etkSettingsDirty=true" onchange="etkUpdateOptionLabel('${cat}',${i},this.value)">
       <button class="etk-settings-remove" onclick="etkRemoveOption('${cat}',${i})">✕</button>
     </div>`).join('');
 }
@@ -5643,24 +5804,37 @@ function etkUpdateOptionColor(cat,idx,hex){
   const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
   _etkSettingsDraft[cat][idx].bg=[r,g,b];
   _etkSettingsDraft[cat][idx].fg=etkContrastFg(hex);
+  _etkSettingsDirty=true;
 }
 function etkUpdateOptionLabel(cat,idx,val){
   if(!_etkSettingsDraft) return;
-  const trimmed=val.trim().toUpperCase();
-  if(trimmed) _etkSettingsDraft[cat][idx].label=trimmed;
+  _etkSettingsDraft[cat][idx].label=val.trim().toUpperCase();
+  _etkSettingsDirty=true;
 }
 function etkAddOption(cat){
   if(!_etkSettingsDraft) return;
   _etkSettingsDraft[cat].push({label:'NEW',fg:[255,255,255],bg:[100,100,100]});
+  _etkSettingsDirty=true;
   etkRenderSettingsList(cat);
 }
 function etkRemoveOption(cat,idx){
   if(!_etkSettingsDraft) return;
   _etkSettingsDraft[cat].splice(idx,1);
+  _etkSettingsDirty=true;
   etkRenderSettingsList(cat);
 }
 async function etkSaveSettings(){
   if(!_etkSettingsDraft) return;
+  // Validate: no blank or duplicate names within a category
+  for(const cat of ['PLs','IFBs']){
+    const noun=cat==='PLs'?'PL':'IFB', seen=new Set();
+    for(const o of _etkSettingsDraft[cat]){
+      const l=(o.label||'').trim().toUpperCase();
+      if(!l){ toast('Every '+noun+' needs a name','danger'); return; }
+      if(seen.has(l)){ toast('Duplicate '+noun+' name: '+l,'danger'); return; }
+      seen.add(l); o.label=l;
+    }
+  }
   const btn=document.getElementById('etk-settings-save-btn');
   if(btn){ btn.textContent='Saving…'; btn.disabled=true; }
   const prevOptions=ETK_OPTIONS;
@@ -5672,6 +5846,7 @@ async function etkSaveSettings(){
     if(btn){ btn.textContent='Save Changes'; btn.disabled=false; }
     return;
   }
+  _etkSettingsDirty=false;
   toast('Settings saved','success');
   if(btn){ btn.textContent='Save Changes'; btn.disabled=false; }
 }
@@ -5681,7 +5856,9 @@ function etkParseRequestNote(noteText){
   if(!m) return null;
   const category=m[2]==='PL'?'PLs':'IFBs';
   const opt=etkFindOption(category,m[1]);
-  return opt?{label:m[1],category,bg:opt.bg,fg:opt.fg}:null;
+  // Renamed or removed in Settings: keep showing it (neutral gray) rather than hiding the key
+  if(!opt) return {label:m[1],category,bg:[120,120,120],fg:[255,255,255],missing:true};
+  return {label:m[1],category,bg:opt.bg,fg:opt.fg};
 }
 
 function openTMKpRequestModal(panelId, currentProd){
@@ -6116,6 +6293,7 @@ async function initCrewApp(){
   crewShowStep('loading');
   loadGlobalOptions(); // real per-space PL/IFB colors from Matt's configured intercom setup
   loadETKOptions(); // TM-editable PL/IFB list for this production
+  etkRequestWakeLock();
 
   // Load productions
   if(SUPA){
@@ -6290,7 +6468,12 @@ async function crewClaimDevice(deviceId){
   };
   if(SUPA){
     const {data,error}=await SUPA.from('device_claims').insert(claimData).select().single();
-    if(error){ alert('Error submitting claim. Please try again.'); return; }
+    if(error){
+      console.error('crewClaimDevice:',error);
+      crewShowToast(error.code==='23505' ? deviceId+' was just claimed — pick another' : 'Couldn’t claim '+deviceId+' — try again');
+      crewReturnToGrid();
+      return;
+    }
     _crewClaim=data;
   }else{
     _crewClaim={...claimData,id:'local'};
@@ -6524,7 +6707,7 @@ async function crewRenderSchematic(silent=false){
 function crewCellState(idx,k){
   const label=crewKeyLabel(k);
   const req=_crewKeyNotes[idx]||_crewCurrentKeyState[idx];
-  const reqOpt=(req&&typeof req==='object')?etkFindOption(req.category,req.label):null;
+  const reqOpt=(req&&typeof req==='object')?(etkFindOption(req.category,req.label)||{label:req.label,bg:[120,120,120],fg:[255,255,255]}):null;
   if(reqOpt){
     return {cellStyle:`background:${rgbStr(reqOpt.bg)};`, nameStyle:`color:${rgbStr(reqOpt.fg)};`, displayLabel:reqOpt.label, isEmpty:false, hasColor:true};
   }
@@ -6719,15 +6902,11 @@ async function crewSubmitBundle(){
     btn.textContent='✓ Submitted';
     crewShowToast('Request submitted — your TM has been notified');
     // ETK build: shared-cart iPad — reset to the beltpack grid for the next crew member
-    setTimeout(()=>{
-      _crewKeyNotes={};
-      if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
-      _crewClaim=null; _currentProfile=null;
-      crewSelectType('bp');
-    },1200);
+    setTimeout(()=>crewReturnToGrid(),1200);
   }catch(e){
+    console.error('crewSubmitBundle:',e);
     btn.disabled=false; btn.textContent='Submit Request';
-    alert('Error submitting. Please try again.');
+    crewShowToast('Couldn’t submit — try again');
   }
 }
 
@@ -6800,9 +6979,7 @@ function crewSubscribe(){
 async function crewCancelClaim(){
   if(!_crewClaim) return;
   if(SUPA&&_crewClaim.id!=='local') await SUPA.from('device_claims').update({status:'cancelled'}).eq('id',_crewClaim.id);
-  if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
-  _crewClaim=null;
-  crewSelectType('bp');
+  crewReturnToGrid();
 }
 
 function crewShowReleaseConfirm(){
@@ -6819,18 +6996,56 @@ async function crewConfirmRelease(){
   if(_crewClaim&&SUPA&&_crewClaim.id!=='local'){
     const {error}=await SUPA.from('device_claims').update({status:'released'}).eq('id',_crewClaim.id);
     if(error){
-      crewShowToast('Release failed: '+(error.message||error.code||'unknown error'),6000);
       console.error('crewConfirmRelease:',error);
+      crewShowToast('Couldn’t release '+(deviceId||'beltpack')+' — try again');
       return;
     }
   }
-  if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
-  _crewClaim=null; _currentProfile=null;
-  crewSelectType('bp');
+  crewReturnToGrid();
   crewShowToast((deviceId||'Beltpack')+' released');
 }
 
+// ETK build: single reset path back to the beltpack grid for the shared cart —
+// clears the previous person's identity, picks, and subscription in one place.
+function crewReturnToGrid(){
+  _crewKeyNotes={}; _crewCurrentKeyState={}; _crewActiveKeyIdx=null;
+  if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
+  _crewClaim=null; _currentProfile=null; _crewPendingDeviceId=null;
+  const ov=document.getElementById('crew-release-confirm-overlay'); if(ov) ov.classList.remove('visible');
+  const tn=document.getElementById('crew-topbar-name'); if(tn) tn.textContent='—';
+  const tp=document.getElementById('crew-topbar-pos'); if(tp) tp.textContent='';
+  crewSelectType('bp');
+}
+
+// ETK build: return to the grid after 60s idle on any step except the grid itself,
+// so the next person never lands on someone else's beltpack.
+let _crewIdleTimer=null, _crewStep=null;
+const CREW_IDLE_MS=60000;
+function crewResetIdle(){
+  clearTimeout(_crewIdleTimer);
+  if(!_crewStep||_crewStep==='device'||_crewStep==='loading') return;
+  _crewIdleTimer=setTimeout(()=>{
+    const scr=document.getElementById('screen-crew');
+    if(!scr||scr.style.display==='none') return;
+    if(!_crewStep||_crewStep==='device'||_crewStep==='loading') return;
+    crewReturnToGrid();
+    crewShowToast('Returned to beltpacks after inactivity');
+  },CREW_IDLE_MS);
+}
+['pointerdown','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,crewResetIdle,{passive:true}));
+
+// ETK build: keep kiosk screens (cart iPad, TM deploy station) awake while open
+let _etkWakeLock=null, _etkWantWake=false;
+async function etkRequestWakeLock(){
+  _etkWantWake=true;
+  try{
+    if('wakeLock' in navigator && document.visibilityState==='visible') _etkWakeLock=await navigator.wakeLock.request('screen');
+  }catch(e){ console.warn('wakeLock:',e); }
+}
+document.addEventListener('visibilitychange',()=>{ if(_etkWantWake&&document.visibilityState==='visible') etkRequestWakeLock(); });
+
 function crewShowStep(step){
+  _crewStep=step; crewResetIdle();
   document.querySelectorAll('.crew-step').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById('crew-step-'+step);
   if(el) el.classList.add('active');
