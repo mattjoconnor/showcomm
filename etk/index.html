@@ -1998,7 +1998,8 @@ function etkApplyRoleLock(){
   if(role==='crew'){ showScreen('crew'); }
   else if(role==='tm'){ document.querySelector('.login-role-btn[data-role="tm"]')?.click(); }
 }
-etkApplyRoleLock();
+// Deferred so the whole script (incl. later declarations) has loaded before the crew screen starts
+setTimeout(etkApplyRoleLock,0);
 
 const _backBtn=document.getElementById('login-back-btn');
 if(_backBtn) _backBtn.addEventListener('click',()=>{
@@ -7019,7 +7020,7 @@ function crewReturnToGrid(){
 
 // ETK build: return to the grid after 60s idle on any step except the grid itself,
 // so the next person never lands on someone else's beltpack.
-let _crewIdleTimer=null, _crewStep=null;
+var _crewIdleTimer=null, _crewStep=null;
 const CREW_IDLE_MS=60000;
 function crewResetIdle(){
   clearTimeout(_crewIdleTimer);
@@ -7035,7 +7036,7 @@ function crewResetIdle(){
 ['pointerdown','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,crewResetIdle,{passive:true}));
 
 // ETK build: keep kiosk screens (cart iPad, TM deploy station) awake while open
-let _etkWakeLock=null, _etkWantWake=false;
+var _etkWakeLock=null, _etkWantWake=false;
 async function etkRequestWakeLock(){
   _etkWantWake=true;
   try{
