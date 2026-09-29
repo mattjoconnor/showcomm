@@ -358,6 +358,42 @@ body { background:var(--bg); color:var(--black); }
 .etk-deploy-tile { display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-height:112px; padding:14px; background:var(--surface); border:2px solid var(--border-md); color:var(--tx-primary); font-family:var(--f-mono); text-align:left; cursor:pointer; transition:background var(--dur-med) var(--ease), border-color var(--dur-med) var(--ease), color var(--dur-med) var(--ease), transform var(--dur-fast) var(--ease); }
 .etk-deploy-tile:active { transform:scale(.96); }
 .etk-deploy-tile.out { background:#0891B2; border-color:#0891B2; color:#fff; }
+.etk-deploy-tile.overdue { background:#DC2626; border-color:#DC2626; color:#fff; }
+.etk-count.late { border-top:4px solid #DC2626; }
+.etk-count.late .etk-count-num { color:#DC2626; }
+.etk-overdue-banner { margin:clamp(16px,2.2vw,28px) clamp(16px,2.2vw,28px) 0; padding:12px 14px; background:rgba(220,38,38,.08); border-left:4px solid #DC2626; font-family:var(--f-mono); font-size:var(--t-small); color:var(--tx-primary); display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; }
+.etk-overdue-go { margin-left:auto; min-height:36px; padding:0 12px; font-family:var(--f-mono); font-size:var(--t-micro); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:#DC2626; color:#fff; border:none; cursor:pointer; }
+.etk-latch-tag { display:inline-block; margin-top:3px; padding:1px 5px; font-family:var(--f-mono); font-size:9px; font-weight:800; letter-spacing:.06em; background:rgba(0,0,0,.72); color:#fff; }
+.crew-latch-tag { display:block; width:max-content; margin:4px auto 0; padding:1px 6px; font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; background:rgba(0,0,0,.72); color:#fff; }
+.crew-latch-btn { display:flex; align-items:center; gap:10px; width:100%; min-height:52px; margin-top:8px; padding:0 14px; background:var(--surface); border:2px solid var(--border-md); font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-primary); cursor:pointer; text-align:left; }
+.crew-latch-box { width:20px; height:20px; border:2px solid var(--tx-primary); flex-shrink:0; }
+.crew-latch-btn.on { border-color:var(--tx-primary); }
+.crew-latch-btn.on .crew-latch-box { background:var(--tx-primary); box-shadow:inset 0 0 0 3px var(--surface); }
+.crew-latch-hint { margin-left:auto; font-weight:600; text-transform:none; letter-spacing:0; color:var(--tx-secondary); }
+.tm-alerts-btn { min-height:32px; padding:0 10px; font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; background:transparent; color:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.25); cursor:pointer; }
+.tm-alerts-btn.on { color:#fff; border-color:#F59E0B; }
+.etk-ch-wrap { padding:clamp(16px,2.2vw,28px); }
+.etk-ch-note { margin:0 0 14px; font-family:var(--f-mono); font-size:var(--t-small); color:var(--tx-secondary); }
+.etk-ch-sec { margin:18px 0 10px; font-family:var(--f-mono); font-size:clamp(13px,1.1vw,15px); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-primary); }
+.etk-ch-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
+.etk-ch-card { background:var(--surface); border:1px solid var(--border-md); }
+.etk-ch-head { display:flex; align-items:baseline; justify-content:space-between; padding:10px 12px; font-family:var(--f-mono); }
+.etk-ch-head b { font-size:clamp(14px,1.2vw,16px); font-weight:800; }
+.etk-ch-head span { font-size:var(--t-micro); font-weight:700; opacity:.85; }
+.etk-ch-list { padding:4px 12px 8px; }
+.etk-ch-row { display:flex; align-items:center; gap:8px; min-height:34px; border-bottom:1px solid var(--border); font-family:var(--f-mono); font-size:var(--t-small); }
+.etk-ch-row:last-child { border-bottom:none; }
+.etk-ch-row b { flex:0 0 44px; font-weight:800; color:var(--tx-primary); }
+.etk-ch-who { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--tx-primary); }
+.etk-ch-who i { font-style:normal; color:var(--tx-tertiary); }
+.etk-ch-key { font-size:var(--t-micro); color:var(--tx-tertiary); }
+.etk-ch-row .etk-latch-tag { margin-top:0; }
+.etk-ch-row.requested { background:rgba(245,158,11,.07); }
+.etk-ch-row.changing .etk-ch-who, .etk-ch-row.changing b { text-decoration:line-through; opacity:.6; }
+.etk-ch-state { padding:1px 6px; font-size:9px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+.etk-ch-state.requested { background:#F59E0B; color:#111; }
+.etk-ch-state.changing { background:var(--border-md); color:var(--tx-primary); }
+.etk-ch-none { padding:12px; font-family:var(--f-mono); font-size:var(--t-small); color:var(--tx-tertiary); }
 .etk-deploy-tile.pending { opacity:.6; pointer-events:none; }
 .etk-deploy-id { font-size:clamp(18px,1.8vw,22px); font-weight:800; letter-spacing:var(--ls-tight); }
 .etk-deploy-who { font-size:clamp(11px,1vw,13px); font-weight:600; opacity:.75; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -5197,6 +5233,8 @@ async function initTMApp(){
   loadETKOptions(); // TM-editable PL/IFB list for this production
   etkStartPolling(); // safety net in case the realtime connection silently drops
   etkRequestWakeLock(); // TM deploy station is a kiosk too
+  document.title = ETK_TITLE;
+  setTimeout(()=>{ etkAlertsLabel(); etkAlertTick(); }, 0);
 
   // ETK build: single hardcoded production — no multi-show lookup
   _tmProductions=PRODUCTIONS['ETK']?[PRODUCTIONS['ETK']]:[];
@@ -5211,7 +5249,7 @@ async function initTMApp(){
   ribbon.className='ribbon'; ribbon.id='tm-ribbon';
   ribbon.innerHTML='<div class="r-brand"><span class="wordmark">ShowComm<span class="wm-dot"></span></span></div>';
   const rnav=document.createElement('nav'); rnav.className='r-nav'; rnav.id='tm-prod-tabs';
-  ['Beltpacks','Deploy','Settings'].forEach(label=>{
+  ['Beltpacks','Channels','Deploy','Settings'].forEach(label=>{
     const btn=document.createElement('button');
     btn.className='ribbon-tab'; btn.textContent=label;
     btn.addEventListener('click',()=>setTMView(label.toLowerCase()));
@@ -5220,7 +5258,7 @@ async function initTMApp(){
   ribbon.appendChild(rnav);
   const rright=document.createElement('div'); rright.className='r-right';
   rright.style.cssText='display:flex;align-items:center;gap:12px;';
-  rright.innerHTML='<span id="tm-live-indicator" style="font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:5px;">'
+  rright.innerHTML='<button type="button" id="tm-alerts-btn" class="tm-alerts-btn" onclick="etkToggleAlerts()">Alerts</button><span id="tm-live-indicator" style="font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:5px;">'
     +'<span id="tm-live-dot" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);"></span><span id="tm-live-text">Connecting…</span></span>'
     +'<span style="font-family:var(--f-mono);font-size:clamp(10px,.85vw,11.5px);font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;background:#7C3AED;color:#fff;">TM</span>'
     +'<span id="tm-user-label" style="font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.4);">'+(_currentProfile?.display_name||'')+'</span>';
@@ -5271,9 +5309,13 @@ async function initTMApp(){
       })
       .on('postgres_changes',{event:'*',schema:'public',table:'device_claims'},function(){
         if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
+        else if(_tmActiveView==='channels') renderETKChannels();
+        else etkAlertTick();
       })
       .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'},function(){
         if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
+        else if(_tmActiveView==='channels') renderETKChannels();
+        else etkAlertTick();
         if(_tmActiveView==='requests') renderTMRequests();
       })
       .on('postgres_changes',{event:'*',schema:'public',table:'etk_options'},async function(){
@@ -5314,6 +5356,7 @@ function setTMView(view){
       keypanels:['Keypanels','All Active Productions'],
       beltpacks:['Beltpacks','ETK · Oct 1–16'],
       deploy:['Deploy','Tap to check beltpacks out and in'],
+      channels:['Channels','Who’s on each PL and IFB, from confirmed programming'],
       requests:['Requests','Pending Changes & Assignments'],
       settings:['Settings','ETK · PL & IFB names and colors']
     };
@@ -5322,7 +5365,7 @@ function setTMView(view){
   }
   // Show/hide filter bar based on view
   const ufBar=$('unified-filters');
-  if(ufBar) ufBar.style.display=(view==='requests'||view==='settings'||view==='deploy')?'none':'flex';
+  if(ufBar) ufBar.style.display=(view==='requests'||view==='settings'||view==='deploy'||view==='channels')?'none':'flex';
   // Restore any previously moved views back to main-body first
   const mb=document.querySelector('.main-body');
   ['view-keypanels','view-allbeltpacks'].forEach(id=>{
@@ -5345,6 +5388,8 @@ function setTMView(view){
     renderETKBeltpackStatus();
   } else if(view==='requests'){
     renderTMRequests();
+  } else if(view==='channels'){
+    renderETKChannels();
   } else if(view==='deploy'){
     renderETKDeploy();
   } else if(view==='settings'){
@@ -5435,6 +5480,59 @@ function renderTMBeltpacks(){
 // green (programmed/fulfilled), red (change requested after programming).
 // Sourced from device_claims + key_requests, not the legacy assignment blob.
 let _etkBpData={};
+/* New-request alerts: chime, "(n) ShowComm TM" in the tab title, and desktop popups */
+const ETK_TITLE='ShowComm TM';
+let _etkSeenOpen=null, _etkAudio=null;
+let _etkAlertsOn=(()=>{ try{ return localStorage.getItem('etk_alerts')!=='off'; }catch(e){ return true; } })();
+function etkChime(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    _etkAudio=_etkAudio||new AC(); const ctx=_etkAudio; if(ctx.state==='suspended') ctx.resume();
+    const t=ctx.currentTime;
+    [[880,0],[1320,.16]].forEach(([f,d])=>{ const o=ctx.createOscillator(), g=ctx.createGain(); o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(.0001,t+d); g.gain.exponentialRampToValueAtTime(.25,t+d+.02); g.gain.exponentialRampToValueAtTime(.0001,t+d+.35);
+      o.connect(g); g.connect(ctx.destination); o.start(t+d); o.stop(t+d+.4); });
+  }catch(e){}
+}
+document.addEventListener('pointerdown',()=>{ if(_etkAudio&&_etkAudio.state==='suspended') _etkAudio.resume(); },{passive:true});
+function etkAlertsLabel(){
+  const b=document.getElementById('tm-alerts-btn'); if(!b) return;
+  const perm=('Notification' in window)?Notification.permission:'unsupported';
+  b.classList.toggle('on',_etkAlertsOn);
+  b.textContent = !_etkAlertsOn ? 'Alerts off' : (perm==='default' ? 'Allow popups' : 'Alerts on');
+  b.title = perm==='granted' ? 'Sound and desktop popups for new requests' : perm==='denied' ? 'Sound only: popups are blocked in this browser’s site settings' : 'Sound for new requests. Click to also allow desktop popups.';
+}
+async function etkToggleAlerts(){
+  etkChime(); // also unlocks audio on this click
+  const perm=('Notification' in window)?Notification.permission:'unsupported';
+  if(_etkAlertsOn && perm==='default'){ try{ await Notification.requestPermission(); }catch(e){} }
+  else { _etkAlertsOn=!_etkAlertsOn; try{ localStorage.setItem('etk_alerts',_etkAlertsOn?'on':'off'); }catch(e){} }
+  etkAlertsLabel();
+}
+function etkCheckAlerts(pack){
+  const bps=(PRODUCTIONS['ETK']&&PRODUCTIONS['ETK'].beltpacks)||[];
+  const n=bps.filter(bp=>etkPackKeys(pack.reqs[bp], pack.claims[bp]).some(k=>k.pend)).length;
+  document.title = n ? `(${n}) ${ETK_TITLE}` : ETK_TITLE;
+  const open=[];
+  Object.keys(pack.reqs).forEach(bp=>{ const c=pack.claims[bp]; if(!c) return; pack.reqs[bp].forEach(r=>{ if(r.status==='open' && r.created_at>=c.claimed_at) open.push({r,bp,claim:c}); }); });
+  const fresh=_etkSeenOpen ? open.filter(o=>!_etkSeenOpen.has(o.r.id)) : [];
+  _etkSeenOpen=new Set(open.map(o=>o.r.id));
+  if(!fresh.length || !_etkAlertsOn) return;
+  etkChime();
+  fresh.forEach(({r,bp,claim})=>{
+    let entries=[]; try{ entries=JSON.parse(r.note||'[]'); }catch(e){}
+    const what=Array.isArray(entries)?entries.map(etkEntryText).join(', '):'';
+    toast(`New request: ${bp} · ${claim.crew_name}`,'info');
+    if('Notification' in window && Notification.permission==='granted'){
+      try{ const nt=new Notification(`${bp} · ${claim.crew_name}`, {body: what||'New key request', tag:'etk-'+r.id});
+           nt.onclick=()=>{ window.focus(); setTMView('beltpacks'); nt.close(); }; }catch(e){}
+    }
+  });
+}
+async function etkAlertTick(){
+  if(!SUPA||!_tmMode) return;
+  try{ const pack=await etkLoadPackData(); if(!pack.error) etkCheckAlerts(pack); }catch(e){}
+}
 let _etkPollInterval=null;
 
 // ETK build: daily beltpack custody (Deploy tab). Separate from claims — deploying or
@@ -5447,17 +5545,58 @@ function etkComputeCustody(rows){
   return latest;
 }
 function etkIsOut(bp){ return !!(_etkCustody[bp]&&_etkCustody[bp].action==='deployed'); }
+/* A new show day starts at 5 AM: anything still out from before then is flagged red */
+function etkCutoff(){ const n=new Date(), c=new Date(n.getFullYear(),n.getMonth(),n.getDate(),5,0,0); if(n<c) c.setDate(c.getDate()-1); return c; }
+function etkIsOverdue(bp){ const c=_etkCustody[bp]; return !!(c && c.action==='deployed' && c.created_at && new Date(c.created_at) < etkCutoff()); }
 function etkCountsHTML(bps){
   const out=bps.filter(etkIsOut).length;
   return `<div class="etk-custody-counts">
     <div class="etk-count out"><span class="etk-count-num" id="etk-count-out">${out}</span><span class="etk-count-lbl">Out</span></div>
     <div class="etk-count in"><span class="etk-count-num" id="etk-count-in">${bps.length-out}</span><span class="etk-count-lbl">In</span></div>
+    <div class="etk-count late" id="etk-count-late-box" style="${bps.some(etkIsOverdue)?'':'display:none'}"><span class="etk-count-num" id="etk-count-late">${bps.filter(etkIsOverdue).length}</span><span class="etk-count-lbl">Not returned</span></div>
   </div>`;
 }
 function etkUpdateCounts(bps){
   const out=bps.filter(etkIsOut).length;
   const o=document.getElementById('etk-count-out'), i=document.getElementById('etk-count-in');
   if(o) o.textContent=out; if(i) i.textContent=bps.length-out;
+  const late=bps.filter(etkIsOverdue).length, lb=document.getElementById('etk-count-late-box'), l=document.getElementById('etk-count-late');
+  if(lb) lb.style.display = late ? '' : 'none'; if(l) l.textContent=late;
+}
+
+async function renderETKChannels(){
+  const body=document.getElementById('tm-body'); if(!body) return;
+  const prod=PRODUCTIONS['ETK'];
+  if(!prod){ body.innerHTML='<div class="empty-state"><div class="empty-text">ETK production not loaded</div></div>'; return; }
+  if(!SUPA){ body.innerHTML='<div class="empty-state"><div class="empty-text">No connection</div></div>'; return; }
+  if(!document.getElementById('etk-ch-wrap')) body.innerHTML='<div class="empty-state"><div class="empty-text">Loading…</div></div>';
+  await loadETKOptions();
+  const pack=await etkLoadPackData();
+  if(_tmActiveView!=='channels') return;
+  etkCheckAlerts(pack);
+  const bps=(prod.beltpacks||[]).slice(), rows={};
+  const add=(v,bp,i,claim,state,latch)=>{ const k=v.category+'|'+v.label; (rows[k]=rows[k]||[]).push({bp, key:i+1, who:claim?claim.crew_name:'', latch, state}); };
+  bps.forEach(bp=>{
+    const claim=pack.claims[bp];
+    etkPackKeys(pack.reqs[bp], claim).forEach((k,i)=>{
+      const same=k.on && k.pend && !k.pend.clear && k.pend.label===k.on.label && k.pend.category===k.on.category;
+      if(same){ add(k.on,bp,i,claim,'relatch',k.pend.latch); return; }
+      if(k.on) add(k.on,bp,i,claim,k.pend?'changing':'on',k.on.latch);
+      if(k.pend && !k.pend.clear) add(k.pend,bp,i,claim,'requested',k.pend.latch);
+    });
+  });
+  const tag={on:'', changing:'<span class="etk-ch-state changing">Changing</span>', requested:'<span class="etk-ch-state requested">Requested</span>', relatch:'<span class="etk-ch-state requested">Latch change</span>'};
+  const card=(cat,o)=>{
+    const list=(rows[cat+'|'+o.label]||[]).sort((a,b)=>a.bp.localeCompare(b.bp,undefined,{numeric:true}));
+    const n=list.filter(x=>x.state!=='requested').length;
+    return `<div class="etk-ch-card"><div class="etk-ch-head" style="background:${rgbStr(o.bg)};color:${rgbStr(o.fg)}"><b>${etkEsc(o.label)}</b><span>${n} pack${n===1?'':'s'}</span></div>
+      ${list.length?`<div class="etk-ch-list">${list.map(x=>`<div class="etk-ch-row ${x.state}"><b>${x.bp}</b><span class="etk-ch-who">${x.who?etkEsc(x.who):'<i>Unclaimed</i>'}</span><span class="etk-ch-key">Key ${x.key}</span>${x.latch?'<span class="etk-latch-tag">LATCH</span>':''}${tag[x.state]}</div>`).join('')}</div>`:'<div class="etk-ch-none">Nobody on this channel</div>'}</div>`;
+  };
+  body.innerHTML=`<div class="etk-ch-wrap" id="etk-ch-wrap">
+    <p class="etk-ch-note">From confirmed programming. <span class="etk-ch-state requested">Requested</span> means asked for but not confirmed yet.</p>
+    <div class="etk-ch-sec">Party lines</div><div class="etk-ch-grid">${(ETK_OPTIONS.PLs||[]).map(o=>card('PLs',o)).join('')}</div>
+    <div class="etk-ch-sec">IFBs</div><div class="etk-ch-grid">${(ETK_OPTIONS.IFBs||[]).map(o=>card('IFBs',o)).join('')}</div>
+  </div>`;
 }
 
 async function renderETKDeploy(){
@@ -5490,11 +5629,11 @@ async function renderETKDeploy(){
 function etkRenderDeployGrid(){
   const grid=document.getElementById('etk-deploy-grid'); if(!grid) return;
   grid.innerHTML=_etkDeployBps.map(bp=>{
-    const out=etkIsOut(bp), claim=_etkDeployClaims[bp], pending=_etkCustodyPending.has(bp);
-    return `<button type="button" class="etk-deploy-tile${out?' out':''}${pending?' pending':''}" onclick="etkToggleCustody('${bp}')">
+    const out=etkIsOut(bp), late=etkIsOverdue(bp), claim=_etkDeployClaims[bp], pending=_etkCustodyPending.has(bp);
+    return `<button type="button" class="etk-deploy-tile${out?' out':''}${late?' overdue':''}${pending?' pending':''}" onclick="etkToggleCustody('${bp}')">
       <span class="etk-deploy-id">${bp}</span>
       <span class="etk-deploy-who">${claim?etkEsc(claim.crew_name):'Spare'}</span>
-      <span class="etk-deploy-state">${out?'Out':'In'}</span>
+      <span class="etk-deploy-state">${late?'Not returned':(out?'Out':'In')}</span>
     </button>`;
   }).join('');
   etkUpdateCounts(_etkDeployBps);
@@ -5543,7 +5682,8 @@ function etkStartPolling(){
   if(_etkPollInterval) return;
   _etkPollInterval=setInterval(()=>{
     if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
-    else if(_tmActiveView==='deploy'&&!_etkCustodyPending.size) renderETKDeploy();
+    else if(_tmActiveView==='channels') renderETKChannels();
+    else { if(_tmActiveView==='deploy'&&!_etkCustodyPending.size) renderETKDeploy(); etkAlertTick(); }
   },20000);
 }
 function etkStopPolling(){
@@ -5577,61 +5717,32 @@ async function renderETKBeltpackStatus(){
   // Hide the shared filter bar — not meaningful for this single-production board
   const ufBar=document.getElementById('unified-filters'); if(ufBar) ufBar.style.display='none';
 
-  const [claimsRes,reqRes,custRes]=await Promise.all([
-    SUPA.from('device_claims').select('device_id,crew_name,crew_position,status,claimed_at')
-      .eq('production_id','ETK').eq('device_type','beltpack')
-      .not('status','in','(cancelled,denied,released)'),
-    SUPA.from('key_requests').select('device_id,status,note,created_at').eq('production_id','ETK')
-      .order('created_at',{ascending:true}),
+  const [pack,custRes]=await Promise.all([
+    etkLoadPackData(),
     SUPA.from('bp_custody').select('id,device_id,action,created_at').eq('production_id','ETK')
       .order('created_at',{ascending:false})
   ]);
   _etkCustody=etkComputeCustody(custRes.error?[]:custRes.data);
-  const claimsByDevice={};
-  (claimsRes.data||[]).forEach(c=>{ claimsByDevice[c.device_id]=c; });
-
-  // Per device, per key index: has it ever been fulfilled, and what's the latest request.
-  // Scoped to requests made since the CURRENT claim started — a released-then-reclaimed
-  // pack shouldn't carry over the previous holder's keys.
-  const keyHistoryByDevice={};
-  (reqRes.data||[]).forEach(r=>{
-    const claim=claimsByDevice[r.device_id];
-    if(!claim||r.created_at<claim.claimed_at) return;
-    let entries=[];
-    try{ entries=JSON.parse(r.note||'[]'); }catch(e){}
-    if(!Array.isArray(entries)) return;
-    const dev=keyHistoryByDevice[r.device_id]=keyHistoryByDevice[r.device_id]||{};
-    entries.forEach(en=>{
-      if(en.keyIndex==null) return;
-      const rec=dev[en.keyIndex]=dev[en.keyIndex]||{hasFulfilled:false};
-      if(r.status==='fulfilled') rec.hasFulfilled=true;
-      rec.latestStatus=r.status;
-      rec.parsed=etkParseRequestNote(en.note);
-    });
-  });
-
-  function keyUrgency(rec){
-    if(!rec) return 'neutral';
-    if(rec.latestStatus==='open'&&rec.hasFulfilled) return 'red';
-    if(rec.latestStatus==='open') return 'orange';
-    if(rec.latestStatus==='fulfilled') return 'green';
-    return 'neutral';
-  }
-
+  const claimsByDevice=pack.claims;
   _etkBpData={};
   bps.forEach(bp=>{
     const claim=claimsByDevice[bp];
-    const keys=keyHistoryByDevice[bp]||{};
+    const pk=etkPackKeys(pack.reqs[bp], claim);
     let urgency='neutral';
-    const keyList=[0,1,2,3].map(ki=>{
-      const rec=keys[ki], urg=keyUrgency(rec);
+    const keyList=pk.map(k=>{
+      const disp=k.pend||k.on;
+      const urg=k.pend?(k.on?'red':'orange'):(k.on?'green':'neutral');
       if(_etkUrgencyRank[urg]>_etkUrgencyRank[urgency]) urgency=urg;
+      const rec=disp?{parsed:disp.clear?etkParseRequestNote('CLEAR'):disp.parsed, latch:!disp.clear&&!!disp.latch}:null;
       return {rec,urg};
     });
-    _etkBpData[bp]={urgency, keys:keyList, claim};
+    _etkBpData[bp]={urgency, keys:keyList, claim, pk};
   });
+  etkCheckAlerts(pack);
+  const overdue=bps.filter(etkIsOverdue);
 
   body.innerHTML=`
+    ${overdue.length?`<div class="etk-overdue-banner"><b>${overdue.length} pack${overdue.length===1?'':'s'} not returned since yesterday:</b> ${overdue.join(', ')} <button class="etk-overdue-go" onclick="setTMView('deploy')">Open Deploy</button></div>`:''}
     <div class="etk-counts-wrap">${etkCountsHTML(bps)}</div>
     <div class="etk-queue-section">
       <div class="etk-queue-header">Needs Programming (<span id="etk-queue-count">0</span>)</div>
@@ -5666,6 +5777,7 @@ function etkKeyCellHTML({rec,urg},i){
     return `<div class="crew-key-cell programmed" style="background-color:${rgbStr(rec.parsed.bg)};${stripeStyle}">
       <div class="crew-key-cell-num" style="color:inherit;opacity:.5;">${i+1}</div>
       <div class="crew-key-cell-name" style="color:${rgbStr(rec.parsed.fg)};">${rec.parsed.label}</div>
+      ${rec.latch?'<div class="etk-latch-tag">LATCH</div>':''}
     </div>`;
   }
   return `<div class="crew-key-cell"><div class="crew-key-cell-num">${i+1}</div><div class="crew-key-cell-name empty">Empty</div></div>`;
@@ -5730,8 +5842,10 @@ async function etkConfirmProgrammed(bp){
   if(!SUPA) return;
   const item=document.getElementById('etk-queue-item-'+bp);
   if(item) item.classList.add('leaving');
+  const claim=_etkBpData[bp]&&_etkBpData[bp].claim;
+  if(!claim){ if(item) item.classList.remove('leaving'); toast(bp+' isn’t claimed right now','danger'); await renderETKBeltpackStatus(); return; }
   const {data,error}=await SUPA.from('key_requests').update({status:'fulfilled'})
-    .eq('device_id',bp).eq('production_id','ETK').eq('status','open')
+    .eq('device_id',bp).eq('production_id','ETK').eq('status','open').gte('created_at',claim.claimed_at)
     .select('id');
   if(error){
     if(item) item.classList.remove('leaving');
@@ -5861,6 +5975,49 @@ async function etkSaveSettings(){
   _etkSettingsDirty=false;
   toast('Settings saved','success');
   if(btn){ btn.textContent='Save Changes'; btn.disabled=false; }
+}
+
+/* A pack's keys come from its whole history, not just the current holder:
+   on   = what's actually programmed (the last CONFIRMED value, across every claim)
+   pend = a change the CURRENT holder requested that the TM hasn't confirmed yet
+   Releasing a pack no longer "clears" it, because the hardware keeps its programming. */
+function etkPackKeys(rows, claim){
+  const keys=[0,1,2,3].map(()=>({on:null, pend:null, onAt:'', pendAt:''}));
+  (rows||[]).forEach(r=>{
+    let entries=[]; try{ entries=JSON.parse(r.note||'[]'); }catch(e){}
+    if(!Array.isArray(entries)) return;
+    entries.forEach(en=>{
+      const k=keys[en.keyIndex]; if(!k) return;
+      let v;
+      if(en.note==='CLEAR') v={clear:true};
+      else { const parsed=etkParseRequestNote(en.note); if(!parsed||parsed.clear) return;
+             v={label:parsed.label, category:parsed.category, latch:!!en.latch && parsed.category==='PLs', parsed}; }
+      if(r.status==='fulfilled'){ k.on = v.clear ? null : v; k.onAt = r.created_at; }
+      else if(r.status==='open' && claim && r.created_at >= claim.claimed_at){ k.pend = v; k.pendAt = r.created_at; }
+    });
+  });
+  keys.forEach(k=>{
+    if(k.pend && k.onAt && k.onAt > k.pendAt) k.pend = null;
+    if(k.pend && k.pend.clear && !k.on) k.pend = null;
+    if(k.pend && !k.pend.clear && k.on && k.pend.label===k.on.label && k.pend.category===k.on.category && k.pend.latch===k.on.latch) k.pend = null;
+  });
+  return keys;
+}
+async function etkLoadPackData(){
+  const [claimsRes, reqRes] = await Promise.all([
+    SUPA.from('device_claims').select('device_id,crew_name,status,claimed_at').eq('production_id','ETK').eq('device_type','beltpack')
+      .not('status','in','(cancelled,denied,released)'),
+    SUPA.from('key_requests').select('id,device_id,status,note,created_at').eq('production_id','ETK')
+      .in('status',['open','fulfilled']).order('created_at',{ascending:true})
+  ]);
+  const claims={}, reqs={};
+  (claimsRes.data||[]).forEach(c=>{ if(!claims[c.device_id] || c.claimed_at > claims[c.device_id].claimed_at) claims[c.device_id]=c; });
+  (reqRes.data||[]).forEach(r=>{ (reqs[r.device_id]=reqs[r.device_id]||[]).push(r); });
+  return {claims, reqs, error: claimsRes.error || reqRes.error};
+}
+function etkEntryText(en){
+  if(en.note==='CLEAR') return `Key ${en.keyIndex+1} → clear`;
+  const p=etkParseRequestNote(en.note); return `Key ${en.keyIndex+1} → ${p?p.label:en.note}${en.latch?' (latch)':''}`;
 }
 
 function etkParseRequestNote(noteText){
@@ -6646,28 +6803,15 @@ async function crewRenderSchematic(silent=false){
   crewUpdateSubmitBar();
   await loadETKOptions(); // pick up any Settings changes even on a long-lived cart session
 
-  // ETK build: always show what's currently assigned to each key — whether
-  // that's an open (unprogrammed) request or one already fulfilled — so crew
-  // can see what they already have before requesting a change. Scoped to
-  // this claim's start time so a released-then-reclaimed pack doesn't show
-  // the previous holder's keys. Kept separate from _crewKeyNotes so it
-  // isn't re-submitted as a new request on its own.
+  // ETK build: the pack's real keys (confirmed history across holders) plus this holder's
+  // pending changes. Kept separate from _crewKeyNotes so it isn't re-submitted on its own.
   if(SUPA){
-    const {data:reqs}=await SUPA.from('key_requests').select('note,status')
+    const {data:reqs}=await SUPA.from('key_requests').select('note,status,created_at')
       .eq('device_id',_crewClaim.device_id).eq('production_id',_crewClaim.production_id)
-      .in('status',['open','fulfilled'])
-      .gte('created_at',_crewClaim.claimed_at)
-      .order('created_at',{ascending:true});
-    (reqs||[]).forEach(r=>{
-      let entries=[];
-      try{ entries=JSON.parse(r.note||'[]'); }catch(e){}
-      if(!Array.isArray(entries)) return;
-      entries.forEach(en=>{
-        if(en.keyIndex==null) return;
-        const parsed=etkParseRequestNote(en.note);
-        if(parsed&&parsed.clear) delete _crewCurrentKeyState[en.keyIndex];
-        else if(parsed) _crewCurrentKeyState[en.keyIndex]={category:parsed.category,label:parsed.label};
-      });
+      .in('status',['open','fulfilled']).order('created_at',{ascending:true});
+    etkPackKeys(reqs||[], _crewClaim).forEach((k,i)=>{
+      const v=k.pend||k.on;
+      if(v && !v.clear) _crewCurrentKeyState[i]={category:v.category, label:v.label, latch:!!v.latch};
     });
   }
 
@@ -6740,7 +6884,7 @@ function crewCellState(idx,k){
   const req=_crewKeyNotes[idx]||_crewCurrentKeyState[idx];
   const reqOpt=(req&&typeof req==='object')?(etkFindOption(req.category,req.label)||{label:req.label,bg:[120,120,120],fg:[255,255,255]}):null;
   if(reqOpt){
-    return {cellStyle:`background:${rgbStr(reqOpt.bg)};`, nameStyle:`color:${rgbStr(reqOpt.fg)};`, displayLabel:reqOpt.label, isEmpty:false, hasColor:true};
+    return {cellStyle:`background:${rgbStr(reqOpt.bg)};`, nameStyle:`color:${rgbStr(reqOpt.fg)};`, displayLabel:reqOpt.label+(req.latch?'<span class="crew-latch-tag">Latch</span>':''), isEmpty:false, hasColor:true};
   }
   if(k&&label){
     const cat=k.c||k.category||'';
@@ -6805,11 +6949,14 @@ function crewOptionPickerHTML(idx){
   const hasCurrent=current&&typeof current==='object';
   const keyLabel='Key '+(idx+1);
   if(hasCurrent && !_crewPickerForceOpen[idx]){
+    const latch = current.category==='PLs'
+      ? `<button type="button" class="crew-latch-btn${current.latch?' on':''}" onclick="crewToggleLatch(${idx})" aria-pressed="${!!current.latch}"><span class="crew-latch-box"></span>Latch<span class="crew-latch-hint">${current.latch?'Key stays open after you let go':'Off: talk while you hold the key'}</span></button>`
+      : '';
     return `<div class="crew-picker-zone-label">${keyLabel}</div>
       <div class="crew-picker-selected" onclick="crewExpandPicker(${idx})">
         <span>Current: ${current.label} (${current.category.replace(/s$/,'')})</span>
         <span class="crew-picker-change-btn">CHANGE</span>
-      </div>`;
+      </div>${latch}`;
   }
   let html=`<div class="crew-picker-zone-label">${keyLabel} — pick one</div>`;
   Object.entries(ETK_OPTIONS).forEach(([cat,opts])=>{
@@ -6850,8 +6997,20 @@ function crewPromptMove(idx,cat,label,fromIdx){
   ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
   ov.querySelector('.primary').onclick=()=>{ close(); crewMoveOption(idx,cat,label,fromIdx); };
 }
+function crewToggleLatch(idx){
+  const cur=crewEffectiveKey(idx); if(!cur || cur.category!=='PLs') return;
+  const next={category:cur.category, label:cur.label, latch:!cur.latch};
+  const base=_crewCurrentKeyState[idx];
+  if(base && base.category===next.category && base.label===next.label && !!base.latch===next.latch) delete _crewKeyNotes[idx];
+  else _crewKeyNotes[idx]=next;
+  crewUpdateCellDisplay(idx);
+  const zone=document.getElementById('crew-picker-zone');
+  if(zone) zone.innerHTML=crewOptionPickerHTML(idx);
+  crewUpdateSubmitBar();
+}
 function crewMoveOption(idx,cat,label,fromIdx){
-  _crewKeyNotes[idx]={category:cat,label:label};
+  const src=crewEffectiveKey(fromIdx);
+  _crewKeyNotes[idx]={category:cat,label:label,latch:!!(src&&src.latch)};
   // If the source only held it as an unsent pick, undo that pick (key reverts to what's on the pack).
   // If it's actually on the beltpack, the TM needs to clear that key.
   delete _crewKeyNotes[fromIdx];
@@ -6865,10 +7024,10 @@ function crewMoveOption(idx,cat,label,fromIdx){
   crewShowToast(label+' moved to Key '+(idx+1));
 }
 function crewPickOption(idx,cat,label){
-  const cur=_crewKeyNotes[idx];
-  const isSame=cur&&typeof cur==='object'&&cur.category===cat&&cur.label===label;
-  if(isSame) delete _crewKeyNotes[idx];
-  else _crewKeyNotes[idx]={category:cat,label:label};
+  const cur=_crewKeyNotes[idx], base=_crewCurrentKeyState[idx];
+  const isSame=cur&&typeof cur==='object'&&!cur.clear&&cur.category===cat&&cur.label===label;
+  if(isSame || (base&&base.category===cat&&base.label===label)) delete _crewKeyNotes[idx];   // back to what's on the pack
+  else _crewKeyNotes[idx]={category:cat,label:label,latch:false};
   _crewPickerForceOpen[idx]=false;
   crewUpdateCellDisplay(idx);
   const zone=document.getElementById('crew-picker-zone');
@@ -6948,7 +7107,7 @@ async function crewSubmitBundle(){
   const annotated=Object.entries(notes).map(([idx,note])=>{
     const label=crewKeyLabel(_crewAllKeys[+idx])||('Key '+(+idx+1));
     const noteText=(note&&note.clear)?'CLEAR':(note&&typeof note==='object')?(note.label+' ('+note.category.replace(/s$/,'')+')'):note;
-    return {keyIndex:+idx, label, note:noteText};
+    return Object.assign({keyIndex:+idx, label, note:noteText}, (note&&note.latch&&note.category==='PLs')?{latch:true}:{});
   });
   const summary=(_currentProfile.display_name||'Crew')+' · '+_crewClaim.device_id+' — '+n+' key'+(n!==1?'s':'')+' flagged: '+annotated.map(a=>a.label).join(', ');
 
