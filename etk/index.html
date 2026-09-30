@@ -5320,7 +5320,8 @@ async function initTMApp(){
   rright.style.cssText='display:flex;align-items:center;gap:12px;';
   rright.innerHTML='<button type="button" id="tm-alerts-btn" class="tm-alerts-btn" onclick="etkToggleAlerts()">Alerts</button><span id="tm-live-indicator" style="font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:5px;">'
     +'<span id="tm-live-dot" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);"></span><span id="tm-live-text">Connecting…</span></span>'
-    +'<span style="font-family:var(--f-mono);font-size:clamp(10px,.85vw,11.5px);font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;background:#7C3AED;color:#fff;">TM</span>'
+    +(()=>{ const adm=_currentProfile&&_currentProfile.role==='admin';   // signed in as Matt: show who, in green
+        return '<span id="tm-role-badge" title="'+(adm?'Signed in as admin':'Signed in as TM')+'" style="font-family:var(--f-mono);font-size:clamp(10px,.85vw,11.5px);font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;background:'+(adm?'#1E9E5E':'#7C3AED')+';color:#fff;">'+(adm?etkEsc(_currentProfile.display_name||'Admin'):'TM')+'</span>'; })()
     +'<span id="tm-user-label" style="font-family:var(--f-mono);font-size:11px;color:rgba(255,255,255,.4);">'+(_currentProfile?.display_name||'')+'</span>';
   const logoutBtn=document.createElement('button'); logoutBtn.className='r-logout'; logoutBtn.id='btn-tm-logout'; logoutBtn.textContent='Sign Out';
   logoutBtn.addEventListener('click',doLogout);
@@ -5546,7 +5547,7 @@ function renderTMBeltpacks(){
 // green (programmed/fulfilled), red (change requested after programming).
 // Sourced from device_claims + key_requests, not the legacy assignment blob.
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.6';   // shown in Settings so we can tell which version a device is running
+const ETK_BUILD='2026-09-30.7';   // shown in Settings so we can tell which version a device is running
 /* New-request alerts: chime, "(n) ShowComm TM" in the tab title, and desktop popups */
 const ETK_TITLE='ShowComm TM';
 let _etkSeenOpen=null, _etkAudio=null;
