@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ShowComm · Crew</title>
 <meta http-equiv="refresh" content="0; url=../index.html?role=crew">
-<script>location.replace('../index.html?role=crew');</script>
+<script>
+/* Remember this device's role, so an installed app still opens as the crew screen even if the
+   home-screen launch drops the ?role= part of the address (iPad Safari can) */
+try { localStorage.setItem('etk_mode', 'crew'); } catch (e) {}
+location.replace('../index.html?role=crew');
+</script>
 </head>
 <body></body>
 </html>

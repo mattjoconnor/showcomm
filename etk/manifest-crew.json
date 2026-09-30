@@ -33,6 +33,6 @@
  "id": "/showcomm/etk/?app=crew",
  "name": "ETK Cart",
  "short_name": "ETK Cart",
- "start_url": "/showcomm/etk/index.html?role=crew",
+ "start_url": "/showcomm/etk/crew/",
  "description": "ETK crew cart: claim a beltpack and request keys"
 }

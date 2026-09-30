@@ -12,15 +12,29 @@
 <link rel="apple-touch-icon" href="icons/showcomm-apple-180.png">
 <link rel="icon" type="image/png" href="icons/showcomm-favicon-32.png">
 <script>
+/* If something breaks, say so on screen (with the build) instead of silently doing nothing */
+(function(){
+  function show(msg){
+    if(/ResizeObserver|Script error\.?$/i.test(msg||'')) return;
+    var b=document.getElementById('etk-err'); if(!b){ b=document.createElement('div'); b.id='etk-err'; b.setAttribute('role','alert');
+      b.style.cssText='position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;padding:12px 14px;background:#7F1D1D;color:#fff;font:600 13px/1.4 system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.35)';
+      b.onclick=function(){ b.remove(); }; (document.body||document.documentElement).appendChild(b); }
+    b.textContent='Something went wrong: '+String(msg).slice(0,160)+(window.ETK_BUILD?' · build '+window.ETK_BUILD:'')+' (tap to dismiss)';
+  }
+  addEventListener('error', function(e){ if(e.filename && e.filename.indexOf(location.origin)!==0 && e.filename.indexOf('file:')!==0) return; show(e.message); });
+  addEventListener('unhandledrejection', function(e){ var r=e.reason; show(r&&r.message?r.message:String(r)); });
+})();
 /* Dark mode follows the device on the TM dashboard; the crew cart (and the Cart tab's frame) stay light */
 (function(){
-  var q=new URLSearchParams(location.search); if(q.get('role')==='crew'||q.get('embed')==='1'||!window.matchMedia) return;
+  var q=new URLSearchParams(location.search), r=q.get('role'); if(!r){ try{ r=localStorage.getItem('etk_mode'); }catch(e){} }
+  if(r==='crew'||q.get('embed')==='1'||!window.matchMedia) return;
   var mq=matchMedia('(prefers-color-scheme: dark)'), set=function(){ document.documentElement.classList.toggle('etk-dark', mq.matches); };
   set(); if(mq.addEventListener) mq.addEventListener('change', set);
 })();
 /* Home-screen install: the TM dashboard is part of ShowPoint; the crew cart installs on its own */
 (function(){
-  var q=new URLSearchParams(location.search), crew=q.get('role')==='crew';
+  var q=new URLSearchParams(location.search), r=q.get('role'); if(!r){ try{ r=localStorage.getItem('etk_mode'); }catch(e){} }
+  var crew=r==='crew';
   if(q.get('embed')==='1') return;   // the Cart tab inside the TM dashboard isn't its own app
   // The TM dashboard installs as part of ShowPoint (one app for the whole site); the cart stays its own app
   var l=document.createElement('link'); l.rel='manifest'; l.href=crew?'manifest-crew.json':'/manifest.json'; document.head.appendChild(l);
@@ -2251,8 +2265,16 @@ document.querySelectorAll('.login-role-btn').forEach(btn=>{
 // ETK build: separate crew/TM URLs via ?role= — one shared file, no code duplication.
 // showcomm/etk/crew redirects to ?role=crew, showcomm/etk/tm redirects to ?role=tm.
 // Re-applied after logout too (see doLogout) since it isn't otherwise re-triggered.
+/* The role comes from the address (?role=crew|tm); without one, from what this device remembers.
+   An explicit address always wins, and is remembered (except the TM dashboard's embedded Cart tab). */
+function etkRole(){
+  const q=new URLSearchParams(location.search), r=q.get('role');
+  if(r==='crew'||r==='tm'){ if(q.get('embed')!=='1'){ try{ localStorage.setItem('etk_mode', r); }catch(e){} } return r; }
+  try{ const m=localStorage.getItem('etk_mode'); if(m==='crew'||m==='tm') return m; }catch(e){}
+  return null;
+}
 function etkApplyRoleLock(){
-  const role=new URLSearchParams(location.search).get('role');
+  const role=etkRole();
   if(role!=='crew'&&role!=='tm') return;
   const grid=document.querySelector('.login-role-grid'); if(grid) grid.style.display='none';
   const backBtn=document.getElementById('login-back-btn'); if(backBtn) backBtn.style.display='none';
@@ -5765,7 +5787,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.14';
+const ETK_BUILD='2026-09-30.15'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself

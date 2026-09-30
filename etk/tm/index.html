@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ShowComm · TM</title>
 <meta http-equiv="refresh" content="0; url=../index.html?role=tm">
-<script>location.replace('../index.html?role=tm');</script>
+<script>
+/* Remember this device's role, so an installed app still opens as the tm screen even if the
+   home-screen launch drops the ?role= part of the address (iPad Safari can) */
+try { localStorage.setItem('etk_mode', 'tm'); } catch (e) {}
+location.replace('../index.html?role=tm');
+</script>
 </head>
 <body></body>
 </html>
