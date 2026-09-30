@@ -1316,6 +1316,32 @@ html.etk-dark .etk-settings-remove { color:#F87171; border-color:rgba(248,113,11
   .etk-update { bottom:calc(76px + env(safe-area-inset-bottom,0px)); }
   .etk-signout-phone { display:block; width:100%; min-height:48px; margin-top:var(--s-4); font-family:var(--f-mono); font-size:13px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:none; color:var(--tx-primary); border:1px solid var(--border-strong); cursor:pointer; }
 }
+
+/* ── TM: Edit keys, and the cart's Blank option ── */
+.etk-queue-item-head { flex-wrap:wrap; gap:var(--s-2); }
+.etk-edit-btn { margin-left:auto; min-height:36px; padding:0 var(--s-3); font-family:var(--f-mono); font-size:12px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:none; color:var(--tx-primary); border:1px solid var(--border-strong); cursor:pointer; }
+.etk-edit-btn:hover { border-color:var(--ink); }
+.etk-queue-item-head .etk-queue-item-crew { margin-left:auto; }
+.etk-queue-item-head .etk-queue-item-crew + .etk-edit-btn { margin-left:0; }
+.crew-confirm-overlay { z-index:700; }   /* dialogs sit above the phone's bottom tab bar */
+.etk-edit-box { max-width:520px; max-height:calc(100dvh - 32px); overflow-y:auto; border-top-color:#0E7490; }
+.etk-edit-rows { display:flex; flex-direction:column; margin-bottom:var(--s-3); }
+.etk-edit-row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--s-2) var(--s-3); padding:var(--s-3) 0; border-top:1px solid var(--border); }
+.etk-edit-key { display:flex; flex-direction:column; gap:2px; min-width:120px; font-family:var(--f-mono); font-size:13px; color:var(--tx-primary); }
+.etk-edit-key b { font-weight:800; }
+.etk-edit-kind { color:var(--tx-secondary); font-size:12px; }
+.etk-edit-empty { color:var(--tx-secondary); font-style:italic; }
+.etk-edit-pend { font-size:12px; font-weight:700; color:#B45309; }
+html.etk-dark .etk-edit-pend { color:#F5A524; }
+.etk-edit-ctrl { display:flex; align-items:center; gap:var(--s-3); }
+.etk-edit-sel { min-height:44px; min-width:170px; padding:0 var(--s-2); font-family:var(--f-mono); font-size:14px; color:var(--tx-primary); background:var(--surface); border:1px solid var(--border-strong); }
+.etk-edit-latch { display:flex; align-items:center; gap:6px; min-height:44px; font-family:var(--f-mono); font-size:13px; font-weight:700; color:var(--tx-primary); }
+.etk-edit-latch input { width:20px; height:20px; }
+.etk-edit-latch input:disabled + * , .etk-edit-latch:has(input:disabled) { opacity:.55; }
+.etk-edit-err { min-height:1em; margin-bottom:var(--s-2); font-family:var(--f-mono); font-size:13px; font-weight:700; color:#B91C1C; }
+html.etk-dark .etk-edit-err { color:#F87171; }
+.crew-picker-opt.blank { background:var(--surface); color:var(--tx-primary); border:2px dashed var(--border-strong); }
+.crew-picker-opt.blank.active { border-style:solid; border-color:#B45309; }
 </style>
 </head>
 <body>
@@ -5739,7 +5765,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.13';
+const ETK_BUILD='2026-09-30.14';
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
@@ -5896,7 +5922,7 @@ function etkCheckAlerts(pack){
   const n=bps.filter(bp=>etkPackKeys(pack.reqs[bp], pack.claims[bp]).some(k=>k.pend)).length;
   document.title = n ? `(${n}) ${ETK_TITLE}` : ETK_TITLE;
   const open=[];
-  Object.keys(pack.reqs).forEach(bp=>{ const c=pack.claims[bp]; if(!c) return; pack.reqs[bp].forEach(r=>{ if(r.status==='open' && r.created_at>=c.claimed_at) open.push({r,bp,claim:c}); }); });
+  Object.keys(pack.reqs).forEach(bp=>{ const c=pack.claims[bp]; if(!c) return; pack.reqs[bp].forEach(r=>{ if(r.status==='open' && r.requester_role!=='tm' && r.created_at>=c.claimed_at) open.push({r,bp,claim:c}); }); });
   const fresh=_etkSeenOpen ? open.filter(o=>!_etkSeenOpen.has(o.r.id)) : [];
   _etkSeenOpen=new Set(open.map(o=>o.r.id));
   if(!fresh.length || !_etkAlertsOn) return;
@@ -6333,6 +6359,7 @@ function renderETKQueue(){
       <div class="etk-queue-item-head">
         <div class="etk-queue-item-id">${bp}</div>
         <div class="etk-queue-item-crew">${d.claim?d.claim.crew_name:'Unclaimed'}</div>
+        <button type="button" class="etk-edit-btn" onclick="etkOpenEdit('${bp}')">Edit keys</button>
       </div>
       <div class="crew-bp-column etk-queue-keys">${cells}</div>
       <button class="etk-queue-confirm" onclick="etkConfirmProgrammed('${bp}')">Confirm Programmed</button>
@@ -6351,10 +6378,79 @@ function renderETKGrid(){
       <div class="etk-queue-item-head">
         <div class="etk-queue-item-id">${bp}${etkIsOut(bp)?'<span class="etk-out-badge">Out</span>':''}</div>
         <div class="etk-queue-item-crew">${d.claim?d.claim.crew_name:'Unclaimed'}</div>
+        <button type="button" class="etk-edit-btn" onclick="etkOpenEdit('${bp}')">Edit keys</button>
       </div>
       <div class="crew-bp-column etk-queue-keys">${cells}</div>
     </div>`;
   }).join('');
+}
+
+/* ── TM: edit a pack's keys (for crew who don't come to the cart). Goes into Needs Programming. ── */
+function etkOpenEdit(bp){
+  const d=_etkBpData[bp]; if(!d) return;
+  const pk=d.pk || etkPackKeys(d.reqs||[], d.claim);
+  const opt=(cat,sel,l)=>(ETK_OPTIONS[cat]||[]).map(o=>`<option value="${cat}|${etkEsc(o.label)}"${sel===cat+'|'+o.label?' selected':''}>${etkEsc(o.label)}</option>`).join('');
+  const rows=pk.map((k,i)=>{
+    const on=k.on, pend=k.pend;
+    const now = on ? `${etkEsc(on.label)} <span class="etk-edit-kind">${on.category==='PLs'?'PL':'IFB'}${on.latch?' · latch':''}</span>` : '<span class="etk-edit-empty">Empty</span>';
+    const pendTxt = pend ? `<div class="etk-edit-pend">Waiting: ${pend.clear?'Blank':etkEsc(pend.label)+(pend.latch?' · latch':'')}</div>` : '';
+    return `<div class="etk-edit-row" data-i="${i}">
+      <div class="etk-edit-key"><b>Key ${i+1}</b><span class="etk-edit-now">${now}</span>${pendTxt}</div>
+      <div class="etk-edit-ctrl">
+        <select class="etk-edit-sel" aria-label="Key ${i+1}"><option value="">No change</option>${on?'<option value="CLEAR">Blank (clear this key)</option>':''}
+          <optgroup label="Party lines">${opt('PLs')}</optgroup><optgroup label="IFBs">${opt('IFBs')}</optgroup></select>
+        <label class="etk-edit-latch"><input type="checkbox"${on&&on.latch?' checked':''}${on&&on.category==='PLs'?'':' disabled'}> Latch</label>
+      </div></div>`;
+  }).join('');
+  const ov=document.createElement('div'); ov.className='crew-confirm-overlay visible'; ov.id='etk-edit-overlay';
+  ov.innerHTML=`<div class="crew-confirm-box move etk-edit-box" role="dialog" aria-modal="true" aria-labelledby="etk-edit-title">
+    <div class="crew-confirm-title" id="etk-edit-title">Edit ${bp} keys</div>
+    <div class="crew-confirm-sub">${d.claim?etkEsc(d.claim.crew_name):'Unclaimed'} · Changes go to Needs Programming until you confirm them.</div>
+    <div class="etk-edit-rows">${rows}</div>
+    <div class="etk-edit-err" id="etk-edit-err" role="alert"></div>
+    <div class="crew-confirm-btns">
+      <button type="button" class="crew-confirm-btn primary" id="etk-edit-save">Add to Needs Programming</button>
+      <button type="button" class="crew-confirm-btn cancel" id="etk-edit-cancel">Cancel</button>
+    </div></div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+  ov.querySelector('#etk-edit-cancel').onclick=close;
+  // latch only applies to party lines: follow the selection
+  ov.querySelectorAll('.etk-edit-row').forEach(row=>{
+    const sel=row.querySelector('select'), cb=row.querySelector('input'), on=pk[+row.dataset.i].on;
+    sel.addEventListener('change',()=>{ const v=sel.value; const cat = v==='' ? (on&&on.category) : v==='CLEAR' ? null : v.split('|')[0];
+      cb.disabled = cat!=='PLs'; if(cb.disabled) cb.checked=false; else if(v!=='' ) cb.checked=false; else cb.checked=!!(on&&on.latch); });
+  });
+  ov.querySelector('#etk-edit-save').onclick=()=>etkSaveEdit(bp, ov, pk);
+  setTimeout(()=>{ const f=ov.querySelector('select'); if(f) f.focus(); },30);
+}
+async function etkSaveEdit(bp, ov, pk){
+  const err=ov.querySelector('#etk-edit-err'); err.textContent='';
+  const entries=[], final=[];
+  ov.querySelectorAll('.etk-edit-row').forEach(row=>{
+    const i=+row.dataset.i, v=row.querySelector('select').value, latch=row.querySelector('input').checked, on=pk[i].on;
+    if(v==='CLEAR'){ entries.push({keyIndex:i, label:'Key '+(i+1), note:'CLEAR'}); final.push(null); return; }
+    if(v===''){                                  // no new value: maybe just the latch changed
+      if(on && on.category==='PLs' && !!on.latch!==latch) entries.push(Object.assign({keyIndex:i, label:'Key '+(i+1), note:on.label+' (PL)'}, latch?{latch:true}:{}));
+      final.push(on?on.category+'|'+on.label:null); return;
+    }
+    const [cat,label]=v.split('|');
+    if(on && on.category===cat && on.label===label && !!on.latch===(cat==='PLs'&&latch)){ final.push(v); return; }   // same as now
+    entries.push(Object.assign({keyIndex:i, label:'Key '+(i+1), note:label+' ('+(cat==='PLs'?'PL':'IFB')+')'}, cat==='PLs'&&latch?{latch:true}:{}));
+    final.push(v);
+  });
+  const dup=final.filter(Boolean).find((v,i,a)=>a.indexOf(v)!==i);
+  if(dup){ err.textContent=`${dup.split('|')[1]} would be on two keys. Pick something else, or set one to Blank.`; return; }
+  if(!entries.length){ err.textContent='Nothing changed.'; return; }
+  const btn=ov.querySelector('#etk-edit-save'); btn.disabled=true; btn.textContent='Adding…';
+  const {error}=await SUPA.from('key_requests').insert({device_id:bp, production_id:'ETK', key_type:'change', requester_role:'tm', status:'open',
+    description:`TM edit · ${bp} — ${entries.length} key${entries.length===1?'':'s'}`, note:JSON.stringify(entries)});
+  if(error){ btn.disabled=false; btn.textContent='Add to Needs Programming';
+    err.textContent = (error.code==='42501'||/row-level security/i.test(error.message||'')) ? 'The database didn’t allow this yet. Run the TM-edit SQL, then try again.' : 'Couldn’t save. Check the connection and try again.';
+    if(etkNetErr(error)) etkSetOnline(false); return; }
+  ov.remove(); toast(`${bp}: ${entries.length} change${entries.length===1?'':'s'} added to Needs Programming`,'success');
+  await renderETKBeltpackStatus();
 }
 
 function etkToggleAllSection(){
@@ -6371,10 +6467,9 @@ async function etkConfirmProgrammed(bp){
   const item=document.getElementById('etk-queue-item-'+bp);
   if(item) item.classList.add('leaving');
   const claim=_etkBpData[bp]&&_etkBpData[bp].claim;
-  if(!claim){ if(item) item.classList.remove('leaving'); toast(bp+' isn’t claimed right now','danger'); await renderETKBeltpackStatus(); return; }
   // Confirm exactly the requests the queue is showing (by id). Letting the database compare
   // times itself can disagree with the queue, because claim and request times come from different clocks.
-  const ids=(_etkBpData[bp].reqs||[]).filter(r=>r.status==='open' && r.created_at>=claim.claimed_at).map(r=>r.id);
+  const ids=(_etkBpData[bp].reqs||[]).filter(r=>etkCountsAsPending(r, claim)).map(r=>r.id);
   if(!ids.length){ if(item) item.classList.remove('leaving'); toast(bp+': nothing waiting to confirm — refreshing','danger'); await renderETKBeltpackStatus(); return; }
   const {data,error}=await SUPA.from('key_requests').update({status:'fulfilled'})
     .in('id',ids).eq('status','open')
@@ -6528,7 +6623,7 @@ function etkPackKeys(rows, claim){
       else { const parsed=etkParseRequestNote(en.note); if(!parsed||parsed.clear) return;
              v={label:parsed.label, category:parsed.category, latch:!!en.latch && parsed.category==='PLs', parsed}; }
       if(r.status==='fulfilled'){ k.on = v.clear ? null : v; k.onAt = r.created_at; }
-      else if(r.status==='open' && claim && r.created_at >= claim.claimed_at){ k.pend = v; k.pendAt = r.created_at; }
+      else if(r.status==='open' && etkCountsAsPending(r, claim)){ k.pend = v; k.pendAt = r.created_at; }
     });
   });
   keys.forEach(k=>{
@@ -6538,11 +6633,14 @@ function etkPackKeys(rows, claim){
   });
   return keys;
 }
+/* A request is pending if it's open and either made by a TM (about the hardware, whoever holds it)
+   or made by the pack's current holder since they claimed it */
+const etkCountsAsPending = (r, claim) => r.status==='open' && (r.requester_role==='tm' || (!!claim && r.created_at >= claim.claimed_at));
 async function etkLoadPackData(){
   const [claimsRes, reqRes] = await Promise.all([
     SUPA.from('device_claims').select('device_id,crew_name,status,claimed_at').eq('production_id','ETK').eq('device_type','beltpack')
       .not('status','in','(cancelled,denied,released)'),
-    SUPA.from('key_requests').select('id,device_id,status,note,created_at').eq('production_id','ETK')
+    SUPA.from('key_requests').select('id,device_id,status,note,created_at,requester_role').eq('production_id','ETK')
       .in('status',['open','fulfilled']).order('created_at',{ascending:true})
   ]);
   const claims={}, reqs={};
@@ -7068,7 +7166,7 @@ async function crewLoadDevices(quiet){
       const [cl, rq] = await Promise.all([
         SUPA.from('device_claims').select('device_id,crew_name,claimed_at')
           .eq('production_id',_crewProdId).eq('device_type','beltpack').in('status',['pending','confirmed']),
-        SUPA.from('key_requests').select('device_id,status,note,created_at')
+        SUPA.from('key_requests').select('device_id,status,note,created_at,requester_role')
           .eq('production_id',_crewProdId).in('status',['open','fulfilled']).order('created_at',{ascending:true})
       ]);
       if(cl.data) cl.data.forEach(r=>{ if(!takenBy[r.device_id] || r.claimed_at>takenBy[r.device_id].claimed_at) takenBy[r.device_id]=r; });
@@ -7376,7 +7474,7 @@ async function crewRenderSchematic(silent=false){
   // ETK build: the pack's real keys (confirmed history across holders) plus this holder's
   // pending changes. Kept separate from _crewKeyNotes so it isn't re-submitted on its own.
   if(SUPA){
-    const {data:reqs}=await SUPA.from('key_requests').select('note,status,created_at')
+    const {data:reqs}=await SUPA.from('key_requests').select('note,status,created_at,requester_role')
       .eq('device_id',_crewClaim.device_id).eq('production_id',_crewClaim.production_id)
       .in('status',['open','fulfilled']).order('created_at',{ascending:true});
     etkPackKeys(reqs||[], _crewClaim).forEach((k,i)=>{
@@ -7450,7 +7548,7 @@ function crewFindKeyHolding(cat,label,exceptIdx){
 }
 function crewCellState(idx,k){
   const label=crewKeyLabel(k);
-  if(_crewKeyNotes[idx]&&_crewKeyNotes[idx].clear) return {cellStyle:'', nameStyle:'', displayLabel:'Empty', isEmpty:true, hasColor:false};
+  if(_crewKeyNotes[idx]&&_crewKeyNotes[idx].clear) return {cellStyle:'', nameStyle:'', displayLabel:'Blank', isEmpty:true, hasColor:false};
   const req=_crewKeyNotes[idx]||_crewCurrentKeyState[idx];
   const reqOpt=(req&&typeof req==='object')?(etkFindOption(req.category,req.label)||{label:req.label,bg:[120,120,120],fg:[255,255,255]}):null;
   if(reqOpt){
@@ -7529,6 +7627,10 @@ function crewOptionPickerHTML(idx){
       </div>${latch}`;
   }
   let html=`<div class="crew-picker-zone-label">${keyLabel} — pick one</div>`;
+  const noteNow=_crewKeyNotes[idx], blanking=!!(noteNow&&noteNow.clear);
+  if(_crewCurrentKeyState[idx] || (noteNow && !noteNow.clear) || blanking){   // only when there's something to clear
+    html+=`<div class="crew-picker-grid"><button type="button" class="crew-picker-opt blank${blanking?' active':''}" onclick="crewPickBlank(${idx})">Blank<span class="crew-picker-opt-sub">${blanking?'Tap again to undo':'Clear this key'}</span></button></div>`;
+  }
   Object.entries(ETK_OPTIONS).forEach(([cat,opts])=>{
     html+=`<div class="crew-picker-cat-label">${cat}</div><div class="crew-picker-grid">`;
     opts.forEach(o=>{
@@ -7566,6 +7668,17 @@ function crewPromptMove(idx,cat,label,fromIdx){
   ov.querySelector('.cancel').onclick=close;
   ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
   ov.querySelector('.primary').onclick=()=>{ close(); crewMoveOption(idx,cat,label,fromIdx); };
+}
+function crewPickBlank(idx){
+  const n=_crewKeyNotes[idx];
+  if(n && n.clear) delete _crewKeyNotes[idx];               // tapped again: undo
+  else if(_crewCurrentKeyState[idx]) _crewKeyNotes[idx]={clear:true};   // clear what's on the pack
+  else delete _crewKeyNotes[idx];                           // only an unsent pick: just drop it
+  _crewPickerForceOpen[idx]=false;
+  crewUpdateCellDisplay(idx);
+  const zone=document.getElementById('crew-picker-zone');
+  if(zone) zone.innerHTML=crewOptionPickerHTML(idx);
+  crewUpdateSubmitBar();
 }
 function crewToggleLatch(idx){
   const cur=crewEffectiveKey(idx); if(!cur || cur.category!=='PLs') return;
