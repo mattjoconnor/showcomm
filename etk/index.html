@@ -396,6 +396,7 @@ body { background:var(--bg); color:var(--black); }
 .tm-alerts-btn.on { color:#fff; border-color:#F59E0B; }
 .etk-cart-frame { display:block; width:100%; border:0; background:var(--bg); }
 .wm-home { text-decoration:none; color:#fff; cursor:pointer; }
+.etk-build { margin:18px 0 0; font-family:var(--f-mono); font-size:var(--t-micro); color:var(--tx-tertiary); }
 /* TM header on phones: controls on top, tabs as their own scrollable row */
 @media (max-width:700px){
   #tm-ribbon { height:auto; flex-wrap:wrap; }
@@ -5521,6 +5522,7 @@ function renderTMBeltpacks(){
 // green (programmed/fulfilled), red (change requested after programming).
 // Sourced from device_claims + key_requests, not the legacy assignment blob.
 let _etkBpData={};
+const ETK_BUILD='2026-09-30.4';   // shown in Settings so we can tell which version a device is running
 /* New-request alerts: chime, "(n) ShowComm TM" in the tab title, and desktop popups */
 const ETK_TITLE='ShowComm TM';
 let _etkSeenOpen=null, _etkAudio=null;
@@ -5939,7 +5941,8 @@ async function etkConfirmProgrammed(bp){
   }
   if(!data||!data.length){
     if(item) item.classList.remove('leaving');
-    toast(bp+': no open requests found — refreshing','danger');
+    toast(bp+': the database didn’t accept the confirm. Refreshing (build '+ETK_BUILD+')','danger');
+    console.warn('confirm updated 0 rows for', bp, ids);
     await renderETKBeltpackStatus();
     return;
   }
@@ -5989,6 +5992,7 @@ function renderETKSettings(){
       <button class="etk-settings-add" onclick="etkAddOption('IFBs')">+ Add IFB</button>
     </div>
     <button class="etk-settings-save" id="etk-settings-save-btn" onclick="etkSaveSettings()">Save Changes</button>
+    <p class="etk-build">ShowComm ETK · build ${ETK_BUILD}</p>
   </div>`;
   etkRenderSettingsList('PLs');
   etkRenderSettingsList('IFBs');
