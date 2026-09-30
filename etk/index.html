@@ -5817,7 +5817,7 @@ async function renderETKBeltpackStatus(){
       const rec=disp?{parsed:disp.clear?etkParseRequestNote('CLEAR'):disp.parsed, latch:!disp.clear&&!!disp.latch}:null;
       return {rec,urg};
     });
-    _etkBpData[bp]={urgency, keys:keyList, claim, pk};
+    _etkBpData[bp]={urgency, keys:keyList, claim, pk, reqs:pack.reqs[bp]||[]};
   });
   etkCheckAlerts(pack);
   const overdue=bps.filter(etkIsOverdue);
@@ -5925,8 +5925,12 @@ async function etkConfirmProgrammed(bp){
   if(item) item.classList.add('leaving');
   const claim=_etkBpData[bp]&&_etkBpData[bp].claim;
   if(!claim){ if(item) item.classList.remove('leaving'); toast(bp+' isn’t claimed right now','danger'); await renderETKBeltpackStatus(); return; }
+  // Confirm exactly the requests the queue is showing (by id). Letting the database compare
+  // times itself can disagree with the queue, because claim and request times come from different clocks.
+  const ids=(_etkBpData[bp].reqs||[]).filter(r=>r.status==='open' && r.created_at>=claim.claimed_at).map(r=>r.id);
+  if(!ids.length){ if(item) item.classList.remove('leaving'); toast(bp+': nothing waiting to confirm — refreshing','danger'); await renderETKBeltpackStatus(); return; }
   const {data,error}=await SUPA.from('key_requests').update({status:'fulfilled'})
-    .eq('device_id',bp).eq('production_id','ETK').eq('status','open').gte('created_at',claim.claimed_at)
+    .in('id',ids).eq('status','open')
     .select('id');
   if(error){
     if(item) item.classList.remove('leaving');
