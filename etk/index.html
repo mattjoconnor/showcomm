@@ -5290,6 +5290,20 @@ async function initTMApp(){
   etkRequestWakeLock(); // TM deploy station is a kiosk too
   document.title = ETK_TITLE;
   setTimeout(()=>{ etkAlertsLabel(); etkAlertTick(); if(_etkAlertsOn) etkPushSubscribe(); etkLoadMessages().then(()=>{ if(/#messages/.test(location.hash)) setTMView('messages'); }); }, 0);
+  // On Android an installed app shares its login with Chrome: if another tab signs in as someone
+  // else, this dashboard would keep showing the old name while acting as the new one. Catch it and reload.
+  try{
+    if(!window._etkAuthWatch && SUPA.auth.onAuthStateChange){
+      window._etkAuthWatch=true;
+      SUPA.auth.onAuthStateChange((ev, session)=>{
+        const id=session&&session.user&&session.user.id;
+        if(_tmMode && _currentUser && id!==_currentUser.id){
+          toast(id?'Signed in as a different account in another tab. Reloading…':'Signed out in another tab. Reloading…','info');
+          setTimeout(()=>location.reload(), 1500);
+        }
+      });
+    }
+  }catch(e){ console.warn('auth watch:', e); }
   // Chat listens on its own connection, so a chat problem can never interrupt claims and key requests
   try{
     (SUPA.getChannels?SUPA.getChannels():[]).filter(c=>c.topic==='realtime:showcomm-tm-chat').forEach(c=>SUPA.removeChannel(c));
@@ -5547,7 +5561,7 @@ function renderTMBeltpacks(){
 // green (programmed/fulfilled), red (change requested after programming).
 // Sourced from device_claims + key_requests, not the legacy assignment blob.
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.7';   // shown in Settings so we can tell which version a device is running
+const ETK_BUILD='2026-09-30.8';   // shown in Settings so we can tell which version a device is running
 /* New-request alerts: chime, "(n) ShowComm TM" in the tab title, and desktop popups */
 const ETK_TITLE='ShowComm TM';
 let _etkSeenOpen=null, _etkAudio=null;
@@ -5738,7 +5752,11 @@ async function etkSendMessage(){
   const {data,error}=await SUPA.from('messages').insert({production_id:'ETK', sender_id:_currentUser.id, sender_role:role,
     sender_name: role==='admin' ? ((_currentProfile&&_currentProfile.display_name)||'Matt') : 'TM', body:text}).select().single();
   btn.disabled=false;
-  if(error){ toast('Message not sent — check the connection and try again','danger'); console.warn('send:', error); return; }
+  if(error){
+    const rls = error.code==='42501' || /row-level security/i.test(error.message||'');
+    toast(rls ? 'Message not sent: this device is signed in as a different account. Reload and sign in again.' : 'Message not sent — check the connection and try again','danger');
+    console.warn('send:', error); return;
+  }
   ta.value=''; ta.style.height='auto'; ta.focus();
   etkReceiveMessage(data);
 }
