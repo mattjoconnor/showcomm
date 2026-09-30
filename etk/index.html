@@ -1283,6 +1283,39 @@ html.etk-dark .etk-settings-remove { color:#F87171; border-color:rgba(248,113,11
 @media (prefers-reduced-motion: reduce){
   *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
 }
+
+/* ── PHONE NAVIGATION: one-row header, bottom tab bar ── */
+.rt-ico, .al-ico, .tm-more-btn, .tm-more-sheet, .etk-signout-phone { display:none; }
+.al-ico { position:relative; }
+.al-push { position:absolute; top:1px; right:-1px; width:8px; height:8px; border-radius:50%; background:#22AA66; box-shadow:0 0 0 2px #111; }
+@media (max-width:700px){
+  #tm-ribbon { flex-wrap:nowrap; height:56px; padding-top:env(safe-area-inset-top,0px); }
+  #tm-ribbon .r-brand { height:56px; }
+  #tm-ribbon .r-right { order:2; margin-left:auto; height:56px; gap:10px !important; padding:0 var(--s-3); }
+  #tm-alerts-btn { width:44px; height:40px; min-height:40px; padding:0; display:flex; align-items:center; justify-content:center; }
+  #tm-alerts-btn .al-ico { display:block; line-height:0; }
+  #tm-alerts-btn .al-txt { display:none; }
+  #tm-live-text, #btn-tm-logout { display:none; }
+  #tm-live-dot { width:10px !important; height:10px !important; }
+  /* the tab row becomes a bar pinned to the bottom */
+  #tm-ribbon .r-nav { position:fixed; left:0; right:0; bottom:0; z-index:600; display:flex; overflow:visible; background:#111; border-top:1px solid #2a2a2a; padding-bottom:env(safe-area-inset-bottom,0px); -webkit-mask-image:none !important; mask-image:none !important; }
+  #tm-ribbon .ribbon-tab, #tm-ribbon .tm-more-btn { flex:1 1 0; min-width:0; min-height:62px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:6px 2px; font-family:var(--f-ui); font-size:12px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:rgba(255,255,255,.72); background:none; border:none; border-right:none; position:relative; cursor:pointer; }
+  #tm-ribbon .ribbon-tab[data-view="cart"], #tm-ribbon .ribbon-tab[data-view="settings"] { display:none; }
+  #tm-ribbon .rt-ico { display:block; line-height:0; }
+  #tm-ribbon .rt-label { white-space:nowrap; }
+  #tm-ribbon .ribbon-tab.active, #tm-ribbon .tm-more-btn.active { color:#fff; background:#1d1d1d; }
+  #tm-ribbon .ribbon-tab.active::after, #tm-ribbon .tm-more-btn.active::after { content:''; position:absolute; top:0; bottom:auto; left:18%; right:18%; height:3px; background:var(--green); }
+  #tm-ribbon .etk-msg-badge { position:absolute; top:6px; left:calc(50% + 6px); margin:0; }
+  .tm-more-btn { display:flex; }
+  .tm-more-sheet { position:fixed; right:8px; bottom:calc(70px + env(safe-area-inset-bottom,0px)); z-index:610; display:none; flex-direction:column; min-width:200px; background:#1c1c1c; border:1px solid #333; box-shadow:0 12px 32px rgba(0,0,0,.4); }
+  .tm-more-sheet.open { display:flex; }
+  .tm-more-sheet button { display:flex; align-items:center; gap:12px; min-height:52px; padding:0 var(--s-4); background:none; border:none; border-bottom:1px solid #2a2a2a; color:#fff; font-family:var(--f-ui); font-size:15px; font-weight:700; text-align:left; cursor:pointer; }
+  .tm-more-sheet button:last-child { border-bottom:none; }
+  .tm-body { padding-bottom:calc(66px + env(safe-area-inset-bottom,0px)); }
+  .toast-stack { top:calc(56px + env(safe-area-inset-top,0px)); }
+  .etk-update { bottom:calc(76px + env(safe-area-inset-bottom,0px)); }
+  .etk-signout-phone { display:block; width:100%; min-height:48px; margin-top:var(--s-4); font-family:var(--f-mono); font-size:13px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:none; color:var(--tx-primary); border:1px solid var(--border-strong); cursor:pointer; }
+}
 </style>
 </head>
 <body>
@@ -5435,10 +5468,21 @@ async function initTMApp(){
   const rnav=document.createElement('nav'); rnav.className='r-nav'; rnav.id='tm-prod-tabs';
   ['Beltpacks','Messages','Channels','Deploy','Cart','Settings'].forEach(label=>{
     const btn=document.createElement('button');
-    btn.className='ribbon-tab'; btn.textContent=label; btn.dataset.view=label.toLowerCase();
+    btn.className='ribbon-tab'; btn.dataset.view=label.toLowerCase();
+    btn.innerHTML=`<span class="rt-ico">${ETK_ICONS[label.toLowerCase()]||''}</span><span class="rt-label">${label}</span>`;
     btn.addEventListener('click',()=>setTMView(label.toLowerCase()));
     rnav.appendChild(btn);
   });
+  // phones: Cart and Settings live behind More (the bottom bar has room for five)
+  const more=document.createElement('button'); more.type='button'; more.id='tm-more-btn'; more.className='tm-more-btn'; more.setAttribute('aria-expanded','false');
+  more.innerHTML=`<span class="rt-ico">${ETK_ICONS.more}</span><span class="rt-label">More</span>`;
+  more.addEventListener('click',()=>etkToggleMore());
+  rnav.appendChild(more);
+  if(!document.getElementById('tm-more-sheet')){
+    const sheet=document.createElement('div'); sheet.id='tm-more-sheet'; sheet.className='tm-more-sheet';
+    sheet.innerHTML=['cart','settings'].map(v=>`<button type="button" data-view="${v}" onclick="etkToggleMore(false); setTMView('${v}')">${ETK_ICONS[v]}<span>${v==='cart'?'Cart':'Settings'}</span></button>`).join('');
+    document.body.appendChild(sheet);
+  }
   ribbon.appendChild(rnav);
   const rright=document.createElement('div'); rright.className='r-right';
   rright.style.cssText='display:flex;align-items:center;gap:12px;';
@@ -5533,6 +5577,7 @@ function setTMView(view){
   if(ribbon) ribbon.querySelectorAll('.ribbon-tab').forEach(b=>{
     b.classList.toggle('active', (b.dataset.view||b.textContent.toLowerCase())===view);   // data-view: a badge can't break it
   });
+  { const mb=document.getElementById('tm-more-btn'); if(mb) mb.classList.toggle('active', view==='cart'||view==='settings'); }
   if(ribbon){ const act=ribbon.querySelector('.ribbon-tab.active'); if(act && act.scrollIntoView) act.scrollIntoView({block:'nearest', inline:'nearest', behavior: etkCalm()?'auto':'smooth'}); if(!ribbon.dataset.fadeHook){ ribbon.dataset.fadeHook='1'; ribbon.addEventListener('scroll', etkNavFade, {passive:true}); } setTimeout(etkNavFade, 350); }
   etkViewEnter();
   const body=document.getElementById('tm-body'); if(!body) return;
@@ -5672,8 +5717,29 @@ function renderTMBeltpacks(){
 // ETK build: live beltpack status board — orange (needs programming),
 // green (programmed/fulfilled), red (change requested after programming).
 // Sourced from device_claims + key_requests, not the legacy assignment blob.
+
+/* Tab and header icons (shown on phones; stroke uses the text color) */
+const ETK_ICON = (d) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ETK_ICONS = {
+  beltpacks: ETK_ICON('<rect x="6" y="7" width="12" height="14" rx="2"/><path d="M9 7V3"/><path d="M9.5 12h5M9.5 15.5h5"/>'),
+  messages:  ETK_ICON('<path d="M4 5h16v11H9l-5 4z"/>'),
+  channels:  ETK_ICON('<path d="M4 7h16M4 12h16M4 17h16"/><circle cx="8" cy="7" r="1.2" fill="currentColor"/><circle cx="14" cy="12" r="1.2" fill="currentColor"/><circle cx="10" cy="17" r="1.2" fill="currentColor"/>'),
+  deploy:    ETK_ICON('<path d="M4 14v5h16v-5"/><path d="M12 15V4"/><path d="M8 8l4-4 4 4"/>'),
+  cart:      ETK_ICON('<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6"/><circle cx="12" cy="17" r="1"/>'),
+  settings:  ETK_ICON('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'),
+  more:      ETK_ICON('<circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/>'),
+  bell:      ETK_ICON('<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>'),
+  bellOff:   ETK_ICON('<path d="M6 16V11a6 6 0 0 1 9.5-4.9M18 11v5l2 2H4"/><path d="M10 20a2 2 0 0 0 4 0"/><path d="M3 3l18 18"/>')
+};
+function etkToggleMore(open){
+  const sh=document.getElementById('tm-more-sheet'); if(!sh) return;
+  const show = open===undefined ? !sh.classList.contains('open') : open;
+  sh.classList.toggle('open', show);
+  const mb=document.getElementById('tm-more-btn'); if(mb) mb.setAttribute('aria-expanded', show);
+}
+document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.12';
+const ETK_BUILD='2026-09-30.13';
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
@@ -5789,7 +5855,9 @@ function etkAlertsLabel(){
   const b=document.getElementById('tm-alerts-btn'); if(!b) return;
   const perm=('Notification' in window)?Notification.permission:'unsupported';
   b.classList.toggle('on',_etkAlertsOn);
-  b.textContent = !_etkAlertsOn ? 'Alerts off' : (perm==='default' ? 'Allow popups' : (_etkPushOn ? 'Alerts on · push' : 'Alerts on'));
+  const txt = !_etkAlertsOn ? 'Alerts off' : (perm==='default' ? 'Allow popups' : (_etkPushOn ? 'Alerts on · push' : 'Alerts on'));
+  b.innerHTML = `<span class="al-ico">${_etkAlertsOn?ETK_ICONS.bell:ETK_ICONS.bellOff}${_etkPushOn&&_etkAlertsOn?'<i class="al-push"></i>':''}</span><span class="al-txt">${txt}</span>`;
+  b.setAttribute('aria-label', txt);
   b.title = _etkPushOn ? 'Sound, popups, and push to this device even when it’s locked' : perm==='granted' ? 'Sound and desktop popups for new requests' : perm==='denied' ? 'Sound only: popups are blocked in this browser’s site settings' : 'Sound for new requests. Click to also allow desktop popups.';
 }
 /* Push to locked phones: this device registers with ShowPoint's worker and is saved so the
@@ -5893,7 +5961,8 @@ function etkUnread(){ const lr=etkLastRead(); return _etkMsgs.filter(m=>m.sender
 function etkMsgBadge(){
   const tab=[...document.querySelectorAll('#tm-prod-tabs .ribbon-tab')].find(t=>t.dataset.view==='messages'||/^Messages/.test(t.textContent));
   if(!tab) return; const n=etkUnread();
-  tab.innerHTML = n ? `Messages <span class="etk-msg-badge">${n}</span>` : 'Messages';
+  const lab=tab.querySelector('.rt-label')||tab;
+  lab.innerHTML = n ? `Messages <span class="etk-msg-badge">${n}</span>` : 'Messages';
 }
 async function etkLoadMessages(){
   if(!SUPA) return;
@@ -5949,7 +6018,7 @@ async function renderETKMessages(){
 }
 function etkSizeMessages(){
   const w=document.getElementById('etk-msgs'); if(!w) return;
-  w.style.height=Math.max(360, window.innerHeight - w.getBoundingClientRect().top - 4)+'px';
+  w.style.height=Math.max(320, window.innerHeight - w.getBoundingClientRect().top - etkBottomBar() - 4)+'px';
 }
 addEventListener('resize', etkSizeMessages);
 async function etkSendMessage(){
@@ -5972,6 +6041,10 @@ document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState=
 // a tapped chat notification opens the Messages tab
 if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e=>{ if(e.data && e.data.type==='open' && /#messages/.test(e.data.url||'') && _tmMode) setTMView('messages'); });
 
+function etkBottomBar(){   // height of the phone's bottom tab bar (0 on laptops)
+  const n=document.getElementById('tm-prod-tabs');
+  return n && getComputedStyle(n).position==='fixed' ? n.getBoundingClientRect().height : 0;
+}
 function renderETKCart(){
   const body=document.getElementById('tm-body'); if(!body) return;
   body.innerHTML=`<iframe id="etk-cart-frame" class="etk-cart-frame" src="index.html?role=crew&embed=1" title="Crew cart"></iframe>`;
@@ -5979,7 +6052,7 @@ function renderETKCart(){
 }
 function etkSizeCart(){
   const f=document.getElementById('etk-cart-frame'); if(!f) return;
-  f.style.height=Math.max(480, window.innerHeight - f.getBoundingClientRect().top - 8)+'px';
+  f.style.height=Math.max(420, window.innerHeight - f.getBoundingClientRect().top - etkBottomBar() - 8)+'px';
 }
 addEventListener('resize', etkSizeCart);
 
@@ -6122,6 +6195,7 @@ function etkSetLiveIndicator(status){
   const s=map[status]||{color:'rgba(255,255,255,.25)',text:'Connecting…'};
   dot.style.background=s.color;
   text.textContent=s.text;
+  const ind=document.getElementById('tm-live-indicator'); if(ind){ ind.title=s.text; ind.setAttribute('aria-label', s.text); }
 }
 const _etkUrgencyColors={orange:'#F59E0B',green:'#10B981',red:'#DC2626',neutral:'#aaa'};
 const _etkUrgencyRank={red:3,orange:2,green:1,neutral:0};
@@ -6363,6 +6437,7 @@ function renderETKSettings(){
       <button class="etk-settings-add" onclick="etkAddOption('IFBs')">+ Add IFB</button>
     </div>
     <button class="etk-settings-save" id="etk-settings-save-btn" onclick="etkSaveSettings()">Save Changes</button>
+    <button type="button" class="etk-signout-phone" onclick="doLogout()">Sign out</button>
     <p class="etk-build">ShowComm ETK · build ${ETK_BUILD}</p>
   </div>`;
   etkRenderSettingsList('PLs');
