@@ -1354,6 +1354,8 @@ html.etk-dark .etk-edit-pend { color:#F5A524; }
 .etk-edit-latch input:disabled + * , .etk-edit-latch:has(input:disabled) { opacity:.55; }
 .etk-edit-err { min-height:1em; margin-bottom:var(--s-2); font-family:var(--f-mono); font-size:13px; font-weight:700; color:#B91C1C; }
 html.etk-dark .etk-edit-err { color:#F87171; }
+.crew-blank-btn { display:flex; align-items:center; gap:10px; width:100%; min-height:52px; margin-top:8px; padding:0 14px; background:var(--surface); border:2px dashed var(--border-strong); font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-primary); cursor:pointer; text-align:left; }
+.crew-blank-hint { margin-left:auto; font-weight:600; text-transform:none; letter-spacing:0; color:var(--tx-secondary); }
 .crew-picker-opt.blank { background:var(--surface); color:var(--tx-primary); border:2px dashed var(--border-strong); }
 .crew-picker-opt.blank.active { border-style:solid; border-color:#B45309; }
 </style>
@@ -5787,7 +5789,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.15'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.16'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
@@ -7646,7 +7648,8 @@ function crewOptionPickerHTML(idx){
       <div class="crew-picker-selected" onclick="crewExpandPicker(${idx})">
         <span>Current: ${current.label} (${current.category.replace(/s$/,'')})</span>
         <span class="crew-picker-change-btn">CHANGE</span>
-      </div>${latch}`;
+      </div>
+      <button type="button" class="crew-blank-btn" onclick="crewPickBlank(${idx})">Blank<span class="crew-blank-hint">Clear this key</span></button>${latch}`;
   }
   let html=`<div class="crew-picker-zone-label">${keyLabel} — pick one</div>`;
   const noteNow=_crewKeyNotes[idx], blanking=!!(noteNow&&noteNow.clear);
