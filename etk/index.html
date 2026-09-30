@@ -410,6 +410,11 @@ body { background:var(--bg); color:var(--black); }
 .etk-msg-compose textarea { flex:1; min-height:46px; max-height:140px; resize:none; padding:12px; font-family:var(--f-ui); font-size:16px; line-height:1.35; color:var(--tx-primary); background:var(--bg); border:1px solid var(--border-md); border-radius:0; }
 .etk-msg-compose button { min-height:46px; padding:0 18px; font-family:var(--f-mono); font-size:12px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; background:#111; color:#fff; border:none; cursor:pointer; }
 .etk-msg-compose button:disabled { opacity:.5; }
+.etk-conn-banner { position:fixed; left:0; right:0; top:0; z-index:9000; padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px; font-family:var(--f-ui); font-size:clamp(14px,1.3vw,16px); font-weight:700; text-align:center; color:#fff; transform:translateY(-100%); transition:transform .25s ease; pointer-events:none; }
+.etk-conn-banner.show { transform:none; }
+.etk-conn-banner.off { background:#DC2626; }
+.etk-conn-banner.on { background:#16A34A; }
+.crew-build { margin:22px 0 0; text-align:center; font-family:var(--f-mono); font-size:10px; letter-spacing:.06em; color:var(--tx-tertiary); opacity:.7; }
 .etk-build { margin:18px 0 0; font-family:var(--f-mono); font-size:var(--t-micro); color:var(--tx-tertiary); }
 /* TM header on phones: controls on top, tabs as their own scrollable row */
 @media (max-width:700px){
@@ -5289,6 +5294,7 @@ async function initTMApp(){
   etkStartPolling(); // safety net in case the realtime connection silently drops
   etkRequestWakeLock(); // TM deploy station is a kiosk too
   document.title = ETK_TITLE;
+  etkStartConnWatch();
   setTimeout(()=>{ etkAlertsLabel(); etkAlertTick(); if(_etkAlertsOn) etkPushSubscribe(); etkLoadMessages().then(()=>{ if(/#messages/.test(location.hash)) setTMView('messages'); }); }, 0);
   // On Android an installed app shares its login with Chrome: if another tab signs in as someone
   // else, this dashboard would keep showing the old name while acting as the new one. Catch it and reload.
@@ -5561,7 +5567,63 @@ function renderTMBeltpacks(){
 // green (programmed/fulfilled), red (change requested after programming).
 // Sourced from device_claims + key_requests, not the legacy assignment blob.
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.8';   // shown in Settings so we can tell which version a device is running
+const ETK_BUILD='2026-09-30.9';
+/* ── CONNECTION WATCH (cart and TM) ──
+   The device's own online flag misses "Wi-Fi with no internet", so we also check in with the
+   server every 15 s (every 5 s while offline) and treat any failed send as offline. */
+let _etkOnline=true, _etkConnStarted=false;
+const etkNetErr = e => !!e && /failed to fetch|networkerror|network request failed|load failed|fetch failed/i.test(String(e.message||e));
+function etkSetOnline(on){
+  if(on===_etkOnline) return;
+  _etkOnline=on;
+  let b=document.getElementById('etk-conn-banner');
+  if(!b){ b=document.createElement('div'); b.id='etk-conn-banner'; b.setAttribute('role','status'); b.setAttribute('aria-live','polite'); document.body.appendChild(b); }
+  const cart = document.getElementById('screen-crew') && document.getElementById('screen-crew').style.display==='flex';
+  if(!on){
+    b.className='etk-conn-banner off show';
+    b.textContent = cart ? 'No connection. Requests can’t be sent until this iPad is back online.' : 'No connection. The board may be out of date until it reconnects.';
+  } else {
+    b.className='etk-conn-banner on show'; b.textContent='Back online';
+    setTimeout(()=>{ if(_etkOnline) b.className='etk-conn-banner on'; }, 2500);
+    // catch up on anything missed while offline
+    if(typeof _tmMode!=='undefined' && _tmMode){
+      if(_tmActiveView==='beltpacks') renderETKBeltpackStatus(); else if(_tmActiveView==='channels') renderETKChannels(); else if(_tmActiveView==='deploy' && !_etkCustodyPending.size) renderETKDeploy();
+      etkLoadMessages(); etkAlertTick();
+    }
+  }
+  etkApplyConnLock();
+  etkScheduleConnCheck();
+}
+function etkApplyConnLock(){
+  const sub=document.getElementById('crew-submit-btn');
+  if(sub){
+    if(!_etkOnline){ if(sub.textContent!=='Submitting…'){ sub.disabled=true; sub.dataset.offline='1'; sub.textContent='Waiting for connection…'; } }
+    else if(sub.dataset.offline){ delete sub.dataset.offline; crewUpdateSubmitBar(); }
+  }
+  const claim=document.getElementById('btn-crew-claim-submit');
+  if(claim){
+    if(!_etkOnline){ if(claim.textContent!=='Claiming…'){ claim.disabled=true; claim.dataset.offline='1'; claim.textContent='Waiting for connection…'; } }
+    else if(claim.dataset.offline){ delete claim.dataset.offline; claim.disabled=false; claim.textContent='Claim Device'; }
+  }
+}
+async function etkConnCheck(){
+  if(!SUPA) return;
+  if(navigator.onLine===false){ etkSetOnline(false); return; }
+  try{ const {error}=await SUPA.from('etk_options').select('key').limit(1); etkSetOnline(!etkNetErr(error)); }
+  catch(e){ etkSetOnline(!etkNetErr(e)); }
+}
+let _etkConnTimer=null;
+function etkScheduleConnCheck(){
+  clearTimeout(_etkConnTimer);
+  _etkConnTimer=setTimeout(()=>{ if(document.visibilityState==='visible') etkConnCheck(); etkScheduleConnCheck(); }, _etkOnline?15000:5000);
+}
+function etkStartConnWatch(){
+  if(_etkConnStarted) return; _etkConnStarted=true;
+  addEventListener('offline', ()=>etkSetOnline(false));
+  addEventListener('online', ()=>etkConnCheck());
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') etkConnCheck(); });
+  etkScheduleConnCheck();
+}   // shown in Settings so we can tell which version a device is running
 /* New-request alerts: chime, "(n) ShowComm TM" in the tab title, and desktop popups */
 const ETK_TITLE='ShowComm TM';
 let _etkSeenOpen=null, _etkAudio=null;
@@ -6675,6 +6737,9 @@ async function tmSubmitRequest(){
 let _crewClaim=null, _crewProdId=null, _crewDeviceType=null, _crewChannel=null;
 
 async function initCrewApp(){
+  etkStartConnWatch();
+  const step=document.getElementById('crew-step-device');
+  if(step && !document.getElementById('crew-build')) step.insertAdjacentHTML('beforeend','<p id="crew-build" class="crew-build">ETK Cart · build '+ETK_BUILD+'</p>');
   // ETK build: identity is captured after picking a beltpack, not before
   document.getElementById('crew-topbar-name').textContent='—';
   document.getElementById('crew-topbar-pos').textContent='';
@@ -6818,6 +6883,7 @@ document.getElementById('btn-crew-claim-submit').addEventListener('click',async(
   const errEl=$('crew-claim-error');
   if(!name){ errEl.textContent='Enter your name.'; errEl.style.display='block'; return; }
   if(!_crewPendingDeviceId) return;
+  if(!_etkOnline){ errEl.textContent='No connection. Your name is saved; tap Claim once it’s back.'; errEl.style.display='block'; return; }
   const btn=document.getElementById('btn-crew-claim-submit'); btn.textContent='Claiming…'; btn.disabled=true;
   try{
     let profile={display_name:name,position:'',role:'crew'};
@@ -6828,8 +6894,8 @@ document.getElementById('btn-crew-claim-submit').addEventListener('click',async(
     _currentProfile=profile; _currentRole='crew';
     document.getElementById('crew-topbar-name').textContent=name;
     await crewClaimDevice(_crewPendingDeviceId);
-  }catch(err){ errEl.textContent='Error connecting. Try again.'; errEl.style.display='block'; }
-  finally{ btn.textContent='Claim Device'; btn.disabled=false; }
+  }catch(err){ errEl.textContent='Error connecting. Try again.'; errEl.style.display='block'; if(etkNetErr(err)) etkSetOnline(false); }
+  finally{ btn.textContent='Claim Device'; btn.disabled=false; etkApplyConnLock(); }
 });
 $('crew-claim-name').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('btn-crew-claim-submit').click(); });
 
@@ -6858,6 +6924,11 @@ async function crewClaimDevice(deviceId){
     const {data,error}=await SUPA.from('device_claims').insert(claimData).select().single();
     if(error){
       console.error('crewClaimDevice:',error);
+      if(etkNetErr(error)){   // Wi-Fi blip: stay on the form with the name filled in
+        etkSetOnline(false);
+        const ce=document.getElementById('crew-claim-error'); if(ce){ ce.textContent='No connection. Your name is saved; tap Claim once it’s back.'; ce.style.display='block'; }
+        return;
+      }
       crewShowToast(error.code==='23505' ? deviceId+' was just claimed — pick another' : 'Couldn’t claim '+deviceId+' — try again');
       crewReturnToGrid();
       return;
@@ -7313,12 +7384,14 @@ function crewUpdateSubmitBar(){
   }
   if(count) count.textContent=n+' key'+(n!==1?'s':'')+' flagged';
   if(btn){ btn.disabled=false; btn.textContent='Submit Request'; }
+  if(!_etkOnline) etkApplyConnLock();
 }
 
 async function crewSubmitBundle(){
   const notes=_crewKeyNotes;
   const n=Object.keys(notes).length;
   if(!n) return;
+  if(!_etkOnline){ crewShowToast('No connection. Your picks are saved; send them once it’s back.'); etkApplyConnLock(); return; }
   const btn=document.getElementById('crew-submit-btn');
   btn.disabled=true; btn.textContent='Submitting…';
 
@@ -7349,7 +7422,9 @@ async function crewSubmitBundle(){
   }catch(e){
     console.error('crewSubmitBundle:',e);
     btn.disabled=false; btn.textContent='Submit Request';
-    crewShowToast('Couldn’t submit — try again');
+    if(etkNetErr(e)){ etkSetOnline(false); crewShowToast('No connection. Your picks are saved; send them once it’s back.'); }
+    else crewShowToast('Couldn’t submit — try again');
+    etkApplyConnLock();
   }
 }
 
@@ -7436,10 +7511,12 @@ function crewCancelReleaseConfirm(){
 async function crewConfirmRelease(){
   document.getElementById('crew-release-confirm-overlay').classList.remove('visible');
   const deviceId=_crewClaim?.device_id;
+  if(!_etkOnline){ crewShowToast('No connection. '+(deviceId||'This beltpack')+' is still yours; release it once it’s back.'); return; }
   if(_crewClaim&&SUPA&&_crewClaim.id!=='local'){
     const {error}=await SUPA.from('device_claims').update({status:'released'}).eq('id',_crewClaim.id);
     if(error){
       console.error('crewConfirmRelease:',error);
+      if(etkNetErr(error)){ etkSetOnline(false); crewShowToast('No connection. '+(deviceId||'This beltpack')+' is still yours; release it once it’s back.'); return; }
       crewShowToast('Couldn’t release '+(deviceId||'beltpack')+' — try again');
       return;
     }
