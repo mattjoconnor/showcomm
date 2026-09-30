@@ -12,13 +12,18 @@
 <link rel="apple-touch-icon" href="icons/showcomm-apple-180.png">
 <link rel="icon" type="image/png" href="icons/showcomm-favicon-32.png">
 <script>
-/* Home-screen install: the TM dashboard and the crew cart install as two separate apps */
+/* Home-screen install: the TM dashboard is part of ShowPoint; the crew cart installs on its own */
 (function(){
   var q=new URLSearchParams(location.search), crew=q.get('role')==='crew';
   if(q.get('embed')==='1') return;   // the Cart tab inside the TM dashboard isn't its own app
-  var l=document.createElement('link'); l.rel='manifest'; l.href=crew?'manifest-crew.json':'manifest-tm.json'; document.head.appendChild(l);
-  if(crew) document.querySelector('meta[name="apple-mobile-web-app-title"]').setAttribute('content','ETK Cart');
-  if('serviceWorker' in navigator) addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  // The TM dashboard installs as part of ShowPoint (one app for the whole site); the cart stays its own app
+  var l=document.createElement('link'); l.rel='manifest'; l.href=crew?'manifest-crew.json':'/manifest.json'; document.head.appendChild(l);
+  document.querySelector('meta[name="apple-mobile-web-app-title"]').setAttribute('content', crew?'ETK Cart':'ShowPoint');
+  if(!crew) document.querySelector('link[rel="apple-touch-icon"]').setAttribute('href','/icons/showpoint-apple-180.png');
+  if('serviceWorker' in navigator) addEventListener('load', function(){
+    navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ if(r.scope!==location.origin+'/') r.unregister(); }); }).catch(function(){});
+    navigator.serviceWorker.register('/sw.js', {scope:'/'}).catch(function(){});
+  });
 })();
 </script>
 <style id="embedded-fonts">
@@ -390,6 +395,7 @@ body { background:var(--bg); color:var(--black); }
 .tm-alerts-btn { min-height:32px; padding:0 10px; font-family:var(--f-mono); font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; background:transparent; color:rgba(255,255,255,.55); border:1px solid rgba(255,255,255,.25); cursor:pointer; }
 .tm-alerts-btn.on { color:#fff; border-color:#F59E0B; }
 .etk-cart-frame { display:block; width:100%; border:0; background:var(--bg); }
+.wm-home { text-decoration:none; color:#fff; cursor:pointer; }
 /* TM header on phones: controls on top, tabs as their own scrollable row */
 @media (max-width:700px){
   #tm-ribbon { height:auto; flex-wrap:wrap; }
@@ -5279,7 +5285,7 @@ async function initTMApp(){
   // Single ribbon bar — identical to admin
   const ribbon=document.createElement('div');
   ribbon.className='ribbon'; ribbon.id='tm-ribbon';
-  ribbon.innerHTML='<div class="r-brand"><span class="wordmark">ShowComm<span class="wm-dot"></span></span></div>';
+  ribbon.innerHTML='<div class="r-brand"><a class="wordmark wm-home" href="/" title="ShowPoint home">ShowComm<span class="wm-dot"></span></a></div>';
   const rnav=document.createElement('nav'); rnav.className='r-nav'; rnav.id='tm-prod-tabs';
   ['Beltpacks','Channels','Deploy','Cart','Settings'].forEach(label=>{
     const btn=document.createElement('button');
