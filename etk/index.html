@@ -1358,6 +1358,54 @@ html.etk-dark .etk-edit-err { color:#F87171; }
 .crew-blank-hint { margin-left:auto; font-weight:600; text-transform:none; letter-spacing:0; color:var(--tx-secondary); }
 .crew-picker-opt.blank { background:var(--surface); color:var(--tx-primary); border:2px dashed var(--border-strong); }
 .crew-picker-opt.blank.active { border-style:solid; border-color:#B45309; }
+
+/* ── CART ON TABLETS: everything about 30–40% larger for use at arm's length (phones unchanged) ── */
+@media (min-width:700px){
+  #screen-crew .crew-topbar { height:64px; }
+  #screen-crew .crew-topbar-wordmark { font-size:1.25rem; }
+  #screen-crew .crew-topbar-badge { font-size:14px; padding:6px 14px; }
+  #screen-crew .crew-topbar-name { font-size:16px; }
+  #screen-crew .crew-inner { max-width:1100px; padding-left:var(--s-5); padding-right:var(--s-5); }
+  #screen-crew .crew-section-label { font-size:15px; margin-bottom:var(--s-3); }
+  #screen-crew .crew-device-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:14px; }
+  #screen-crew .crew-device-card-id { font-size:1.5rem; }
+  #screen-crew .crew-device-card-status { font-size:15px; }
+  #screen-crew .crew-device-card-state { font-size:13px; padding:3px 9px; }
+  #screen-crew .crew-build { font-size:13px; }
+  #screen-crew .field-label { font-size:15px; }
+  #screen-crew .field-input { font-size:22px; padding:14px 0; }
+  #screen-crew .btn-full { font-size:17px; padding:20px; min-height:64px; }
+  #screen-crew .crew-back-btn { font-size:15px; min-height:48px; }
+  #screen-crew .crew-home-header { padding:var(--s-5); }
+  #screen-crew .crew-home-type { font-size:14px; }
+  #screen-crew .crew-home-device { font-size:3rem; }
+  #screen-crew .crew-home-show { font-size:15px; }
+  #screen-crew .crew-home-badge { font-size:14px; padding:7px 16px; }
+  #screen-crew .crew-keys-label { font-size:15px; }
+  #screen-crew .crew-keys-row button { font-size:14px !important; min-height:44px; padding:0 14px !important; }
+  #screen-crew .crew-key-cell { min-height:150px; padding:var(--s-4); }
+  #screen-crew .crew-key-cell-num { font-size:16px; }
+  #screen-crew .crew-key-cell-name { font-size:1.6rem; }
+  #screen-crew .crew-latch-tag { font-size:12px; }
+  #screen-crew .crew-picker-zone { padding:var(--s-5); }
+  #screen-crew .crew-picker-zone-label, #screen-crew .crew-picker-cat-label { font-size:15px; }
+  #screen-crew .crew-picker-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+  #screen-crew .crew-picker-opt { font-size:22px; min-height:84px; }
+  #screen-crew .crew-picker-opt-sub { font-size:13px; }
+  #screen-crew .crew-picker-selected { font-size:19px; min-height:76px; }
+  #screen-crew .crew-picker-change-btn { font-size:15px; padding:12px 20px; }
+  #screen-crew .crew-latch-btn, #screen-crew .crew-blank-btn { min-height:72px; font-size:17px; }
+  #screen-crew .crew-latch-hint, #screen-crew .crew-blank-hint { font-size:16px; }
+  #screen-crew .crew-latch-box { width:24px; height:24px; }
+  #screen-crew .crew-submit-count { font-size:17px; }
+  #screen-crew .crew-submit-btn { font-size:18px; min-height:72px; padding:20px 56px; }
+  #screen-crew .crew-release-btn { font-size:16px; padding:24px; }
+  #screen-crew #crew-toast { font-size:16px !important; padding:14px 22px !important; bottom:110px !important; }
+  body.crew-mode .crew-confirm-box { max-width:560px; padding:var(--s-6); }
+  body.crew-mode .crew-confirm-title { font-size:22px; }
+  body.crew-mode .crew-confirm-sub { font-size:16px; }
+  body.crew-mode .crew-confirm-btn { font-size:16px; min-height:60px; }
+}
 </style>
 </head>
 <body>
@@ -5789,7 +5837,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.16'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.17'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
@@ -7114,6 +7162,7 @@ async function tmSubmitRequest(){
 let _crewClaim=null, _crewProdId=null, _crewDeviceType=null, _crewChannel=null;
 
 async function initCrewApp(){
+  document.body.classList.add('crew-mode');   // lets dialogs attached to the page scale with the cart on tablets
   etkStartConnWatch();
   if(!window._crewGridTimer) window._crewGridTimer=setInterval(()=>{
     const st=document.getElementById('crew-step-device');
