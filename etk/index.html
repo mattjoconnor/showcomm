@@ -253,6 +253,13 @@ body { background:var(--bg); color:var(--black); }
 .crew-device-card:active { background:rgba(8,145,178,.1); transform:scale(.96); }
 .crew-device-card.taken { background:rgba(8,145,178,.04); border-color:#0891B2; }
 .crew-device-card.taken:hover { background:rgba(8,145,178,.1); }
+.crew-device-card.ready { background:rgba(22,163,74,.10); border-color:#16A34A; border-bottom-color:#16A34A; }
+.crew-device-card.ready:hover { background:rgba(22,163,74,.16); }
+.crew-device-card.pending { background:rgba(245,158,11,.14); border-color:#D97706; border-bottom-color:#D97706; }
+.crew-device-card.pending:hover { background:rgba(245,158,11,.20); }
+.crew-device-card-state { margin-top:5px; padding:2px 7px; font-family:var(--f-mono); font-size:clamp(9px,.75vw,10px); font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#fff; }
+.crew-device-card.ready .crew-device-card-state { background:#15803D; }
+.crew-device-card.pending .crew-device-card-state { background:#B45309; }
 .crew-device-card-id { font-family:var(--f-mono); font-size:clamp(.85rem,3.2vw,1.05rem); font-weight:800; color:var(--tx-primary); letter-spacing:var(--ls-tight); }
 .crew-device-card-status { font-family:var(--f-mono); font-size:clamp(10px,.8vw,11px); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-tertiary); }
 /* Empty/loading */
@@ -414,6 +421,7 @@ body { background:var(--bg); color:var(--black); }
 .etk-conn-banner.show { transform:none; }
 .etk-conn-banner.off { background:#DC2626; }
 .etk-conn-banner.on { background:#16A34A; }
+.etk-update { position:fixed; left:50%; bottom:calc(18px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); z-index:8999; min-height:48px; padding:0 22px; font-family:var(--f-mono); font-size:13px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; background:#111; color:#fff; border:2px solid #22AA66; box-shadow:0 8px 24px rgba(0,0,0,.3); cursor:pointer; }
 .crew-build { margin:22px 0 0; text-align:center; font-family:var(--f-mono); font-size:10px; letter-spacing:.06em; color:var(--tx-tertiary); opacity:.7; }
 .etk-build { margin:18px 0 0; font-family:var(--f-mono); font-size:var(--t-micro); color:var(--tx-tertiary); }
 /* TM header on phones: controls on top, tabs as their own scrollable row */
@@ -5567,7 +5575,42 @@ function renderTMBeltpacks(){
 // green (programmed/fulfilled), red (change requested after programming).
 // Sourced from device_claims + key_requests, not the legacy assignment blob.
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.9';
+const ETK_BUILD='2026-09-30.10';
+/* ── UPDATE CHECK ──
+   A cheap header check of this page every few minutes; only when it changes do we download the
+   page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
+   when it's idle on the pack grid. */
+let _etkPageTag=null, _etkUpdateOffered=false;
+async function etkServerBuild(){
+  try{ const r=await fetch(location.pathname, {cache:'no-store'}); if(!r.ok) return null;
+       _etkPageTag=r.headers.get('etag')||r.headers.get('last-modified')||_etkPageTag;
+       const m=/const ETK_BUILD='([^']+)'/.exec(await r.text()); return m?m[1]:null; }catch(e){ return null; }
+}
+async function etkCheckUpdate(full){
+  if(_etkUpdateOffered || location.protocol==='file:' || !navigator.onLine) return;
+  if(!full && _etkPageTag){
+    try{ const h=await fetch(location.pathname, {method:'HEAD', cache:'no-store'});
+         const tag=h.ok && (h.headers.get('etag')||h.headers.get('last-modified')); if(!tag || tag===_etkPageTag) return; }catch(e){ return; }
+  }
+  const b=await etkServerBuild();
+  if(b && b!==ETK_BUILD) etkOfferUpdate(b);
+}
+function etkOfferUpdate(b){
+  _etkUpdateOffered=true;
+  const cart=document.getElementById('screen-crew') && document.getElementById('screen-crew').style.display==='flex';
+  if(cart){
+    const tryReload=()=>{
+      const grid=document.getElementById('crew-step-device');
+      if(grid && grid.classList.contains('active') && !_crewPendingDeviceId && Date.now()-(window._etkLastTouch||0)>20000) location.reload();
+      else setTimeout(tryReload, 10000);
+    };
+    tryReload(); return;
+  }
+  const btn=document.createElement('button'); btn.type='button'; btn.id='etk-update-btn'; btn.className='etk-update';
+  btn.textContent='Update ready · tap to reload'; btn.title='New version: build '+b; btn.onclick=()=>location.reload();
+  document.body.appendChild(btn);
+}
+document.addEventListener('pointerdown', ()=>{ window._etkLastTouch=Date.now(); }, {passive:true});
 /* ── CONNECTION WATCH (cart and TM) ──
    The device's own online flag misses "Wi-Fi with no internet", so we also check in with the
    server every 15 s (every 5 s while offline) and treat any failed send as offline. */
@@ -5619,6 +5662,11 @@ function etkScheduleConnCheck(){
 }
 function etkStartConnWatch(){
   if(_etkConnStarted) return; _etkConnStarted=true;
+  if(new URLSearchParams(location.search).get('embed')!=='1'){   // the Cart tab's frame reloads with the dashboard
+    etkCheckUpdate(true);
+    setInterval(()=>{ if(document.visibilityState==='visible') etkCheckUpdate(false); }, 5*60*1000);
+    document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') etkCheckUpdate(false); });
+  }
   addEventListener('offline', ()=>etkSetOnline(false));
   addEventListener('online', ()=>etkConnCheck());
   document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') etkConnCheck(); });
@@ -6738,6 +6786,10 @@ let _crewClaim=null, _crewProdId=null, _crewDeviceType=null, _crewChannel=null;
 
 async function initCrewApp(){
   etkStartConnWatch();
+  if(!window._crewGridTimer) window._crewGridTimer=setInterval(()=>{
+    const st=document.getElementById('crew-step-device');
+    if(st && st.classList.contains('active') && document.visibilityState==='visible' && _etkOnline && _crewDeviceType==='bp') crewLoadDevices(true);
+  }, 15000);
   const step=document.getElementById('crew-step-device');
   if(step && !document.getElementById('crew-build')) step.insertAdjacentHTML('beforeend','<p id="crew-build" class="crew-build">ETK Cart · build '+ETK_BUILD+'</p>');
   // ETK build: identity is captured after picking a beltpack, not before
@@ -6792,9 +6844,9 @@ function crewSelectType(type){
   crewShowStep('device');
 }
 
-async function crewLoadDevices(){
+async function crewLoadDevices(quiet){
   const el=document.getElementById('crew-device-list');
-  el.innerHTML='<div class="crew-loading">Loading…</div>';
+  if(!quiet || !el.querySelector('.crew-device-grid')) el.innerHTML='<div class="crew-loading">Loading…</div>';
   const prod=PRODUCTIONS[_crewProdId];
 
   if(_crewDeviceType==='bp'){
@@ -6802,17 +6854,28 @@ async function crewLoadDevices(){
     if(!bps.length){
       el.innerHTML='<div class="crew-empty">No beltpacks configured for this show yet.<br>Check with your TM.</div>'; return;
     }
-    let takenBy={};
+    // Claimed packs show whether they're programmed: green "Ready" (nothing waiting) or amber
+    // "Pending" (a change is waiting on the TM). Same key logic as the TM queue, so they always agree.
+    let takenBy={}, reqsBy={};
     if(SUPA){
-      const {data}=await SUPA.from('device_claims').select('device_id,crew_name')
-        .eq('production_id',_crewProdId).eq('device_type','beltpack').in('status',['pending','confirmed']);
-      if(data) data.forEach(r=>{ takenBy[r.device_id]=r.crew_name; });
+      const [cl, rq] = await Promise.all([
+        SUPA.from('device_claims').select('device_id,crew_name,claimed_at')
+          .eq('production_id',_crewProdId).eq('device_type','beltpack').in('status',['pending','confirmed']),
+        SUPA.from('key_requests').select('device_id,status,note,created_at')
+          .eq('production_id',_crewProdId).in('status',['open','fulfilled']).order('created_at',{ascending:true})
+      ]);
+      if(cl.data) cl.data.forEach(r=>{ if(!takenBy[r.device_id] || r.claimed_at>takenBy[r.device_id].claimed_at) takenBy[r.device_id]=r; });
+      if(rq.data) rq.data.forEach(r=>{ (reqsBy[r.device_id]=reqsBy[r.device_id]||[]).push(r); });
+      if(cl.error && etkNetErr(cl.error)) etkSetOnline(false);
     }
+    if(quiet && document.getElementById('crew-step-device') && !document.getElementById('crew-step-device').classList.contains('active')) return;
     el.innerHTML=`<div class="crew-device-grid">`+bps.map(bp=>{
       const t=takenBy[bp];
-      return `<div class="crew-device-card${t?' taken':''}" onclick="${t?`crewReopenDevice('${bp}')`:`crewOpenClaimForm('${bp}')`}">
+      const pending = t && etkPackKeys(reqsBy[bp]||[], t).some(k=>k.pend);
+      const state = !t ? '' : pending ? ' pending' : ' ready';
+      return `<div class="crew-device-card${t?' taken':''}${state}" onclick="${t?`crewReopenDevice('${bp}')`:`crewOpenClaimForm('${bp}')`}">
         <div class="crew-device-card-id">${bp}</div>
-        ${t?`<div class="crew-device-card-status">${t}</div>`:''}
+        ${t?`<div class="crew-device-card-status">${etkEsc(t.crew_name)}</div><div class="crew-device-card-state">${pending?'Pending':'Ready'}</div>`:''}
       </div>`;
     }).join('')+`</div>`;
 
