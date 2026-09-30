@@ -5272,7 +5272,7 @@ async function initTMApp(){
   etkStartPolling(); // safety net in case the realtime connection silently drops
   etkRequestWakeLock(); // TM deploy station is a kiosk too
   document.title = ETK_TITLE;
-  setTimeout(()=>{ etkAlertsLabel(); etkAlertTick(); }, 0);
+  setTimeout(()=>{ etkAlertsLabel(); etkAlertTick(); if(_etkAlertsOn) etkPushSubscribe(); }, 0);
 
   // ETK build: single hardcoded production — no multi-show lookup
   _tmProductions=PRODUCTIONS['ETK']?[PRODUCTIONS['ETK']]:[];
@@ -5540,8 +5540,31 @@ function etkAlertsLabel(){
   const b=document.getElementById('tm-alerts-btn'); if(!b) return;
   const perm=('Notification' in window)?Notification.permission:'unsupported';
   b.classList.toggle('on',_etkAlertsOn);
-  b.textContent = !_etkAlertsOn ? 'Alerts off' : (perm==='default' ? 'Allow popups' : 'Alerts on');
-  b.title = perm==='granted' ? 'Sound and desktop popups for new requests' : perm==='denied' ? 'Sound only: popups are blocked in this browser’s site settings' : 'Sound for new requests. Click to also allow desktop popups.';
+  b.textContent = !_etkAlertsOn ? 'Alerts off' : (perm==='default' ? 'Allow popups' : (_etkPushOn ? 'Alerts on · push' : 'Alerts on'));
+  b.title = _etkPushOn ? 'Sound, popups, and push to this device even when it’s locked' : perm==='granted' ? 'Sound and desktop popups for new requests' : perm==='denied' ? 'Sound only: popups are blocked in this browser’s site settings' : 'Sound for new requests. Click to also allow desktop popups.';
+}
+/* Push to locked phones: this device registers with ShowPoint's worker and is saved so the
+   alert function in Supabase can reach it. Turning Alerts off removes it. */
+const ETK_VAPID_PUBLIC='BEyF1EPjksj2UQJy44-YJpCnU1gfP0UyjTxh4FTMWEfunUrE1aA0dBKvZ5e90olzQ28C3_OIBUdDCiaMI5wr7NA';
+let _etkPushOn=false;
+function etkB64ToBytes(b64){ const pad='='.repeat((4-b64.length%4)%4), raw=atob((b64+pad).replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(raw, c=>c.charCodeAt(0)); }
+async function etkPushReg(){ try{ return ('serviceWorker' in navigator) ? await navigator.serviceWorker.getRegistration('/') : null; }catch(e){ return null; } }
+async function etkPushSubscribe(){
+  try{
+    if(!('PushManager' in window) || !SUPA || !_currentUser || Notification.permission!=='granted') return false;
+    const reg = await etkPushReg(); if(!reg || !reg.pushManager) return false;
+    const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:etkB64ToBytes(ETK_VAPID_PUBLIC)});
+    const {error} = await SUPA.from('push_subscriptions').upsert({endpoint:sub.endpoint, subscription:sub.toJSON(), user_id:_currentUser.id});
+    _etkPushOn = !error; if(error) console.warn('push save:', error);
+  }catch(e){ console.warn('push subscribe:', e); _etkPushOn=false; }
+  etkAlertsLabel(); return _etkPushOn;
+}
+async function etkPushUnsubscribe(){
+  try{
+    const reg = await etkPushReg(), sub = reg && reg.pushManager && await reg.pushManager.getSubscription();
+    if(sub){ if(SUPA) await SUPA.from('push_subscriptions').delete().eq('endpoint', sub.endpoint); await sub.unsubscribe(); }
+  }catch(e){ console.warn('push unsubscribe:', e); }
+  _etkPushOn=false; etkAlertsLabel();
 }
 async function etkToggleAlerts(){
   etkChime(); // also unlocks audio on this click
@@ -5549,6 +5572,7 @@ async function etkToggleAlerts(){
   if(_etkAlertsOn && perm==='default'){ try{ await Notification.requestPermission(); }catch(e){} }
   else { _etkAlertsOn=!_etkAlertsOn; try{ localStorage.setItem('etk_alerts',_etkAlertsOn?'on':'off'); }catch(e){} }
   etkAlertsLabel();
+  if(_etkAlertsOn) etkPushSubscribe(); else etkPushUnsubscribe();
 }
 function etkCheckAlerts(pack){
   const bps=(PRODUCTIONS['ETK']&&PRODUCTIONS['ETK'].beltpacks)||[];
@@ -5564,7 +5588,7 @@ function etkCheckAlerts(pack){
     let entries=[]; try{ entries=JSON.parse(r.note||'[]'); }catch(e){}
     const what=Array.isArray(entries)?entries.map(etkEntryText).join(', '):'';
     toast(`New request: ${bp} · ${claim.crew_name}`,'info');
-    if('Notification' in window && Notification.permission==='granted') etkNotify(`${bp} · ${claim.crew_name}`, what||'New key request', 'etk-'+r.id);
+    if(!_etkPushOn && 'Notification' in window && Notification.permission==='granted') etkNotify(`${bp} · ${claim.crew_name}`, what||'New key request', 'etk-'+r.id);
   });
 }
 /* Phones only allow popups through the service worker; desktops accept either */
