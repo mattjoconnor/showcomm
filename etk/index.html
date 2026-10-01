@@ -5635,24 +5635,24 @@ async function initTMApp(){
         if(_tmActiveView==='requests') renderTMRequests();
       })
       .on('postgres_changes',{event:'*',schema:'public',table:'device_claims'},function(){
-        if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
-        else if(_tmActiveView==='channels') renderETKChannels();
+        if(_tmActiveView==='beltpacks') renderETKBeltpackStatus({bg:true});
+        else if(_tmActiveView==='channels') renderETKChannels({bg:true});
         else etkAlertTick();
       })
       .on('postgres_changes',{event:'*',schema:'public',table:'key_requests'},function(){
-        if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
-        else if(_tmActiveView==='channels') renderETKChannels();
+        if(_tmActiveView==='beltpacks') renderETKBeltpackStatus({bg:true});
+        else if(_tmActiveView==='channels') renderETKChannels({bg:true});
         else etkAlertTick();
         if(_tmActiveView==='requests') renderTMRequests();
       })
       .on('postgres_changes',{event:'*',schema:'public',table:'etk_options'},async function(){
         await loadETKOptions();
-        if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
+        if(_tmActiveView==='beltpacks') renderETKBeltpackStatus({bg:true});
         if(_tmActiveView==='settings'&&!_etkSettingsDirty) renderETKSettings();
       })
       .on('postgres_changes',{event:'*',schema:'public',table:'bp_custody'},function(){
-        if(_tmActiveView==='deploy'&&!_etkCustodyPending.size) renderETKDeploy();
-        if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
+        if(_tmActiveView==='deploy'&&!_etkCustodyPending.size) renderETKDeploy({bg:true});
+        if(_tmActiveView==='beltpacks') renderETKBeltpackStatus({bg:true});
       })
       .subscribe((status,err)=>{
         console.log('[TM realtime] status:',status,err||'');
@@ -5837,7 +5837,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.17'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.18'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
@@ -5892,7 +5892,7 @@ function etkSetOnline(on){
     setTimeout(()=>{ if(_etkOnline) b.className='etk-conn-banner on'; }, 2500);
     // catch up on anything missed while offline
     if(typeof _tmMode!=='undefined' && _tmMode){
-      if(_tmActiveView==='beltpacks') renderETKBeltpackStatus(); else if(_tmActiveView==='channels') renderETKChannels(); else if(_tmActiveView==='deploy' && !_etkCustodyPending.size) renderETKDeploy();
+      if(_tmActiveView==='beltpacks') renderETKBeltpackStatus({bg:true}); else if(_tmActiveView==='channels') renderETKChannels({bg:true}); else if(_tmActiveView==='deploy' && !_etkCustodyPending.size) renderETKDeploy({bg:true});
       etkLoadMessages(); etkAlertTick();
     }
   }
@@ -6154,7 +6154,7 @@ function etkSizeCart(){
 }
 addEventListener('resize', etkSizeCart);
 
-async function renderETKChannels(){
+async function renderETKChannels(opts){
   const body=document.getElementById('tm-body'); if(!body) return;
   const prod=PRODUCTIONS['ETK'];
   if(!prod){ body.innerHTML='<div class="empty-state"><div class="empty-text">ETK production not loaded</div></div>'; return; }
@@ -6164,6 +6164,9 @@ async function renderETKChannels(){
   const pack=await etkLoadPackData();
   if(_tmActiveView!=='channels') return;
   etkCheckAlerts(pack);
+  const sig=etkSignature(pack);
+  if(opts&&opts.bg && sig===_etkSig.channels && document.getElementById('etk-ch-wrap')) return;
+  _etkSig.channels=sig; const _scroll=body.scrollTop;
   const bps=(prod.beltpacks||[]).slice(), rows={};
   const add=(v,bp,i,claim,state,latch)=>{ const k=v.category+'|'+v.label; (rows[k]=rows[k]||[]).push({bp, key:i+1, who:claim?claim.crew_name:'', latch, state}); };
   bps.forEach(bp=>{
@@ -6187,9 +6190,10 @@ async function renderETKChannels(){
     <div class="etk-ch-sec">Party lines</div><div class="etk-ch-grid">${(ETK_OPTIONS.PLs||[]).map(o=>card('PLs',o)).join('')}</div>
     <div class="etk-ch-sec">IFBs</div><div class="etk-ch-grid">${(ETK_OPTIONS.IFBs||[]).map(o=>card('IFBs',o)).join('')}</div>
   </div>`;
+  body.scrollTop=_scroll;
 }
 
-async function renderETKDeploy(){
+async function renderETKDeploy(opts){
   const body=document.getElementById('tm-body'); if(!body) return;
   const prod=PRODUCTIONS['ETK'];
   if(!prod){ body.innerHTML='<div class="empty-state"><div class="empty-text">ETK production not loaded</div></div>'; return; }
@@ -6208,6 +6212,9 @@ async function renderETKDeploy(){
     body.innerHTML='<div class="empty-state"><div class="empty-text">Deploy tracking isn’t set up yet — run the bp_custody SQL in Supabase.</div></div>';
     return;
   }
+  const sig=JSON.stringify([(claimsRes.data||[]).map(c=>[c.device_id,c.crew_name]).sort(), (custRes.data||[]).map(x=>x.id).sort(), etkCutoff().toISOString()]);
+  if(opts&&opts.bg && sig===_etkSig.deploy && document.getElementById('etk-deploy-grid')) return;   // nothing changed
+  _etkSig.deploy=sig;
   _etkDeployClaims={}; (claimsRes.data||[]).forEach(c=>{ _etkDeployClaims[c.device_id]=c; });
   _etkCustody=etkComputeCustody(custRes.data);
   _etkDeployBps=bps;
@@ -6272,9 +6279,9 @@ function etkStartPolling(){
   if(_etkPollInterval) return;
   _etkPollInterval=setInterval(()=>{
     etkLoadMessages();   // catches anything realtime missed
-    if(_tmActiveView==='beltpacks') renderETKBeltpackStatus();
-    else if(_tmActiveView==='channels') renderETKChannels();
-    else { if(_tmActiveView==='deploy'&&!_etkCustodyPending.size) renderETKDeploy(); etkAlertTick(); }
+    if(_tmActiveView==='beltpacks') renderETKBeltpackStatus({bg:true});
+    else if(_tmActiveView==='channels') renderETKChannels({bg:true});
+    else { if(_tmActiveView==='deploy'&&!_etkCustodyPending.size) renderETKDeploy({bg:true}); etkAlertTick(); }
   },20000);
 }
 function etkStopPolling(){
@@ -6300,12 +6307,19 @@ const _etkUrgencyRank={red:3,orange:2,green:1,neutral:0};
 
 let _etkAllExpanded=false;
 
-async function renderETKBeltpackStatus(){
+/* Background refreshes (live updates, the 20 s poll) only touch the page when the data changed */
+const _etkSig={};
+function etkSignature(pack, extra){
+  const c=Object.entries(pack.claims||{}).map(([k,v])=>[k,v.crew_name,v.claimed_at]).sort();
+  const r=Object.values(pack.reqs||{}).flat().map(x=>[x.id,x.status]).sort();
+  return JSON.stringify([c,r,extra||null,etkCutoff().toISOString(),JSON.stringify(ETK_OPTIONS).length]);
+}
+async function renderETKBeltpackStatus(opts){
   const body=document.getElementById('tm-body'); if(!body) return;
   const prod=PRODUCTIONS['ETK']; if(!prod){ body.innerHTML='<div class="empty-state"><div class="empty-text">ETK production not loaded</div></div>'; return; }
   const bps=(prod.beltpacks||[]).slice();
   if(!SUPA){ body.innerHTML='<div class="empty-state"><div class="empty-text">No connection</div></div>'; return; }
-  body.innerHTML='<div class="empty-state"><div class="empty-text">Loading…</div></div>';
+  if(!document.getElementById('etk-queue-list')) body.innerHTML='<div class="empty-state"><div class="empty-text">Loading…</div></div>';   // only on first open, never on refreshes
   // Hide the shared filter bar — not meaningful for this single-production board
   const ufBar=document.getElementById('unified-filters'); if(ufBar) ufBar.style.display='none';
 
@@ -6332,6 +6346,10 @@ async function renderETKBeltpackStatus(){
   });
   etkCheckAlerts(pack);
   const overdue=bps.filter(etkIsOverdue);
+  const sig=etkSignature(pack, (custRes.data||[]).map(x=>x.id).sort());
+  if(opts&&opts.bg && sig===_etkSig.beltpacks && document.getElementById('etk-queue-list')) return;   // nothing changed: leave the page alone
+  _etkSig.beltpacks=sig;
+  const _scroll=body.scrollTop;
 
   body.innerHTML=`
     ${overdue.length?`<div class="etk-overdue-banner"><b>${overdue.length} pack${overdue.length===1?'':'s'} not returned since yesterday:</b> ${overdue.join(', ')} <button class="etk-overdue-go" onclick="setTMView('deploy')">Open Deploy</button></div>`:''}
@@ -6352,6 +6370,7 @@ async function renderETKBeltpackStatus(){
   if(grid) grid.style.display=_etkAllExpanded?'grid':'none';
   const tgl=document.getElementById('etk-all-toggle');
   if(tgl){ tgl.classList.toggle('open',_etkAllExpanded); tgl.setAttribute('aria-expanded',_etkAllExpanded); }
+  body.scrollTop=_scroll;   // keep your place when something changed
 }
 
 let _etkKnownQueue=null; // null until first render — nothing "new" to flag on initial load
