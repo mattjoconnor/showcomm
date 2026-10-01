@@ -1416,6 +1416,45 @@ html.etk-dark .etk-edit-err { color:#F87171; }
 @media (max-width:699px){ #screen-crew .crew-picker-opt { font-size:13px; letter-spacing:.02em; padding:12px 4px; } }
 #screen-crew .crew-picker-opt.blank { grid-column:1 / -1; }
 @media (min-width:1000px){ #screen-crew .crew-device-grid, #screen-crew .crew-picker-grid { grid-template-columns:repeat(8,minmax(0,1fr)); } }
+
+/* ── TM DASHBOARD ON LAPTOPS: all 24 packs on one screen when nothing's waiting ── */
+.etk-all-head { margin:0; font-family:var(--f-mono); font-size:13px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:var(--tx-secondary); }
+@media (min-width:701px){
+  .sec-head { padding:var(--s-3) var(--pad-page) var(--s-2); }
+  .etk-counts-wrap { padding-top:var(--s-3); }
+  .etk-count { padding:4px 12px; align-items:center; }
+  .etk-count-num { font-size:20px; }
+  /* nothing waiting: heading and "all caught up" share one line */
+  .etk-queue-section:has(.etk-queue-empty.visible) { display:flex; flex-wrap:wrap; align-items:baseline; column-gap:var(--s-4); }
+  .etk-queue-section:has(.etk-queue-empty.visible) .etk-queue-header { margin-bottom:0; }
+  .etk-queue-section:has(.etk-queue-empty.visible) .etk-queue-list { display:none; }
+  .etk-queue-empty.visible { padding:0; border:none; text-align:left; color:var(--tx-secondary); }
+  .etk-queue-section { padding-top:var(--s-4); }
+  .etk-all-section { padding-top:var(--s-4); }
+  #etk-bp-status-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; padding-top:var(--s-2); }
+  #etk-bp-status-grid .etk-queue-item { border-top-width:3px; }
+  #etk-bp-status-grid .etk-queue-item-head { flex-wrap:nowrap; align-items:center; gap:8px; padding:6px 10px; }
+  #etk-bp-status-grid .etk-queue-item-id { font-size:15px; }
+  #etk-bp-status-grid .etk-queue-item-crew { flex:1; min-width:0; margin-left:auto; text-align:right; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #etk-bp-status-grid .etk-edit-btn { margin-left:0; min-height:28px; padding:0 10px; font-size:12px; letter-spacing:.06em; }
+  #etk-bp-status-grid .crew-key-cell { min-height:40px; padding:4px 6px; }
+  #etk-bp-status-grid .crew-key-cell-num { font-size:12px; margin-bottom:2px; }
+  #etk-bp-status-grid .crew-key-cell-name { font-size:13px; }
+  #etk-bp-status-grid .crew-key-cell { padding-left:4px; padding-right:4px; }
+  #etk-bp-status-grid .crew-key-cell-name.empty { font-size:12px; }
+  #etk-bp-status-grid .crew-latch-tag { font-size:12px; padding:0 4px; }
+}
+@media (min-width:1100px){ #etk-bp-status-grid { grid-template-columns:repeat(6,minmax(0,1fr)); } }
+/* short laptop windows: title and subtitle on one line, slimmer key rows */
+@media (min-width:701px) and (max-height:780px){
+  .sec-head { padding:var(--s-2) var(--pad-page); }
+  .sec-head .sec-name { display:inline; font-size:1.25rem; }
+  .sec-head .sec-full { display:inline; margin:0 0 0 var(--s-3); }
+  #etk-bp-status-grid .crew-key-cell { min-height:36px; }
+  .etk-counts-wrap { padding-top:var(--s-2); }
+  .etk-queue-section, .etk-all-section { padding-top:var(--s-3); }
+}
+@media (min-width:1600px){ #etk-bp-status-grid { grid-template-columns:repeat(8,minmax(0,1fr)); } }
 </style>
 </head>
 <body>
@@ -5847,7 +5886,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.20'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.21'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
@@ -6315,7 +6354,7 @@ function etkSetLiveIndicator(status){
 const _etkUrgencyColors={orange:'#F59E0B',green:'#10B981',red:'#DC2626',neutral:'#aaa'};
 const _etkUrgencyRank={red:3,orange:2,green:1,neutral:0};
 
-let _etkAllExpanded=false;
+let _etkAllExpanded=true;   // always open (no collapsing)
 
 /* Background refreshes (live updates, the 20 s poll) only touch the page when the data changed */
 const _etkSig={};
@@ -6370,7 +6409,7 @@ async function renderETKBeltpackStatus(opts){
       <div class="etk-queue-empty" id="etk-queue-empty">All caught up — nothing waiting on you.</div>
     </div>
     <div class="etk-all-section">
-      <button class="etk-all-toggle${_etkAllExpanded?' open':''}" id="etk-all-toggle" onclick="etkToggleAllSection()" aria-expanded="${_etkAllExpanded}"><span id="etk-all-chevron" aria-hidden="true">▸</span> All Beltpacks (${bps.length})</button>
+      <h3 class="etk-all-head" id="etk-all-toggle">All Beltpacks (${bps.length})</h3>
       <div class="etk-bp-status-grid" id="etk-bp-status-grid" style="display:none;"></div>
     </div>`;
   renderETKQueue();
@@ -6478,8 +6517,8 @@ function renderETKGrid(){
     return `<div class="etk-queue-item" style="border-top-color:${_etkUrgencyColors[d.urgency]};">
       <div class="etk-queue-item-head">
         <div class="etk-queue-item-id">${bp}${etkIsOut(bp)?'<span class="etk-out-badge">Out</span>':''}</div>
-        <div class="etk-queue-item-crew">${d.claim?d.claim.crew_name:'Unclaimed'}</div>
-        <button type="button" class="etk-edit-btn" onclick="etkOpenEdit('${bp}')">Edit keys</button>
+        <div class="etk-queue-item-crew" title="${d.claim?etkEsc(d.claim.crew_name):'Unclaimed'}">${d.claim?d.claim.crew_name:'Unclaimed'}</div>
+        <button type="button" class="etk-edit-btn" onclick="etkOpenEdit('${bp}')" title="Edit ${bp} keys" aria-label="Edit ${bp} keys">Edit</button>
       </div>
       <div class="crew-bp-column etk-queue-keys">${cells}</div>
     </div>`;
