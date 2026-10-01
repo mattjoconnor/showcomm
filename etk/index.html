@@ -1389,7 +1389,7 @@ html.etk-dark .etk-edit-err { color:#F87171; }
   #screen-crew .crew-latch-tag { font-size:12px; }
   #screen-crew .crew-picker-zone { padding:var(--s-5); }
   #screen-crew .crew-picker-zone-label, #screen-crew .crew-picker-cat-label { font-size:15px; }
-  #screen-crew .crew-picker-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+  #screen-crew .crew-picker-grid { gap:12px; }
   #screen-crew .crew-picker-opt { font-size:22px; min-height:84px; }
   #screen-crew .crew-picker-opt-sub { font-size:13px; }
   #screen-crew .crew-picker-selected { font-size:19px; min-height:76px; }
@@ -1410,7 +1410,12 @@ html.etk-dark .etk-edit-err { color:#F87171; }
 /* ── CART PACK GRID: rows of 4, or 8 on wide screens (24 packs divide evenly either way) ── */
 #screen-crew .crew-device-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
 @media (min-width:700px) and (max-width:999px){ #screen-crew .crew-device-card { aspect-ratio:auto; min-height:120px; } }   /* upright iPad: wide tiles so all rows fit */
-@media (min-width:1000px){ #screen-crew .crew-device-grid { grid-template-columns:repeat(8,minmax(0,1fr)); } }
+/* PL/IFB picker: the same 4-or-8 rows; Blank spans the full row as its own action */
+#screen-crew .crew-picker-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+#screen-crew .crew-picker-opt { min-width:0; overflow-wrap:normal; word-break:normal; hyphens:none; }   /* wrap between words, never mid-word */
+@media (max-width:699px){ #screen-crew .crew-picker-opt { font-size:13px; letter-spacing:.02em; padding:12px 4px; } }
+#screen-crew .crew-picker-opt.blank { grid-column:1 / -1; }
+@media (min-width:1000px){ #screen-crew .crew-device-grid, #screen-crew .crew-picker-grid { grid-template-columns:repeat(8,minmax(0,1fr)); } }
 </style>
 </head>
 <body>
@@ -5842,7 +5847,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.19'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.20'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
