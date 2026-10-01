@@ -1367,7 +1367,7 @@ html.etk-dark .etk-edit-err { color:#F87171; }
   #screen-crew .crew-topbar-name { font-size:16px; }
   #screen-crew .crew-inner { max-width:1100px; padding-left:var(--s-5); padding-right:var(--s-5); }
   #screen-crew .crew-section-label { font-size:15px; margin-bottom:var(--s-3); }
-  #screen-crew .crew-device-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:14px; }
+  #screen-crew .crew-device-grid { gap:14px; }
   #screen-crew .crew-device-card-id { font-size:1.5rem; }
   #screen-crew .crew-device-card-status { font-size:15px; }
   #screen-crew .crew-device-card-state { font-size:13px; padding:3px 9px; }
@@ -1406,6 +1406,11 @@ html.etk-dark .etk-edit-err { color:#F87171; }
   body.crew-mode .crew-confirm-sub { font-size:16px; }
   body.crew-mode .crew-confirm-btn { font-size:16px; min-height:60px; }
 }
+
+/* ── CART PACK GRID: rows of 4, or 8 on wide screens (24 packs divide evenly either way) ── */
+#screen-crew .crew-device-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+@media (min-width:700px) and (max-width:999px){ #screen-crew .crew-device-card { aspect-ratio:auto; min-height:120px; } }   /* upright iPad: wide tiles so all rows fit */
+@media (min-width:1000px){ #screen-crew .crew-device-grid { grid-template-columns:repeat(8,minmax(0,1fr)); } }
 </style>
 </head>
 <body>
@@ -5837,7 +5842,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.18'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.19'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
