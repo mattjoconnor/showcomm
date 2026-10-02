@@ -1431,7 +1431,7 @@ html.etk-dark .etk-edit-err { color:#F87171; }
   .etk-queue-empty.visible { padding:0; border:none; text-align:left; color:var(--tx-secondary); }
   .etk-queue-section { padding-top:var(--s-4); }
   .etk-all-section { padding-top:var(--s-4); }
-  #etk-bp-status-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; padding-top:var(--s-2); }
+  #etk-bp-status-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; padding-top:var(--s-2); }
   #etk-bp-status-grid .etk-queue-item { border-top-width:3px; }
   #etk-bp-status-grid .etk-queue-item-head { flex-wrap:nowrap; align-items:center; gap:8px; padding:6px 10px; }
   #etk-bp-status-grid .etk-queue-item-id { font-size:15px; }
@@ -1444,17 +1444,23 @@ html.etk-dark .etk-edit-err { color:#F87171; }
   #etk-bp-status-grid .crew-key-cell-name.empty { font-size:12px; }
   #etk-bp-status-grid .crew-latch-tag { font-size:12px; padding:0 4px; }
 }
-@media (min-width:1100px){ #etk-bp-status-grid { grid-template-columns:repeat(6,minmax(0,1fr)); } }
+@media (min-width:1600px){ #etk-bp-status-grid { grid-template-columns:repeat(6,minmax(0,1fr)); } }   /* narrower: 4 per row so every word fits */
 /* short laptop windows: title and subtitle on one line, slimmer key rows */
 @media (min-width:701px) and (max-height:780px){
   .sec-head { padding:var(--s-2) var(--pad-page); }
   .sec-head .sec-name { display:inline; font-size:1.25rem; }
   .sec-head .sec-full { display:inline; margin:0 0 0 var(--s-3); }
-  #etk-bp-status-grid .crew-key-cell { min-height:36px; }
+  #etk-bp-status-grid .etk-queue-item-head { padding-top:4px; padding-bottom:4px; }
   .etk-counts-wrap { padding-top:var(--s-2); }
   .etk-queue-section, .etk-all-section { padding-top:var(--s-3); }
 }
-@media (min-width:1600px){ #etk-bp-status-grid { grid-template-columns:repeat(8,minmax(0,1fr)); } }
+/* every pack card the same height: fixed key cells, names up to two lines, LATCH as a corner tag */
+@media (min-width:701px){
+  #etk-bp-status-grid .crew-key-cell { position:relative; height:60px; min-height:0 !important; padding:3px 2px; display:flex; flex-direction:column; overflow:hidden; }
+  #etk-bp-status-grid .crew-key-cell-num { margin:0; line-height:14px; flex:none; }
+  #etk-bp-status-grid .crew-key-cell-name { margin:auto 0; font-size:12px; line-height:1.12; letter-spacing:-.02em; text-align:center; overflow-wrap:break-word; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
+  #etk-bp-status-grid .etk-latch-tag { position:absolute; top:3px; right:2px; margin:0; padding:0 3px; font-size:12px; line-height:15px; letter-spacing:0; }
+}
 </style>
 </head>
 <body>
@@ -5886,7 +5892,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.21'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.22'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
