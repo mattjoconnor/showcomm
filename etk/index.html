@@ -1599,6 +1599,7 @@ html.etk-dark .etk-edit-err { color:#F87171; }
       </div>
       <!-- Confirmed home -->
       <div class="crew-step" id="crew-step-confirmed">
+        <button type="button" class="crew-back-btn" id="crew-home-back" onclick="crewLeavePack()">← All beltpacks</button>
         <div class="crew-home-header" id="crew-home-header">
           <div class="crew-home-left">
             <div class="crew-home-type" id="crew-home-type"></div>
@@ -5892,7 +5893,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.22'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.23'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
@@ -8069,7 +8070,27 @@ async function crewConfirmRelease(){
 
 // ETK build: single reset path back to the beltpack grid for the shared cart —
 // clears the previous person's identity, picks, and subscription in one place.
+/* Back from a pack to the grid. Nothing unsent: go straight back. Unsent picks: ask first.
+   Either way the pack stays claimed (Back never releases). */
+function crewLeavePack(){
+  const n=Object.keys(_crewKeyNotes||{}).length;
+  if(!n){ crewReturnToGrid(); return; }
+  const bp=(_crewClaim&&_crewClaim.device_id)||'this pack';
+  const ov=document.createElement('div'); ov.className='crew-confirm-overlay visible'; ov.id='crew-leave-confirm';
+  ov.innerHTML=`<div class="crew-confirm-box" role="dialog" aria-modal="true" aria-labelledby="crew-leave-title">
+    <div class="crew-confirm-title" id="crew-leave-title">Leave ${bp} without sending?</div>
+    <div class="crew-confirm-sub">You have ${n} change${n===1?'':'s'} that ${n===1?'hasn’t':'haven’t'} been sent to the TM. ${n===1?'It':'They'} will be discarded. Your beltpack stays yours.</div>
+    <div class="crew-confirm-btns">
+      <button type="button" class="crew-confirm-btn primary" id="crew-leave-keep">Keep editing</button>
+      <button type="button" class="crew-confirm-btn cancel" id="crew-leave-discard">Discard changes</button>
+    </div></div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#crew-leave-keep').onclick=()=>ov.remove();
+  ov.querySelector('#crew-leave-discard').onclick=()=>{ ov.remove(); crewReturnToGrid(); };
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.remove(); });
+}
 function crewReturnToGrid(){
+  { const lv=document.getElementById('crew-leave-confirm'); if(lv) lv.remove(); }
   _crewKeyNotes={}; _crewCurrentKeyState={}; _crewActiveKeyIdx=null;
   if(_crewChannel){ try{ SUPA&&SUPA.removeChannel(_crewChannel); }catch(e){} _crewChannel=null; }
   _crewClaim=null; _currentProfile=null; _crewPendingDeviceId=null;
