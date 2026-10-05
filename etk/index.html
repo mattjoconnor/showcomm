@@ -21,7 +21,17 @@
       b.onclick=function(){ b.remove(); }; (document.body||document.documentElement).appendChild(b); }
     b.textContent='Something went wrong: '+String(msg).slice(0,160)+(window.ETK_BUILD?' · build '+window.ETK_BUILD:'')+' (tap to dismiss)';
   }
-  addEventListener('error', function(e){ if(e.filename && e.filename.indexOf(location.origin)!==0 && e.filename.indexOf('file:')!==0) return; show(e.message); });
+  window.__etkErrs=[];
+  addEventListener('error', function(e){
+    var t=e.target;
+    if(t && t!==window && t.tagName){            // a file that failed to load: record scripts, never pop the box
+      if(t.tagName==='SCRIPT') window.__etkErrs.push('script didn’t load: '+(t.src||'').replace(/^https?:\/\//,'').slice(0,60));
+      return;
+    }
+    var where=(e.filename||'').replace(location.origin,'')+(e.lineno?':'+e.lineno:'');
+    window.__etkErrs.push(String(e.message||'error')+(where?' @ '+where:''));
+    if(!e.message) return;
+    if(e.filename && e.filename.indexOf(location.origin)!==0 && e.filename.indexOf('file:')!==0) return; show(e.message); }, true);
   addEventListener('unhandledrejection', function(e){ var r=e.reason; show(r&&r.message?r.message:String(r)); });
 })();
 /* Dark mode follows the device on the TM dashboard; the crew cart (and the Cart tab's frame) stay light */
@@ -1483,7 +1493,7 @@ html.etk-dark .etk-edit-err { color:#F87171; }
       <div class="login-role-label">Select role</div>
       <div class="login-role-grid">
         <button class="login-role-btn" data-role="tm">TM</button>
-        <button class="login-role-btn" data-role="crew">Crew</button>
+        <button class="login-role-btn" data-role="crew" onclick="try{localStorage.setItem('etk_mode','crew')}catch(e){} location.href='index.html?role=crew'; return false;">Crew</button>
       </div>
       <div id="login-creds-wrap">
         <button class="login-back" id="login-back-btn">← Change role</button>
@@ -2351,8 +2361,7 @@ document.querySelectorAll('.login-role-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     _selectedRole=btn.dataset.role;
     if(_selectedRole==='crew'){
-      // ETK build: identity is captured after picking a beltpack, not here
-      showScreen('crew');
+      // ETK build: the button's own onclick loads the cart address (works even if this script didn't start)
       return;
     }
     document.querySelectorAll('.login-role-btn').forEach(b=>b.classList.remove('active'));
@@ -2379,6 +2388,7 @@ function etkRole(){
   try{ const m=localStorage.getItem('etk_mode'); if(m==='crew'||m==='tm') return m; }catch(e){}
   return null;
 }
+window.__etkMainOk=true;   // the gate's self-check looks for this
 function etkApplyRoleLock(){
   const role=etkRole();
   if(role!=='crew'&&role!=='tm') return;
@@ -5893,7 +5903,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.23'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.24'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
@@ -8138,6 +8148,29 @@ function crewShowStep(step){
 
 // Crew back button wiring
 document.getElementById('crew-back-to-prod').addEventListener('click',()=>{ crewRenderProdList(); crewShowStep('prod'); });
+</script>
+
+<script>
+/* Gate self-check: if the main script never started, say so (with the reasons) instead of leaving dead buttons */
+(function(){
+  function status(){
+    var mode='—'; try{ mode=localStorage.getItem('etk_mode')||'none'; }catch(e){ mode='storage blocked'; }
+    return 'build '+(window.ETK_BUILD||'?')+' · remembered role: '+mode+' · '+(navigator.onLine?'online':'OFFLINE')+' · library: '+(typeof supabase!=='undefined'?'loaded':'NOT loaded');
+  }
+  setTimeout(function(){
+    var gate=document.getElementById('screen-login'); if(!gate || gate.style.display==='none') return;
+    var line=document.createElement('p'); line.id='etk-gate-status';
+    line.style.cssText='margin:18px 0 0;font:600 12px/1.4 system-ui,sans-serif;color:#555;text-align:center';
+    line.textContent=status(); (document.querySelector('#screen-login .login-box')||gate).appendChild(line);
+    if(!window.__etkMainOk){
+      var old=document.getElementById('etk-err'); if(old) old.remove();      // replace any generic box with the full report
+      var b=document.createElement('div'); b.id='etk-err'; b.setAttribute('role','alert');
+      b.style.cssText='position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;padding:12px 14px;background:#7F1D1D;color:#fff;font:600 13px/1.45 system-ui,sans-serif';
+      b.textContent='ShowComm didn’t start. '+((window.__etkErrs||[]).slice(0,3).join(' | ')||'No error was reported.')+' — '+status()+'. Tap Crew to open the cart anyway.';
+      document.body.appendChild(b);
+    }
+  }, 2000);
+})();
 </script>
 </body>
 </html>
