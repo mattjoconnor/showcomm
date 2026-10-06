@@ -1471,6 +1471,24 @@ html.etk-dark .etk-edit-err { color:#F87171; }
   #etk-bp-status-grid .crew-key-cell-name { margin:auto 0; font-size:12px; line-height:1.12; letter-spacing:-.02em; text-align:center; overflow-wrap:break-word; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
   #etk-bp-status-grid .etk-latch-tag { position:absolute; top:3px; right:2px; margin:0; padding:0 3px; font-size:12px; line-height:15px; letter-spacing:0; }
 }
+
+/* ── CART: Claim | Deploy tabs, and Deploy at kiosk size ── */
+#screen-crew .crew-tabs { display:flex; gap:0; margin:0 0 var(--s-4); border:2px solid var(--ink); }
+#screen-crew .crew-tabs button { flex:1; min-height:56px; font-family:var(--f-mono); font-size:15px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:var(--surface); color:var(--tx-primary); border:none; cursor:pointer; }
+#screen-crew .crew-tabs button + button { border-left:2px solid var(--ink); }
+#screen-crew .crew-tabs button.active { background:var(--ink); color:#fff; }
+#screen-crew .etk-counts-wrap { padding:0 0 var(--s-3); }
+#screen-crew .etk-deploy-grid { padding:0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+@media (min-width:700px){
+  #screen-crew .crew-tabs button { min-height:64px; font-size:17px; }
+  #screen-crew .etk-deploy-grid { gap:14px; }
+  #screen-crew .etk-deploy-tile { min-height:120px; padding:var(--s-3); }
+  #screen-crew .etk-deploy-id { font-size:1.5rem; }
+  #screen-crew .etk-deploy-who { font-size:15px; }
+  #screen-crew .etk-deploy-state { font-size:13px; }
+  #screen-crew .etk-count-num { font-size:24px; }
+}
+@media (min-width:1000px){ #screen-crew .etk-deploy-grid { grid-template-columns:repeat(8,minmax(0,1fr)); } }
 </style>
 </head>
 <body>
@@ -1581,6 +1599,16 @@ html.etk-dark .etk-edit-err { color:#F87171; }
             <div class="crew-type-desc">Fixed position</div>
           </div>
         </div>
+      </div>
+      <!-- Claim | Deploy (shown on the two top-level screens) -->
+      <div class="crew-tabs" id="crew-tabs" role="tablist" style="display:none">
+        <button type="button" role="tab" data-tab="claim" class="active" onclick="crewSetTab('claim')">Claim</button>
+        <button type="button" role="tab" data-tab="deploy" onclick="crewSetTab('deploy')">Deploy</button>
+      </div>
+      <!-- Deploy: check beltpacks out and in (run by TMs at the cart) -->
+      <div class="crew-step" id="crew-step-deploy">
+        <div class="crew-section-label">Tap a beltpack to check it out or in</div>
+        <div id="crew-deploy-wrap"></div>
       </div>
       <!-- Select device -->
       <div class="crew-step" id="crew-step-device">
@@ -5903,7 +5931,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.24'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.25'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
@@ -6317,11 +6345,13 @@ async function etkToggleCustody(bp){
     console.error('etkToggleCustody:',error);
     if(prev) _etkCustody[bp]=prev; else delete _etkCustody[bp];
     etkRenderDeployGrid();
-    toast('Couldn’t update '+bp+' — try again','danger');
+    if(document.body.classList.contains('crew-mode')) crewShowToast(etkNetErr(error)?'No connection — '+bp+' not changed':'Couldn’t update '+bp+' — try again');
+    else toast('Couldn’t update '+bp+' — try again','danger');
     return;
   }
   _etkCustody[bp]={device_id:bp,action,created_at:data.created_at,id:data.id};
   etkRenderDeployGrid();
+  if(document.body.classList.contains('crew-mode')){ _crewDeploySig=null; crewShowToast(bp+(action==='deployed'?' checked out':' checked in')+' · tap again to reverse'); return; }
   etkShowUndo(bp,action,data.id,prev);
 }
 function etkShowUndo(bp,action,rowId,prev){
@@ -7252,6 +7282,7 @@ async function initCrewApp(){
   if(!window._crewGridTimer) window._crewGridTimer=setInterval(()=>{
     const st=document.getElementById('crew-step-device');
     if(st && st.classList.contains('active') && document.visibilityState==='visible' && _etkOnline && _crewDeviceType==='bp') crewLoadDevices(true);
+    if(_crewStep==='deploy' && document.visibilityState==='visible' && _etkOnline) crewLoadDeploy(true);
   }, 15000);
   const step=document.getElementById('crew-step-device');
   if(step && !document.getElementById('crew-build')) step.insertAdjacentHTML('beforeend','<p id="crew-build" class="crew-build">ETK Cart · build '+ETK_BUILD+'</p>');
@@ -8099,6 +8130,33 @@ function crewLeavePack(){
   ov.querySelector('#crew-leave-discard').onclick=()=>{ ov.remove(); crewReturnToGrid(); };
   ov.addEventListener('click', e=>{ if(e.target===ov) ov.remove(); });
 }
+function crewSetTab(t){
+  if(t==='deploy'){ crewShowStep('deploy'); crewLoadDeploy(); }
+  else { crewShowStep('device'); crewLoadDevices(true); }
+}
+let _crewDeploySig=null;
+async function crewLoadDeploy(quiet){
+  const wrap=document.getElementById('crew-deploy-wrap'); if(!wrap) return;
+  const prod=PRODUCTIONS[_crewProdId]; const bps=(prod&&prod.beltpacks)||[];
+  if(!SUPA){ wrap.innerHTML='<div class="crew-empty">No connection.</div>'; return; }
+  if(!quiet && !document.getElementById('etk-deploy-grid')) wrap.innerHTML='<div class="crew-loading">Loading…</div>';
+  const [claimsRes,custRes]=await Promise.all([
+    SUPA.from('device_claims').select('device_id,crew_name').eq('production_id',_crewProdId).eq('device_type','beltpack').in('status',['pending','confirmed']),
+    SUPA.from('bp_custody').select('id,device_id,action,created_at').eq('production_id',_crewProdId).order('created_at',{ascending:false})
+  ]);
+  if(_crewStep!=='deploy') return;                       // left the tab mid-fetch
+  if(custRes.error){
+    if(etkNetErr(custRes.error)){ etkSetOnline(false); return; }
+    wrap.innerHTML='<div class="crew-empty">Deploy on the cart needs a one-time database setting. Ask your TM to run the cart-deploy SQL.</div>'; return;
+  }
+  const sig=JSON.stringify([(claimsRes.data||[]).map(c=>[c.device_id,c.crew_name]).sort(),(custRes.data||[]).map(x=>x.id).sort(),etkCutoff().toISOString()]);
+  if(quiet && sig===_crewDeploySig && document.getElementById('etk-deploy-grid')) return;   // nothing changed
+  _crewDeploySig=sig;
+  _etkDeployClaims={}; (claimsRes.data||[]).forEach(c=>{ _etkDeployClaims[c.device_id]=c; });
+  _etkCustody=etkComputeCustody(custRes.data); _etkDeployBps=bps;
+  if(!document.getElementById('etk-deploy-grid')) wrap.innerHTML=`<div class="etk-counts-wrap">${etkCountsHTML(bps)}</div><div class="etk-deploy-grid" id="etk-deploy-grid"></div>`;
+  etkRenderDeployGrid();
+}
 function crewReturnToGrid(){
   { const lv=document.getElementById('crew-leave-confirm'); if(lv) lv.remove(); }
   _crewKeyNotes={}; _crewCurrentKeyState={}; _crewActiveKeyIdx=null;
@@ -8139,6 +8197,9 @@ document.addEventListener('visibilitychange',()=>{ if(_etkWantWake&&document.vis
 
 function crewShowStep(step){
   _crewStep=step; crewResetIdle();
+  const tabs=document.getElementById('crew-tabs');
+  if(tabs){ const top=(step==='device'||step==='deploy'); tabs.style.display=top?'flex':'none';
+    tabs.querySelectorAll('button').forEach(b=>{ const on=(b.dataset.tab==='deploy')===(step==='deploy'); b.classList.toggle('active',on); b.setAttribute('aria-selected',on); }); }
   document.querySelectorAll('.crew-step').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById('crew-step-'+step);
   if(el) el.classList.add('active');
