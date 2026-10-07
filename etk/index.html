@@ -1489,6 +1489,28 @@ html.etk-dark .etk-edit-err { color:#F87171; }
   #screen-crew .etk-count-num { font-size:24px; }
 }
 @media (min-width:1000px){ #screen-crew .etk-deploy-grid { grid-template-columns:repeat(8,minmax(0,1fr)); } }
+
+/* ── CART: holder name + Rename on the pack screen ── */
+.crew-home-holder { display:flex; align-items:center; gap:12px; margin-top:6px; }
+#crew-home-holder { font-family:var(--f-ui); font-size:18px; font-weight:800; color:#fff; }
+.crew-rename-btn { min-height:36px; padding:0 14px; font-family:var(--f-mono); font-size:12px; font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; background:transparent; color:#fff; border:1px solid rgba(255,255,255,.6); cursor:pointer; }
+.crew-rename-btn:hover { border-color:#fff; }
+#crew-rename { align-items:flex-start; padding-top:12vh; }   /* top half: clear of the on-screen keyboard */
+.crew-rename-input { width:100%; margin:var(--s-2) 0 var(--s-2); font-size:20px; }
+.crew-rename-err { min-height:1.2em; margin-bottom:var(--s-2); font-family:var(--f-mono); font-size:13px; font-weight:700; color:#B91C1C; }
+@media (min-width:700px){
+  #screen-crew #crew-home-holder { font-size:22px; }
+  #screen-crew .crew-rename-btn { min-height:44px; font-size:14px; padding:0 18px; }
+  body.crew-mode .crew-rename-input { font-size:24px; }
+}
+
+/* full-width amber Rename, framed like Release */
+.crew-rename-full { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; margin-top:var(--s-5); padding:14px 16px; font-family:var(--f-mono); font-size:var(--t-small); font-weight:800; letter-spacing:var(--ls-wide); text-transform:uppercase; color:#111; background:#F5A524; border:2px solid #B45309; cursor:pointer; text-align:left; }
+.crew-rename-full:hover { background:#F7B240; }
+.crew-rename-full:active { transform:scale(.98); }
+.crew-rename-hint { font-weight:600; text-transform:none; letter-spacing:0; color:#3a2600; }
+.crew-rename-full + .crew-release-btn { margin-top:var(--s-3); }
+@media (min-width:700px){ #screen-crew .crew-rename-full { font-size:16px; min-height:68px; padding:20px 24px; } #screen-crew .crew-rename-hint { font-size:16px; } }
 </style>
 </head>
 <body>
@@ -1642,6 +1664,7 @@ html.etk-dark .etk-edit-err { color:#F87171; }
           <div class="crew-home-left">
             <div class="crew-home-type" id="crew-home-type"></div>
             <div class="crew-home-device" id="crew-home-device"></div>
+            <div class="crew-home-holder"><span id="crew-home-holder"></span></div>
             <div class="crew-home-show" id="crew-home-show"></div>
             <div class="crew-home-location" id="crew-home-location"></div>
           </div>
@@ -1653,6 +1676,7 @@ html.etk-dark .etk-edit-err { color:#F87171; }
         </div>
         <div class="crew-schematic" id="crew-schematic"></div>
         <div class="crew-picker-zone" id="crew-picker-zone"></div>
+        <button type="button" class="crew-rename-full" id="crew-rename-btn" onclick="crewOpenRename()"><span>Rename</span><span class="crew-rename-hint" id="crew-rename-hint">Change who has this beltpack</span></button>
         <button class="crew-release-btn" onclick="crewShowReleaseConfirm()">Release Beltpack</button>
       </div>
     </div>
@@ -5931,7 +5955,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.25'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.26'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
@@ -7529,12 +7553,59 @@ function crewShowPending(){ crewShowDeviceHome(); } // kept for compat
 
 function crewShowConfirmed(){ crewShowDeviceHome(); } // kept for compat
 
+/* Rename the person holding this pack, in place: same claim, same keys, same pending requests and Out/In status */
+function crewOpenRename(){
+  if(!_crewClaim) return;
+  const ov=document.createElement('div'); ov.className='crew-confirm-overlay visible'; ov.id='crew-rename';
+  ov.innerHTML=`<div class="crew-confirm-box move" role="dialog" aria-modal="true" aria-labelledby="crew-rename-title">
+    <div class="crew-confirm-title" id="crew-rename-title">Rename ${etkEsc(_crewClaim.device_id)}</div>
+    <div class="crew-confirm-sub">Who has this beltpack now? Keys and requests stay with the pack.</div>
+    <input class="field-input crew-rename-input" id="crew-rename-input" type="text" maxlength="40" autocomplete="off" value="${etkEsc(_crewClaim.crew_name||'')}" aria-label="New name">
+    <div class="crew-rename-err" id="crew-rename-err" role="alert"></div>
+    <div class="crew-confirm-btns">
+      <button type="button" class="crew-confirm-btn primary" id="crew-rename-save">Save</button>
+      <button type="button" class="crew-confirm-btn cancel" id="crew-rename-cancel">Cancel</button>
+    </div></div>`;
+  document.body.appendChild(ov);
+  const inp=ov.querySelector('#crew-rename-input');
+  setTimeout(()=>{ inp.focus(); inp.select(); },40);
+  ov.querySelector('#crew-rename-cancel').onclick=()=>ov.remove();
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.remove(); });
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); crewSaveRename(); } });
+  ov.querySelector('#crew-rename-save').onclick=crewSaveRename;
+}
+async function crewSaveRename(){
+  const ov=document.getElementById('crew-rename'); if(!ov) return;
+  const err=ov.querySelector('#crew-rename-err'), btn=ov.querySelector('#crew-rename-save');
+  const name=(ov.querySelector('#crew-rename-input').value||'').replace(/\s+/g,' ').trim();
+  if(!name){ err.textContent='Enter a name.'; return; }
+  if(name===_crewClaim.crew_name){ ov.remove(); return; }
+  if(!_etkOnline){ err.textContent='No connection. Try again when the iPad is back online.'; return; }
+  btn.disabled=true; btn.textContent='Saving…';
+  if(SUPA && _crewClaim.id!=='local'){
+    const {data,error}=await SUPA.from('device_claims').update({crew_name:name}).eq('id',_crewClaim.id).select('id');
+    if(error || !data || !data.length){
+      btn.disabled=false; btn.textContent='Save';
+      if(error && etkNetErr(error)){ etkSetOnline(false); err.textContent='No connection. Try again when the iPad is back online.'; }
+      else err.textContent='Couldn’t rename. Ask your TM to check the database settings.';
+      return;
+    }
+  }
+  const was=_crewClaim.crew_name; _crewClaim.crew_name=name;
+  try{ localStorage.setItem('sc_crew_name', name); }catch(e){}
+  const h=document.getElementById('crew-home-holder'); if(h) h.textContent=name;
+  const tn=document.getElementById('crew-topbar-name'); if(tn) tn.textContent=name;
+  ov.remove(); crewShowToast(`${_crewClaim.device_id}: ${was||'—'} → ${name}`);
+}
+
 function crewShowDeviceHome(){
   const prod=PRODUCTIONS[_crewClaim.production_id]||{};
   const roomClr=crFg(prod.controlRoom)||'#0E7490';
   const isPending=_crewClaim.status==='pending';
 
   document.getElementById('crew-home-device').textContent=_crewClaim.device_id;
+  { const h=document.getElementById('crew-home-holder'); if(h) h.textContent=_crewClaim.crew_name||'';
+    const rh=document.getElementById('crew-rename-hint'); if(rh) rh.textContent='Change who has '+_crewClaim.device_id; }
   document.getElementById('crew-home-type').textContent=(_crewClaim.device_type==='keypanel'?'Keypanel':'Beltpack')+(prod.controlRoom?' · '+prod.controlRoom:'');
   document.getElementById('crew-home-show').textContent=prod.name||_crewClaim.production_id||'';
 
