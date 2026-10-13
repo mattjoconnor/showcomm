@@ -1511,16 +1511,6 @@ html.etk-dark .etk-edit-err { color:#F87171; }
 .crew-rename-hint { font-weight:600; text-transform:none; letter-spacing:0; color:#3a2600; }
 .crew-rename-full + .crew-release-btn { margin-top:var(--s-3); }
 @media (min-width:700px){ #screen-crew .crew-rename-full { font-size:16px; min-height:68px; padding:20px 24px; } #screen-crew .crew-rename-hint { font-size:16px; } }
-
-/* ── CART PACK CARDS ON THE iPAD: every card identical — number on top, name centered (up to 3 lines), badge on the bottom ── */
-@media (min-width:700px){
-  #screen-crew .crew-device-card { aspect-ratio:auto; height:132px; min-height:0; justify-content:flex-start; gap:0; padding:12px 6px 10px; overflow:hidden; }
-  #screen-crew .crew-device-card-id { flex:none; }
-  #screen-crew .crew-device-card-status { margin:auto 0; width:100%; text-align:center; font-size:13.5px; letter-spacing:.02em; line-height:1.2;
-    overflow-wrap:break-word; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
-  #screen-crew .crew-device-card-state { flex:none; margin-top:0; }
-}
-@media (min-width:1000px){ #screen-crew .crew-device-card { height:150px; } }
 </style>
 </head>
 <body>
@@ -5965,7 +5955,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.27'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.26'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
