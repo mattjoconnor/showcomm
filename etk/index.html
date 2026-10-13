@@ -1511,6 +1511,22 @@ html.etk-dark .etk-edit-err { color:#F87171; }
 .crew-rename-hint { font-weight:600; text-transform:none; letter-spacing:0; color:#3a2600; }
 .crew-rename-full + .crew-release-btn { margin-top:var(--s-3); }
 @media (min-width:700px){ #screen-crew .crew-rename-full { font-size:16px; min-height:68px; padding:20px 24px; } #screen-crew .crew-rename-hint { font-size:16px; } }
+
+/* iOS: don't auto-resize text behind the layout's back (standard for app UIs) */
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+/* ── CART PACK CARDS ON THE iPAD: every card identical, plain standard layout (no Safari-only tricks) ──
+   three rows: number on top, name in the middle (up to 3 lines, then cut off), badge at the bottom */
+@media (min-width:700px){
+  #screen-crew .crew-device-card { display:grid; grid-template-rows:auto 1fr auto; justify-items:center; align-items:center; aspect-ratio:auto; min-height:0; gap:0; padding:10px 6px 9px; overflow:hidden;
+    height:clamp(96px, calc((100vh - 361px) / 6), 132px); height:clamp(96px, calc((100dvh - 361px) / 6), 132px); }   /* 6 rows upright: fill the screen, never scroll */
+  #screen-crew .crew-device-card-id { align-self:start; }
+  #screen-crew .crew-device-card-status { display:block; width:100%; max-height:calc(3 * 1.2em); overflow:hidden; text-align:center; font-size:13.5px; letter-spacing:.02em; line-height:1.2; overflow-wrap:break-word; }
+  #screen-crew .crew-device-card-state { align-self:end; margin-top:0; }
+}
+@media (min-width:1000px){ #screen-crew .crew-device-card { height:clamp(112px, calc((100vh - 319px) / 3), 150px); height:clamp(112px, calc((100dvh - 319px) / 3), 150px); } }   /* 3 rows sideways */
+
+#screen-crew.crew-top .crew-inner { padding-bottom:var(--s-5); }   /* the 80px Submit-bar space is only needed inside a pack */
+#screen-crew.crew-top .crew-build { margin-top:var(--s-4); }
 </style>
 </head>
 <body>
@@ -5955,7 +5971,7 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.26'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-09-30.29'; window.ETK_BUILD=ETK_BUILD;
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
@@ -8269,6 +8285,7 @@ document.addEventListener('visibilitychange',()=>{ if(_etkWantWake&&document.vis
 function crewShowStep(step){
   _crewStep=step; crewResetIdle();
   const tabs=document.getElementById('crew-tabs');
+  { const sc=document.getElementById('screen-crew'); if(sc) sc.classList.toggle('crew-top', step==='device'||step==='deploy'); }   // no Submit-bar reserve on the main screens
   if(tabs){ const top=(step==='device'||step==='deploy'); tabs.style.display=top?'flex':'none';
     tabs.querySelectorAll('button').forEach(b=>{ const on=(b.dataset.tab==='deploy')===(step==='deploy'); b.classList.toggle('active',on); b.setAttribute('aria-selected',on); }); }
   document.querySelectorAll('.crew-step').forEach(s=>s.classList.remove('active'));
