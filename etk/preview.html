@@ -5818,13 +5818,13 @@ function setTMView(view){
   if(tmSH){
     const titles={
       keypanels:['Keypanels','All Active Productions'],
-      beltpacks:['Beltpacks','ETK · Oct 1–16'],
+      beltpacks:['Beltpacks',ETK_SHOW.name+' · '+ETK_SHOW.dates],
       deploy:['Deploy','Tap to check beltpacks out and in'],
       channels:['Channels','Who’s on each PL and IFB, from confirmed programming'],
       cart:['Cart','The crew screen, to claim, request or release on someone’s behalf'],
       messages:['Messages','The ETK thread: TMs and Matt'],
       requests:['Requests','Pending Changes & Assignments'],
-      settings:['Settings','ETK · PL & IFB names and colors']
+      settings:['Settings',ETK_SHOW.name+' · PL & IFB names and colors']
     };
     const [name,sub]=titles[view]||[view,''];
     tmSH.innerHTML='<div class="sec-head"><div><div class="sec-name">'+name+'</div><div class="sec-full">'+sub+'</div></div></div>';
@@ -5971,7 +5971,9 @@ function etkToggleMore(open){
 }
 document.addEventListener('click', e=>{ if(!e.target.closest('#tm-more-sheet,#tm-more-btn')) etkToggleMore(false); });
 let _etkBpData={};
-const ETK_BUILD='2026-09-30.29'; window.ETK_BUILD=ETK_BUILD;
+const ETK_BUILD='2026-10-16.1'; window.ETK_BUILD=ETK_BUILD;
+/* The show on screen. Rolling over to the next production = change these two lines (data stays filed under 'ETK'). */
+const ETK_SHOW={ name:'Chopped', dates:'Oct 19–20' };
 /* ── UPDATE CHECK ──
    A cheap header check of this page every few minutes; only when it changes do we download the
    page once and compare build numbers. TM gets a tap-to-reload button; the cart reloads itself
@@ -6212,7 +6214,7 @@ function etkOnNewMessage(m){
   if(!looking && _etkAlertsOn){
     etkChime();
     toast(`Message from ${etkSenderLabel(m)}: ${m.body.slice(0,60)}`,'info');
-    if(!_etkPushOn && 'Notification' in window && Notification.permission==='granted') etkNotify(`ETK · ${etkSenderLabel(m)}`, m.body.slice(0,140), 'etk-chat');
+    if(!_etkPushOn && 'Notification' in window && Notification.permission==='granted') etkNotify(`${ETK_SHOW.name} · ${etkSenderLabel(m)}`, m.body.slice(0,140), 'etk-chat');
   }
 }
 function etkReceiveMessage(m){
@@ -6760,7 +6762,7 @@ function renderETKSettings(){
     </div>
     <button class="etk-settings-save" id="etk-settings-save-btn" onclick="etkSaveSettings()">Save Changes</button>
     <button type="button" class="etk-signout-phone" onclick="doLogout()">Sign out</button>
-    <p class="etk-build">ShowComm ETK · build ${ETK_BUILD}</p>
+    <p class="etk-build">ShowComm · ${ETK_SHOW.name} · build ${ETK_BUILD}</p>
   </div>`;
   etkRenderSettingsList('PLs');
   etkRenderSettingsList('IFBs');
@@ -7325,7 +7327,7 @@ async function initCrewApp(){
     if(_crewStep==='deploy' && document.visibilityState==='visible' && _etkOnline) crewLoadDeploy(true);
   }, 15000);
   const step=document.getElementById('crew-step-device');
-  if(step && !document.getElementById('crew-build')) step.insertAdjacentHTML('beforeend','<p id="crew-build" class="crew-build">ETK Cart · build '+ETK_BUILD+'</p>');
+  if(step && !document.getElementById('crew-build')) step.insertAdjacentHTML('beforeend','<p id="crew-build" class="crew-build">'+ETK_SHOW.name+' Cart · build '+ETK_BUILD+'</p>');
   // ETK build: identity is captured after picking a beltpack, not before
   document.getElementById('crew-topbar-name').textContent='—';
   document.getElementById('crew-topbar-pos').textContent='';
